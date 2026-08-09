@@ -21,7 +21,7 @@
   .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 600px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
   .logo-wrap img { width: 140px; display: block; margin: 0 auto; filter: drop-shadow(0 4px 7px rgba(0,0,0,0.2)); }
   h1 { margin: 2px 0 4px; color: var(--negro); font-family: Impact, sans-serif; font-size: 24px; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
-  .subtitle { text-align: center; color: var(--petroleo); font-size: 13px; margin-bottom: 18px; }
+  .subtitle { text-align: center; color: var(--petroleo); font-size: 13px; margin-bottom: 18px; text-transform: uppercase; letter-spacing: .5px; }
 
   #pinScreen { display: block; animation: fadeInScreen .3s ease-out; }
   #mainScreen { display: none; }
@@ -83,9 +83,9 @@
 
   <div id="mainScreen">
     <div class="progreso-box">
-      <div class="progreso-titulo" id="ejercicioTitulo" onclick="toggleSelectorEjercicios()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-        <span>Ejercicio — cargando...</span>
-        <span style="font-size:11px;">▾</span>
+      <div id="ejercicioTitulo" onclick="toggleSelectorEjercicios()" style="cursor:pointer; display:inline-flex; justify-content:space-between; align-items:center; gap:10px; background:rgba(255,255,255,0.12); border:2px solid var(--lima); border-radius:20px; padding:8px 16px; width:100%; box-sizing:border-box;">
+        <span class="progreso-titulo" style="margin-bottom:0;" id="ejercicioTituloTexto">Ejercicio — cargando...</span>
+        <span style="font-size:13px; color:var(--lima);">▾</span>
       </div>
       <div id="selectorEjercicios" style="display:none; background:rgba(255,255,255,0.08); border-radius:10px; padding:10px; margin-top:8px;">
         <div id="listaEjerciciosDropdown" style="margin-bottom:8px;"></div>
@@ -183,11 +183,11 @@ let EJERCICIO_ACTIVO = null;
 function cargarEjercicioActivo() {
   jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(res) {
     if (!res || !res.ok) {
-      document.getElementById('ejercicioTitulo').textContent = 'Sin Ejercicio cargado — pedile a Claude que lo configure';
+      document.getElementById('ejercicioTituloTexto').textContent = 'Sin Ejercicio cargado — pedile a Claude que lo configure';
       return;
     }
     EJERCICIO_ACTIVO = res.ejercicio;
-    document.getElementById('ejercicioTitulo').textContent = 'Ejercicio N.º ' + res.ejercicio.numero + ' — ' + res.ejercicio.fechaInicio + ' a ' + res.ejercicio.fechaCierre;
+    document.getElementById('ejercicioTituloTexto').textContent = 'Ejercicio N.º ' + res.ejercicio.numero + ' — ' + res.ejercicio.fechaInicio + ' a ' + res.ejercicio.fechaCierre;
   });
 }
 
