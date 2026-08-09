@@ -190,6 +190,9 @@ function generarMemoria() {
     }
     mostrarMemoria(res.idDocumento, res.contenido, 'BORRADOR', res.version);
     cargarVersiones();
+    if (res.pendientesDeEvaluar > 0) {
+      alert('Ojo: quedan ' + res.pendientesDeEvaluar + ' novedad(es) marcadas "Evaluar" sin decidir. No se incluyeron en este borrador. Andá a Novedades y marcalas SI o NO antes de la versión final.');
+    }
   });
 }
 

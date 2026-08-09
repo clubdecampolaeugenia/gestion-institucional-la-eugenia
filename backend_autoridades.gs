@@ -1030,7 +1030,9 @@ function generarBorradorMemoria(params) {
 
   // Junta las novedades SI/EVALUAR del ejercicio activo
   const novedadesRes = listarNovedades({ idEjercicio: ej.idEjercicio });
-  const novedadesRelevantes = (novedadesRes.novedades || []).filter(n => n.considerarMemoria === 'SI' || n.considerarMemoria === 'EVALUAR');
+  // Solo entran las que ya fueron aprobadas explícitamente (SI) -- EVALUAR significa "todavía sin decidir", no se incluye
+  const novedadesRelevantes = (novedadesRes.novedades || []).filter(n => n.considerarMemoria === 'SI');
+  const pendientesDeEvaluar = (novedadesRes.novedades || []).filter(n => n.considerarMemoria === 'EVALUAR').length;
 
   // Trae el último balance del ejercicio activo, si existe
   const balancesRes = listarBalances();
@@ -1083,7 +1085,7 @@ function generarBorradorMemoria(params) {
   const nuevoId = 'DOC-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
   hoja.appendRow([nuevoId, ej.idEjercicio, 'MEMORIA', version, 'BORRADOR', bloqueTexto.text, 'IA', new Date()]);
 
-  return { ok: true, idDocumento: nuevoId, contenido: bloqueTexto.text, novedadesUsadas: novedadesRelevantes.length, version: version };
+  return { ok: true, idDocumento: nuevoId, contenido: bloqueTexto.text, novedadesUsadas: novedadesRelevantes.length, version: version, pendientesDeEvaluar: pendientesDeEvaluar };
 }
 
 function listarDocumentos(params) {
