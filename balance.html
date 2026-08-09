@@ -44,16 +44,16 @@
 
   .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--petroleo); border-top-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 6px; vertical-align: middle; }
 
-  .resultado-box { background: var(--blanco); border-radius: 16px; padding: 16px; margin-top: 16px; }
+  .resultado-box { background: var(--blanco); border-radius: 16px; padding: 16px; margin-top: 16px; margin-bottom: 16px; }
   .resultado-titulo { font-family: Impact, sans-serif; font-size: 15px; color: var(--petroleo); text-transform: uppercase; margin-bottom: 8px; }
   .dato-linea { font-size: 13px; color: var(--petroleo); margin-bottom: 3px; }
   .dato-linea strong { font-weight: 900; }
 
-  .obs-item { border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; font-size: 13px; }
-  .obs-CRITICO { background: #f3c6c6; border-left: 4px solid var(--error); color: #7a1f1f; }
-  .obs-OBSERVACION { background: #fdeecb; border-left: 4px solid var(--naranja); color: #7a5c1f; }
-  .obs-ADVERTENCIA { background: #fff8db; border-left: 4px solid #e0c94f; color: #6b6320; }
-  .obs-DATO_CORRECTO { background: var(--verdecl); border-left: 4px solid var(--petroleo); color: var(--petroleo); }
+  .obs-item { border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; font-size: 13px; border: 2px solid transparent; }
+  .obs-CRITICO { background: #f3c6c6; border-color: var(--error); color: #7a1f1f; }
+  .obs-OBSERVACION { background: #fdeecb; border-color: #a87d2c; color: #7a5c1f; }
+  .obs-ADVERTENCIA { background: #e4edf1; border-color: #6f8fa0; color: #3d5560; }
+  .obs-DATO_CORRECTO { background: var(--hueso); border-color: #2d6a4f; color: #1f4a37; }
   .obs-tipo { font-weight: 900; text-transform: uppercase; font-size: 10px; display: block; margin-bottom: 2px; }
   .btn-resolver { padding: 9px 14px; border-radius: 20px; border: 2px solid var(--petroleo); background: var(--verdecl); color: var(--petroleo); font-family: 'Roboto'; font-size: 11px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
   .btn-omitir { padding: 9px 14px; border-radius: 20px; border: 2px solid var(--petroleo); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 11px; font-weight: 900; text-transform: uppercase; cursor: pointer; opacity: .8; }
