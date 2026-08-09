@@ -21,11 +21,19 @@ function validarPinInterno(pin, moduloRequerido) {
   if (!pin) return false;
   const hoja = SpreadsheetApp.openById(PINES_CGV_SHEET_ID).getSheets()[0];
   const datos = hoja.getDataRange().getValues();
-  const headers = datos[0];
+
+  // Busca la fila real de encabezados (puede no ser la fila 0 si hay una fila en blanco arriba)
+  let filaHeaders = -1;
+  for (let i = 0; i < datos.length; i++) {
+    if (datos[i].indexOf('PIN') !== -1) { filaHeaders = i; break; }
+  }
+  if (filaHeaders === -1) return false;
+
+  const headers = datos[filaHeaders];
   const idx = {};
   headers.forEach((h, i) => idx[h] = i);
 
-  for (let i = 1; i < datos.length; i++) {
+  for (let i = filaHeaders + 1; i < datos.length; i++) {
     const fila = datos[i];
     if (String(fila[idx.PIN]) === String(pin)) {
       if (fila[idx.ACTIVO] !== 'SI') return false;
