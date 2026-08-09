@@ -548,6 +548,14 @@ function procesarBalance() {
     JSON.stringify(analisis.observaciones)
   ]);
 
+  // Archiva los PDF ya procesados en una subcarpeta propia, para que la carpeta principal
+  // quede siempre vacía y lista para el próximo balance -- así nunca se mezclan períodos.
+  const carpetaArchivo = carpeta.createFolder('Procesado_' + nuevoId);
+  archivos.forEach(f => {
+    carpeta.removeFile(f);
+    carpetaArchivo.addFile(f);
+  });
+
   return { ok: true, idBalance: nuevoId, analisis: analisis, estado: estadoInicial, archivosProcesados: archivos.length };
 }
 
@@ -626,6 +634,13 @@ function actualizarObservacionBalance(params) {
 
       observaciones[indice].estadoObs = params.estadoObs;
       observaciones[indice].comentario = params.comentario || observaciones[indice].comentario || '';
+      if (params.estadoObs === 'PENDIENTE') {
+        observaciones[indice].marcadaPor = '';
+        observaciones[indice].marcadaFecha = '';
+      } else {
+        observaciones[indice].marcadaPor = params.pin || '';
+        observaciones[indice].marcadaFecha = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm');
+      }
 
       hoja.getRange(i + 1, idx.OBSERVACIONES + 1).setValue(JSON.stringify(observaciones));
 

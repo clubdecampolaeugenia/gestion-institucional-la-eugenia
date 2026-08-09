@@ -55,6 +55,10 @@
   .obs-ADVERTENCIA { background: #fff8db; border-left: 4px solid #e0c94f; color: #6b6320; }
   .obs-DATO_CORRECTO { background: var(--verdecl); border-left: 4px solid var(--petroleo); color: var(--petroleo); }
   .obs-tipo { font-weight: 900; text-transform: uppercase; font-size: 10px; display: block; margin-bottom: 2px; }
+  .btn-resolver { padding: 9px 14px; border-radius: 20px; border: 2px solid var(--petroleo); background: var(--verdecl); color: var(--petroleo); font-family: 'Roboto'; font-size: 11px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .btn-omitir { padding: 9px 14px; border-radius: 20px; border: 2px solid var(--petroleo); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 11px; font-weight: 900; text-transform: uppercase; cursor: pointer; opacity: .8; }
+  .btn-revertir { padding: 7px 0; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 11px; font-weight: 700; text-decoration: underline; cursor: pointer; }
+  .obs-audit { font-size: 10px; color: inherit; opacity: .65; margin-top: 6px; font-style: italic; }
 
   .divider { border: none; border-top: 1.5px solid #9bb583; margin: 16px 0; }
   .loading-text { text-align: center; color: var(--petroleo); font-size: 13px; font-weight: 700; min-height: 20px; }
@@ -77,8 +81,9 @@
   <div id="mainScreen">
     <a href="index.html" style="display:block; text-align:center; color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:none; margin-bottom:14px; opacity:.75;">&larr; Volver al panel</a>
     <div class="instr-box">
-      1. Subí a la carpeta de Drive <a href="https://drive.google.com/drive/folders/189c_jJ7CkLdHISks0PI2KoBpfC-1_eX1" target="_blank">Balances_Gestion_Institucional_La_Eugenia</a> el Balance General y los Estados Contables (pueden ser varios PDF, se procesan todos juntos — no subas el BHON del contador, no forma parte del Balance)<br>
-      2. Volvé acá y tocá "Procesar último Balance"
+      1. Subí a la carpeta de Drive <a href="https://drive.google.com/drive/folders/189c_jJ7CkLdHISks0PI2KoBpfC-1_eX1" target="_blank">Balances_Gestion_Institucional_La_Eugenia</a> el Balance General y los Estados Contables (no el BHON del contador, ese no forma parte del Balance)<br>
+      2. Volvé acá y tocá "Procesar último Balance"<br>
+      3. Una vez procesados, los PDF se archivan solos en una subcarpeta — la carpeta principal queda vacía para el próximo Balance, así nunca se mezclan períodos
     </div>
 
     <button type="button" class="btn-solid" id="btnProcesar" onclick="procesarBalance()">Procesar último Balance</button>
@@ -209,12 +214,15 @@ function mostrarResultado(analisis, estado, idBalance) {
     html += '<span style="' + tachado + '">' + escapeHtml(o.texto) + '</span>';
 
     if (estadoObs === 'PENDIENTE') {
-      html += '<div style="margin-top:8px; display:flex; gap:6px;">';
-      html += '<button type="button" class="btn-small" onclick="marcarObservacion(' + i + ', \'RESUELTA\')">✅ Marcar resuelta</button>';
-      html += '<button type="button" class="btn-small" onclick="marcarObservacion(' + i + ', \'OMITIDA\')">⏭ Omitir</button>';
+      html += '<div style="margin-top:8px; display:flex; gap:8px;">';
+      html += '<button type="button" class="btn-resolver" onclick="marcarObservacion(' + i + ', \'RESUELTA\')">✅ Marcar resuelta</button>';
+      html += '<button type="button" class="btn-omitir" onclick="marcarObservacion(' + i + ', \'OMITIDA\')">⏭ Omitir</button>';
       html += '</div>';
     } else {
-      html += '<div style="margin-top:6px;"><button type="button" class="btn-small" onclick="marcarObservacion(' + i + ', \'PENDIENTE\')">↩ Volver a pendiente</button></div>';
+      const quien = o.marcadaPor ? (' por PIN ' + o.marcadaPor) : '';
+      const cuando = o.marcadaFecha ? (' el ' + o.marcadaFecha) : '';
+      html += '<div class="obs-audit">Marcada' + quien + cuando + '</div>';
+      html += '<button type="button" class="btn-revertir" onclick="marcarObservacion(' + i + ', \'PENDIENTE\')">↩ Volver a pendiente</button>';
     }
     html += '</div>';
   });
