@@ -74,7 +74,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'procesarBalance', 'actualizarEstadoBalance'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -114,7 +114,11 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v8-thinking-disabled-16k-09ago-1140' };
+      resultado = { ok: true, version: 'v9-ejercicios-09ago-1230' };
+    } else if (action === 'obtenerEjercicioActivo') {
+      resultado = obtenerEjercicioActivo();
+    } else if (action === 'cerrarYAbrirNuevoEjercicio') {
+      resultado = cerrarYAbrirNuevoEjercicio(e.parameter);
     } else {
       resultado = { ok: false, error: 'Acción no reconocida' };
     }
@@ -599,4 +603,81 @@ function actualizarEstadoBalance(params) {
     }
   }
   return { ok: false, error: 'Balance no encontrado' };
+}
+
+// ============ EJERCICIOS ============
+const HOJA_EJERCICIOS = 'EJERCICIOS';
+
+function getHojaEjercicios() {
+  return SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_EJERCICIOS);
+}
+
+function obtenerEjercicioActivo() {
+  const hoja = getHojaEjercicios();
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const idx = {};
+  headers.forEach((h, i) => idx[h] = i);
+
+  // El activo es el de mayor número que no esté PRESENTADO
+  let activo = null;
+  for (let i = 1; i < datos.length; i++) {
+    const fila = datos[i];
+    if (!fila[idx.ID_EJERCICIO]) continue;
+    if (fila[idx.ESTADO] !== 'PRESENTADO') {
+      if (!activo || Number(fila[idx.NUMERO]) > Number(activo[idx.NUMERO])) activo = fila;
+    }
+  }
+  if (!activo) return { ok: false, error: 'No hay ningún Ejercicio activo cargado' };
+
+  return {
+    ok: true,
+    ejercicio: {
+      idEjercicio: activo[idx.ID_EJERCICIO],
+      numero: activo[idx.NUMERO],
+      fechaInicio: Utilities.formatDate(new Date(activo[idx.FECHA_INICIO]), Session.getScriptTimeZone(), 'dd/MM/yyyy'),
+      fechaCierre: Utilities.formatDate(new Date(activo[idx.FECHA_CIERRE]), Session.getScriptTimeZone(), 'dd/MM/yyyy'),
+      fechaLimiteAsamblea: Utilities.formatDate(new Date(activo[idx.FECHA_LIMITE_ASAMBLEA]), Session.getScriptTimeZone(), 'dd/MM/yyyy'),
+      estado: activo[idx.ESTADO]
+    }
+  };
+}
+
+function cerrarYAbrirNuevoEjercicio(params) {
+  const hoja = getHojaEjercicios();
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const idx = {};
+  headers.forEach((h, i) => idx[h] = i);
+
+  let filaActiva = -1;
+  let activo = null;
+  for (let i = 1; i < datos.length; i++) {
+    const fila = datos[i];
+    if (!fila[idx.ID_EJERCICIO]) continue;
+    if (fila[idx.ESTADO] !== 'PRESENTADO') {
+      if (!activo || Number(fila[idx.NUMERO]) > Number(activo[idx.NUMERO])) { activo = fila; filaActiva = i; }
+    }
+  }
+  if (!activo) return { ok: false, error: 'No hay Ejercicio activo para cerrar' };
+
+  // Cierra el actual
+  hoja.getRange(filaActiva + 1, idx.ESTADO + 1).setValue('PRESENTADO');
+
+  // Abre el siguiente: inicio = día después del cierre anterior, cierre = +1 año, límite asamblea = cierre + 3 meses
+  const cierreAnterior = new Date(activo[idx.FECHA_CIERRE]);
+  const nuevoInicio = new Date(cierreAnterior);
+  nuevoInicio.setDate(nuevoInicio.getDate() + 1);
+  const nuevoCierre = new Date(nuevoInicio);
+  nuevoCierre.setFullYear(nuevoCierre.getFullYear() + 1);
+  nuevoCierre.setDate(nuevoCierre.getDate() - 1);
+  const nuevoLimiteAsamblea = new Date(nuevoCierre);
+  nuevoLimiteAsamblea.setMonth(nuevoLimiteAsamblea.getMonth() + 3);
+
+  const nuevoNumero = Number(activo[idx.NUMERO]) + 1;
+  const nuevoId = 'EJ-' + String(nuevoNumero).padStart(3, '0');
+
+  hoja.appendRow([nuevoId, nuevoNumero, nuevoInicio, nuevoCierre, 'ABIERTO', nuevoLimiteAsamblea]);
+
+  return { ok: true, ejercicioAnteriorCerrado: activo[idx.ID_EJERCICIO], nuevoEjercicio: nuevoId, nuevoNumero: nuevoNumero };
 }
