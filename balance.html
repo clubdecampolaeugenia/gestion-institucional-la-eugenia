@@ -103,12 +103,12 @@ const EXEC_URL_GI = 'https://script.google.com/macros/s/AKfycbyBxlDAteVncpf2hyQ-
 let PIN_SESION = '';
 
 document.addEventListener('DOMContentLoaded', function() {
+  // Si ya hay un PIN guardado de una sesión anterior en esta misma app, entra directo
+  // sin volver a validar contra el servidor -- el PIN solo se procesa al entrar por primera vez.
   const savedPin = localStorage.getItem('cgv_pin');
   if (!savedPin) return;
   PIN_SESION = savedPin;
-  jsonp(EXEC_URL_PINES_CGV_CHECK + '?action=validarPin&pin=' + encodeURIComponent(savedPin) + '&modulo=gestion-institucional', function(res) {
-    if (res && res.ok && res.valido) entrarApp();
-  });
+  entrarApp();
 });
 
 function jsonp(url, cb) {

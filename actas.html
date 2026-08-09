@@ -148,11 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const savedPin = localStorage.getItem('cgv_pin');
   if (!savedPin) return;
   PIN_SESION = savedPin;
-  jsonp(EXEC_URL_PINES_CGV_CHECK + '?action=validarPin&pin=' + encodeURIComponent(savedPin) + '&modulo=gestion-institucional', function(res) {
-    if (res && res.ok && res.valido) {
-      entrarApp();
-    }
-  });
+  entrarApp();
 });
 
 function jsonp(url, cb) {
