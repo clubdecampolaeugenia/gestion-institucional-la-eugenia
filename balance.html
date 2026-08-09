@@ -160,7 +160,7 @@ function procesarBalance() {
       document.getElementById('resultadoContainer').innerHTML = '<div class="obs-item obs-CRITICO"><span class="obs-tipo">Error</span>' + escapeHtml(res && res.error ? res.error : 'desconocido') + '</div>';
       return;
     }
-    mostrarResultado(res.analisis, res.estado);
+    mostrarResultado(res.analisis, res.estado, res.idBalance);
     cargarBalances();
   });
 }
@@ -171,7 +171,10 @@ function escapeHtml(s) {
   return d.innerHTML;
 }
 
-function mostrarResultado(analisis, estado) {
+let BALANCE_ACTUAL_ID = null;
+
+function mostrarResultado(analisis, estado, idBalance) {
+  BALANCE_ACTUAL_ID = idBalance || BALANCE_ACTUAL_ID;
   const cont = document.getElementById('resultadoContainer');
   let html = '<div class="resultado-box">';
   html += '<div class="resultado-titulo">Resultado del análisis</div>';
@@ -191,13 +194,33 @@ function mostrarResultado(analisis, estado) {
   html += '<div class="dato-linea"><strong>Activo:</strong> $' + escapeHtml(String(analisis.activoTotal || '—')) + ' · <strong>Pasivo:</strong> $' + escapeHtml(String(analisis.pasivoTotal || '—')) + ' · <strong>PN:</strong> $' + escapeHtml(String(analisis.patrimonioNeto || '—')) + '</div>';
   html += '<div class="dato-linea"><strong>Superávit del ejercicio:</strong> $' + escapeHtml(String(analisis.superavitEjercicio || '—')) + '</div>';
   html += '<div class="dato-linea"><strong>Cuadra Activo = Pasivo + PN:</strong> ' + (analisis.cuadraActivoPasivoPN ? '✅ Sí' : '❌ No') + '</div>';
+  html += '<div class="dato-linea" style="margin-top:8px;"><strong>Estado general:</strong> <span id="estadoGeneralTexto">' + estado + '</span></div>';
   html += '</div>';
 
-  (analisis.observaciones || []).forEach(o => {
-    html += '<div class="obs-item obs-' + o.tipo + '"><span class="obs-tipo">' + o.tipo.replace('_', ' ') + '</span>' + escapeHtml(o.texto) + '</div>';
+  (analisis.observaciones || []).forEach((o, i) => {
+    const estadoObs = o.estadoObs || 'PENDIENTE';
+    const resuelta = estadoObs === 'RESUELTA';
+    const omitida = estadoObs === 'OMITIDA';
+    const opacidad = (resuelta || omitida) ? 'opacity:.55;' : '';
+    const tachado = (resuelta || omitida) ? 'text-decoration:line-through;' : '';
+
+    html += '<div class="obs-item obs-' + o.tipo + '" style="' + opacidad + '">';
+    html += '<span class="obs-tipo">' + o.tipo.replace('_', ' ') + (resuelta ? ' · ✅ RESUELTA' : omitida ? ' · ⏭ OMITIDA' : '') + '</span>';
+    html += '<span style="' + tachado + '">' + escapeHtml(o.texto) + '</span>';
+
+    if (estadoObs === 'PENDIENTE') {
+      html += '<div style="margin-top:8px; display:flex; gap:6px;">';
+      html += '<button type="button" class="btn-small" onclick="marcarObservacion(' + i + ', \'RESUELTA\')">✅ Marcar resuelta</button>';
+      html += '<button type="button" class="btn-small" onclick="marcarObservacion(' + i + ', \'OMITIDA\')">⏭ Omitir</button>';
+      html += '</div>';
+    } else {
+      html += '<div style="margin-top:6px;"><button type="button" class="btn-small" onclick="marcarObservacion(' + i + ', \'PENDIENTE\')">↩ Volver a pendiente</button></div>';
+    }
+    html += '</div>';
   });
 
   cont.innerHTML = html;
+  window.ANALISIS_ACTUAL = analisis;
 }
 
 function cargarBalances() {
@@ -219,10 +242,23 @@ function cargarBalances() {
   });
 }
 
+function marcarObservacion(indice, nuevoEstado) {
+  if (!BALANCE_ACTUAL_ID) return;
+  jsonp(EXEC_URL_GI + '?action=actualizarObservacionBalance&idBalance=' + encodeURIComponent(BALANCE_ACTUAL_ID) + '&indice=' + indice + '&estadoObs=' + nuevoEstado + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    if (res && res.ok) {
+      window.ANALISIS_ACTUAL.observaciones = res.observaciones;
+      mostrarResultado(window.ANALISIS_ACTUAL, res.estadoGeneral, BALANCE_ACTUAL_ID);
+      cargarBalances();
+    } else {
+      alert('Error: ' + (res && res.error ? res.error : 'desconocido'));
+    }
+  });
+}
+
 function verDetalle(idBalance) {
   jsonp(EXEC_URL_GI + '?action=obtenerBalance&idBalance=' + idBalance, function(res) {
     if (res && res.ok) {
-      mostrarResultado(res.balance.datosExtraidos, res.balance.estado);
+      mostrarResultado(res.balance.datosExtraidos, res.balance.estado, idBalance);
       document.getElementById('resultadoContainer').scrollIntoView({ behavior: 'smooth' });
     }
   });

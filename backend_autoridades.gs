@@ -74,7 +74,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -114,11 +114,13 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v9-ejercicios-09ago-1230' };
+      resultado = { ok: true, version: 'v10-observaciones-resolubles-09ago-1250' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'cerrarYAbrirNuevoEjercicio') {
       resultado = cerrarYAbrirNuevoEjercicio(e.parameter);
+    } else if (action === 'actualizarObservacionBalance') {
+      resultado = actualizarObservacionBalance(e.parameter);
     } else {
       resultado = { ok: false, error: 'Acción no reconocida' };
     }
@@ -516,6 +518,9 @@ function procesarBalance() {
     return { ok: false, error: 'La IA no devolvió JSON válido: ' + textoRespuesta.substring(0, 300) };
   }
 
+  // Cada observación arranca como PENDIENTE -- se puede marcar RESUELTA u OMITIDA desde la app, nunca se borra
+  (analisis.observaciones || []).forEach(o => { o.estadoObs = 'PENDIENTE'; o.comentario = ''; });
+
   // Guarda en la hoja BALANCES
   const hoja = getHojaBalances();
   const datos = hoja.getDataRange().getValues();
@@ -600,6 +605,47 @@ function actualizarEstadoBalance(params) {
     if (String(datos[i][idx.ID_BALANCE]) === String(params.idBalance)) {
       hoja.getRange(i + 1, idx.ESTADO + 1).setValue(params.estado);
       return { ok: true };
+    }
+  }
+  return { ok: false, error: 'Balance no encontrado' };
+}
+
+function actualizarObservacionBalance(params) {
+  const hoja = getHojaBalances();
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const idx = {};
+  headers.forEach((h, i) => idx[h] = i);
+
+  const indice = Number(params.indice);
+
+  for (let i = 1; i < datos.length; i++) {
+    if (String(datos[i][idx.ID_BALANCE]) === String(params.idBalance)) {
+      const observaciones = JSON.parse(datos[i][idx.OBSERVACIONES]);
+      if (!observaciones[indice]) return { ok: false, error: 'Observación no encontrada' };
+
+      observaciones[indice].estadoObs = params.estadoObs;
+      observaciones[indice].comentario = params.comentario || observaciones[indice].comentario || '';
+
+      hoja.getRange(i + 1, idx.OBSERVACIONES + 1).setValue(JSON.stringify(observaciones));
+
+      // Refleja el cambio también dentro de DATOS_EXTRAIDOS, para que quede consistente
+      const datosExtraidos = JSON.parse(datos[i][idx.DATOS_EXTRAIDOS]);
+      if (datosExtraidos.observaciones && datosExtraidos.observaciones[indice]) {
+        datosExtraidos.observaciones[indice].estadoObs = params.estadoObs;
+        datosExtraidos.observaciones[indice].comentario = observaciones[indice].comentario;
+        hoja.getRange(i + 1, idx.DATOS_EXTRAIDOS + 1).setValue(JSON.stringify(datosExtraidos));
+      }
+
+      // Si ya no quedan CRITICOS pendientes, sugiere avanzar de OBSERVADO a EN_REVISION automáticamente
+      const quedanCriticosPendientes = observaciones.some(o => o.tipo === 'CRITICO' && o.estadoObs === 'PENDIENTE');
+      let nuevoEstadoGeneral = datos[i][idx.ESTADO];
+      if (!quedanCriticosPendientes && nuevoEstadoGeneral === 'OBSERVADO') {
+        nuevoEstadoGeneral = 'EN_REVISION';
+        hoja.getRange(i + 1, idx.ESTADO + 1).setValue(nuevoEstadoGeneral);
+      }
+
+      return { ok: true, observaciones: observaciones, estadoGeneral: nuevoEstadoGeneral };
     }
   }
   return { ok: false, error: 'Balance no encontrado' };
