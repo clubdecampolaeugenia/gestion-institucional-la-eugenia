@@ -88,9 +88,9 @@
       <div class="progreso-pct" id="progresoPct">calculando...</div>
     </div>
 
-    <div id="cerrarEjercicioBox" style="display:none; background:var(--lima); border:2px solid var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:14px;">
-      <div style="color:var(--petroleo); font-size:13px; font-weight:700; margin-bottom:10px;">Este Ejercicio está completo. ¿Cerrarlo y abrir el próximo?</div>
-      <button type="button" class="btn-solid" style="margin-bottom:0;" onclick="cerrarEjercicio()">Cerrar Ejercicio y abrir el siguiente</button>
+    <div id="cerrarEjercicioBox" style="background:var(--hueso); border:2px dashed var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:14px;">
+      <div style="color:var(--petroleo); font-size:12px; font-weight:700; margin-bottom:10px;" id="cerrarEjercicioTexto">Cuando el Ejercicio esté cerrado en la práctica (Asamblea celebrada, Acta firmada), podés cerrarlo acá y abrir el siguiente. Es una decisión manual — no se hace sola.</div>
+      <button type="button" class="btn-outline" style="margin-bottom:0;" onclick="cerrarEjercicio()">Cerrar Ejercicio y abrir el siguiente</button>
     </div>
 
     <div class="proxima-accion">
@@ -193,7 +193,16 @@ function evaluarCierreEjercicio() {
   const total = HITOS.length;
   const suma = HITOS.reduce((acc, h) => acc + ESTADO_PESO[h.estado], 0);
   const pct = Math.round((suma / total) * 100);
-  document.getElementById('cerrarEjercicioBox').style.display = (pct >= 100) ? 'block' : 'none';
+  const box = document.getElementById('cerrarEjercicioBox');
+  if (pct >= 100) {
+    box.style.background = 'var(--lima)';
+    box.style.border = '2px solid var(--petroleo)';
+    document.getElementById('cerrarEjercicioTexto').textContent = 'Este Ejercicio está completo. ¿Cerrarlo y abrir el próximo?';
+  } else {
+    box.style.background = 'var(--hueso)';
+    box.style.border = '2px dashed var(--petroleo)';
+    document.getElementById('cerrarEjercicioTexto').textContent = 'Cuando el Ejercicio esté cerrado en la práctica (Asamblea celebrada, Acta firmada), podés cerrarlo acá y abrir el siguiente. Es una decisión manual — no se hace sola.';
+  }
 }
 
 function cerrarEjercicio() {
