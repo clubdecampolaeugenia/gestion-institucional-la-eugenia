@@ -74,7 +74,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -114,7 +114,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v13-importar-chat-09ago-1530' };
+      resultado = { ok: true, version: 'v14-validacion-fecha-ejercicio-09ago-1600' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'listarEjercicios') {
@@ -139,6 +139,8 @@ function doGet(e) {
       resultado = extraerNovedadesDeChat(e.parameter);
     } else if (action === 'guardarNovedadesSeleccionadas') {
       resultado = guardarNovedadesSeleccionadas(e.parameter);
+    } else if (action === 'eliminarNovedad') {
+      resultado = eliminarNovedad(e.parameter);
     } else {
       resultado = { ok: false, error: 'Acción no reconocida' };
     }
@@ -794,6 +796,22 @@ const HOJA_NOVEDADES = 'NOVEDADES';
 // Regla por defecto: Personal nunca se marca SI automáticamente (ver criterio de Memoria)
 const CONSIDERAR_MEMORIA_DEFAULT = { 'Personal': 'NO' };
 
+// Nunca deja guardar una novedad con fecha fuera del período del Ejercicio activo.
+// El pasado ya cerrado no se toca desde acá; el futuro (próximo Ejercicio) todavía no existe como fila.
+function fechaEnRangoEjercicio(fechaStr, ejercicio) {
+  const fecha = new Date(fechaStr);
+  const inicio = new Date(ejercicio.fechaInicio.split('/').reverse().join('-'));
+  const cierre = new Date(ejercicio.fechaCierre.split('/').reverse().join('-'));
+  if (fecha < inicio || fecha > cierre) {
+    return {
+      ok: false,
+      error: 'La fecha ' + fechaStr + ' está fuera del período del Ejercicio N.° ' + ejercicio.numero +
+        ' (' + ejercicio.fechaInicio + ' a ' + ejercicio.fechaCierre + '). No se guarda para evitar mezclar ejercicios.'
+    };
+  }
+  return { ok: true };
+}
+
 function getHojaNovedades() {
   return SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_NOVEDADES);
 }
@@ -804,6 +822,11 @@ function guardarNovedad(params) {
 
   const ejercicioActivo = obtenerEjercicioActivo();
   const idEjercicioActual = ejercicioActivo.ok ? ejercicioActivo.ejercicio.idEjercicio : '';
+
+  if (ejercicioActivo.ok) {
+    const chequeo = fechaEnRangoEjercicio(params.fecha, ejercicioActivo.ejercicio);
+    if (!chequeo.ok) return chequeo;
+  }
 
   const considerarMemoria = params.considerarMemoria || CONSIDERAR_MEMORIA_DEFAULT[params.categoria] || 'EVALUAR';
 
@@ -873,6 +896,22 @@ function actualizarNovedad(params) {
   return { ok: false, error: 'Novedad no encontrada' };
 }
 
+function eliminarNovedad(params) {
+  const hoja = getHojaNovedades();
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const idx = {};
+  headers.forEach((h, i) => idx[h] = i);
+
+  for (let i = 1; i < datos.length; i++) {
+    if (String(datos[i][idx.ID_NOVEDAD]) === String(params.idNovedad)) {
+      hoja.deleteRow(i + 1);
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'Novedad no encontrada' };
+}
+
 const PROMPT_EXTRAER_NOVEDADES = `Sos un asistente que ayuda a una asociación civil (Club de Campo "La Eugenia") a separar información institucional real de charla social/ruido dentro de exportaciones de chat de WhatsApp (grupo de Comisión Directiva o grupo de difusión a socios).
 
 Vas a recibir texto crudo de un chat exportado (con fechas, remitentes, mensajes, emojis, stickers, "<Multimedia omitido>", etc.).
@@ -936,7 +975,12 @@ function guardarNovedadesSeleccionadas(params) {
   const idEjercicioActual = ejercicioActivo.ok ? ejercicioActivo.ejercicio.idEjercicio : '';
 
   let guardadas = 0;
+  const rechazadas = [];
   seleccionadas.forEach(n => {
+    if (ejercicioActivo.ok) {
+      const chequeo = fechaEnRangoEjercicio(n.fecha, ejercicioActivo.ejercicio);
+      if (!chequeo.ok) { rechazadas.push({ titulo: n.titulo, motivo: chequeo.error }); return; }
+    }
     const nuevoId = 'NOV-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss') + '-' + guardadas;
     const considerarMemoria = CONSIDERAR_MEMORIA_DEFAULT[n.categoria] || 'EVALUAR';
     hoja.appendRow([
@@ -947,7 +991,7 @@ function guardarNovedadesSeleccionadas(params) {
     guardadas++;
   });
 
-  return { ok: true, guardadas: guardadas };
+  return { ok: true, guardadas: guardadas, rechazadas: rechazadas };
 }
 
 // ============ DOCUMENTOS (tabla única: Memoria, y a futuro Convocatoria/Edictos/Informe Revisor, etc.) ============
