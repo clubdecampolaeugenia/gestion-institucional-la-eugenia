@@ -407,34 +407,27 @@ function procesarBalance() {
     return { ok: false, error: 'Falta configurar ANTHROPIC_API_KEY en Script Properties' };
   }
 
-  // Busca el archivo más reciente en la carpeta de Balances
+  // Toma TODOS los PDF de la carpeta (un Balance suele venir en más de un archivo)
   const carpeta = DriveApp.getFolderById(CARPETA_BALANCES_ID);
-  const archivos = carpeta.getFilesByType(MimeType.PDF);
-  let archivoMasReciente = null;
-  while (archivos.hasNext()) {
-    const f = archivos.next();
-    if (!archivoMasReciente || f.getLastUpdated() > archivoMasReciente.getLastUpdated()) {
-      archivoMasReciente = f;
-    }
-  }
-  if (!archivoMasReciente) {
+  const archivosIter = carpeta.getFilesByType(MimeType.PDF);
+  const archivos = [];
+  while (archivosIter.hasNext()) archivos.push(archivosIter.next());
+
+  if (archivos.length === 0) {
     return { ok: false, error: 'No hay ningún PDF en la carpeta de Balances. Subí uno primero.' };
   }
 
-  const blob = archivoMasReciente.getBlob();
-  const base64Pdf = Utilities.base64Encode(blob.getBytes());
+  const contentBlocks = archivos.map(f => ({
+    type: 'document',
+    source: { type: 'base64', media_type: 'application/pdf', data: Utilities.base64Encode(f.getBlob().getBytes()) }
+  }));
+  contentBlocks.push({ type: 'text', text: 'Estos son los documentos del Balance (puede ser más de un archivo: Balance General, Estados Contables, etc.). Analizalos en conjunto y respondé solo el JSON según las reglas indicadas.' });
 
   const payload = {
     model: 'claude-sonnet-5',
     max_tokens: 2000,
     system: PROMPT_REVISION_BALANCE,
-    messages: [{
-      role: 'user',
-      content: [
-        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64Pdf } },
-        { type: 'text', text: 'Revisá este balance según las reglas indicadas y respondé solo el JSON.' }
-      ]
-    }]
+    messages: [{ role: 'user', content: contentBlocks }]
   };
 
   const response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
@@ -468,7 +461,6 @@ function procesarBalance() {
   const idx = {};
   headers.forEach((h, i) => idx[h] = i);
 
-  // Calcula versión (cuántos balances ya existen para este archivo/ejercicio)
   let version = 1;
   for (let i = 1; i < datos.length; i++) {
     if (datos[i][idx.ID_BALANCE]) version++;
@@ -477,18 +469,19 @@ function procesarBalance() {
   const nuevoId = 'BAL-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
   const hayCriticos = analisis.observaciones.some(o => o.tipo === 'CRITICO');
   const estadoInicial = hayCriticos ? 'OBSERVADO' : 'EN_REVISION';
+  const urls = archivos.map(f => f.getUrl()).join(' | ');
 
   hoja.appendRow([
     nuevoId,
     '',
-    archivoMasReciente.getUrl(),
+    urls,
     version,
     estadoInicial,
     JSON.stringify(analisis),
     JSON.stringify(analisis.observaciones)
   ]);
 
-  return { ok: true, idBalance: nuevoId, analisis: analisis, estado: estadoInicial };
+  return { ok: true, idBalance: nuevoId, analisis: analisis, estado: estadoInicial, archivosProcesados: archivos.length };
 }
 
 function listarBalances() {
