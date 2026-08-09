@@ -83,14 +83,16 @@
 
   <div id="mainScreen">
     <div class="progreso-box">
-      <div class="progreso-titulo" id="ejercicioTitulo">Ejercicio — cargando...</div>
-      <div class="progreso-barra-fondo"><div class="progreso-barra-fill" id="progresoFill" style="width:0%;"></div></div>
+      <div class="progreso-titulo" id="ejercicioTitulo" onclick="toggleSelectorEjercicios()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+        <span>Ejercicio — cargando...</span>
+        <span style="font-size:11px;">▾</span>
+      </div>
+      <div id="selectorEjercicios" style="display:none; background:rgba(255,255,255,0.08); border-radius:10px; padding:10px; margin-top:8px;">
+        <div id="listaEjerciciosDropdown" style="margin-bottom:8px;"></div>
+        <button type="button" class="btn-ghost" style="color:var(--hueso); opacity:.65; font-size:10px; padding:6px 0;" onclick="cerrarEjercicio()">Cerrar Ejercicio actual y abrir el siguiente</button>
+      </div>
+      <div class="progreso-barra-fondo" style="margin-top:10px;"><div class="progreso-barra-fill" id="progresoFill" style="width:0%;"></div></div>
       <div class="progreso-pct" id="progresoPct">calculando...</div>
-    </div>
-
-    <div id="cerrarEjercicioBox" style="background:var(--hueso); border:2px dashed var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:14px;">
-      <div style="color:var(--petroleo); font-size:12px; font-weight:700; margin-bottom:10px;" id="cerrarEjercicioTexto">Cuando el Ejercicio esté cerrado en la práctica (Asamblea celebrada, Acta firmada), podés cerrarlo acá y abrir el siguiente. Es una decisión manual — no se hace sola.</div>
-      <button type="button" class="btn-outline" style="margin-bottom:0;" onclick="cerrarEjercicio()">Cerrar Ejercicio y abrir el siguiente</button>
     </div>
 
     <div class="proxima-accion">
@@ -189,20 +191,31 @@ function cargarEjercicioActivo() {
   });
 }
 
-function evaluarCierreEjercicio() {
-  const total = HITOS.length;
-  const suma = HITOS.reduce((acc, h) => acc + ESTADO_PESO[h.estado], 0);
-  const pct = Math.round((suma / total) * 100);
-  const box = document.getElementById('cerrarEjercicioBox');
-  if (pct >= 100) {
-    box.style.background = 'var(--lima)';
-    box.style.border = '2px solid var(--petroleo)';
-    document.getElementById('cerrarEjercicioTexto').textContent = 'Este Ejercicio está completo. ¿Cerrarlo y abrir el próximo?';
-  } else {
-    box.style.background = 'var(--hueso)';
-    box.style.border = '2px dashed var(--petroleo)';
-    document.getElementById('cerrarEjercicioTexto').textContent = 'Cuando el Ejercicio esté cerrado en la práctica (Asamblea celebrada, Acta firmada), podés cerrarlo acá y abrir el siguiente. Es una decisión manual — no se hace sola.';
-  }
+function toggleSelectorEjercicios() {
+  const el = document.getElementById('selectorEjercicios');
+  const abrir = el.style.display === 'none';
+  el.style.display = abrir ? 'block' : 'none';
+  if (abrir) cargarListaEjercicios();
+}
+
+function cargarListaEjercicios() {
+  jsonp(EXEC_URL_GI + '?action=listarEjercicios', function(res) {
+    const cont = document.getElementById('listaEjerciciosDropdown');
+    if (!res || !res.ok || !res.ejercicios.length) {
+      cont.innerHTML = '<div style="color:var(--hueso); font-size:12px; opacity:.7;">No hay Ejercicios cargados.</div>';
+      return;
+    }
+    cont.innerHTML = res.ejercicios.map(ej => {
+      const esActivo = EJERCICIO_ACTIVO && ej.idEjercicio === EJERCICIO_ACTIVO.idEjercicio;
+      const estiloActivo = esActivo ? 'font-weight:900; color:var(--lima);' : 'color:var(--hueso); opacity:.75; cursor:pointer;';
+      const accion = esActivo ? '' : ' onclick="verEjercicioHistorico(\'' + ej.idEjercicio + '\')"';
+      return '<div style="' + estiloActivo + ' font-size:12px; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.1);"' + accion + '>Ejercicio N.º ' + ej.numero + ' — ' + ej.fechaInicio + ' a ' + ej.fechaCierre + (esActivo ? ' (actual)' : ' · ' + ej.estado) + '</div>';
+    }).join('');
+  });
+}
+
+function verEjercicioHistorico(idEjercicio) {
+  window.location.href = 'balance.html?ejercicio=' + encodeURIComponent(idEjercicio);
 }
 
 function cerrarEjercicio() {
@@ -247,7 +260,6 @@ function actualizarProgreso() {
   const pct = Math.round((suma / total) * 100);
   document.getElementById('progresoFill').style.width = pct + '%';
   document.getElementById('progresoPct').textContent = pct + '%';
-  evaluarCierreEjercicio();
 }
 
 function actualizarHito(nombre, estado, detalle) {

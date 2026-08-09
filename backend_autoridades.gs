@@ -117,6 +117,8 @@ function doGet(e) {
       resultado = { ok: true, version: 'v10-observaciones-resolubles-09ago-1250' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
+    } else if (action === 'listarEjercicios') {
+      resultado = listarEjercicios();
     } else if (action === 'cerrarYAbrirNuevoEjercicio') {
       resultado = cerrarYAbrirNuevoEjercicio(e.parameter);
     } else if (action === 'actualizarObservacionBalance') {
@@ -675,6 +677,29 @@ const HOJA_EJERCICIOS = 'EJERCICIOS';
 
 function getHojaEjercicios() {
   return SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_EJERCICIOS);
+}
+
+function listarEjercicios() {
+  const hoja = getHojaEjercicios();
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const idx = {};
+  headers.forEach((h, i) => idx[h] = i);
+
+  const ejercicios = [];
+  for (let i = 1; i < datos.length; i++) {
+    const fila = datos[i];
+    if (!fila[idx.ID_EJERCICIO]) continue;
+    ejercicios.push({
+      idEjercicio: fila[idx.ID_EJERCICIO],
+      numero: fila[idx.NUMERO],
+      fechaInicio: Utilities.formatDate(new Date(fila[idx.FECHA_INICIO]), Session.getScriptTimeZone(), 'dd/MM/yyyy'),
+      fechaCierre: Utilities.formatDate(new Date(fila[idx.FECHA_CIERRE]), Session.getScriptTimeZone(), 'dd/MM/yyyy'),
+      estado: fila[idx.ESTADO]
+    });
+  }
+  ejercicios.sort((a, b) => Number(b.numero) - Number(a.numero));
+  return { ok: true, ejercicios: ejercicios };
 }
 
 function obtenerEjercicioActivo() {

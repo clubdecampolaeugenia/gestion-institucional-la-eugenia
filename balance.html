@@ -231,15 +231,36 @@ function mostrarResultado(analisis, estado, idBalance) {
   window.ANALISIS_ACTUAL = analisis;
 }
 
+function obtenerEjercicioFiltroDeURL() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('ejercicio');
+}
+
 function cargarBalances() {
+  const filtroEjercicio = obtenerEjercicioFiltroDeURL();
   jsonp(EXEC_URL_GI + '?action=listarBalances', function(res) {
     const cont = document.getElementById('listaBalances');
     cont.innerHTML = '';
+
+    if (filtroEjercicio) {
+      const aviso = document.createElement('div');
+      aviso.style.cssText = 'background:var(--naranja); border-radius:10px; padding:8px 12px; margin-bottom:10px; font-size:12px; font-weight:700; color:var(--petroleo);';
+      aviso.innerHTML = 'Viendo el histórico de <strong>' + filtroEjercicio + '</strong> — <a href="balance.html" style="color:var(--petroleo); text-decoration:underline;">volver al Ejercicio actual</a>';
+      cont.appendChild(aviso);
+    }
+
     if (!res || !res.ok || res.balances.length === 0) {
-      cont.innerHTML = '<div class="empty-msg">Todavía no se procesó ningún balance.</div>';
+      cont.innerHTML += '<div class="empty-msg">Todavía no se procesó ningún balance.</div>';
       return;
     }
-    res.balances.forEach(b => {
+
+    const lista = filtroEjercicio ? res.balances.filter(b => b.idEjercicio === filtroEjercicio) : res.balances;
+    if (lista.length === 0) {
+      cont.innerHTML += '<div class="empty-msg">No hay balances registrados para ese Ejercicio.</div>';
+      return;
+    }
+
+    lista.forEach(b => {
       const div = document.createElement('div');
       div.className = 'dato-linea';
       div.style.cssText = 'background:var(--blanco); border-radius:10px; padding:8px 12px; margin-bottom:6px; cursor:pointer;';
