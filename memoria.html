@@ -81,8 +81,10 @@
   <div id="mainScreen">
     <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px; opacity:.7;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
     <div id="instrBox" class="instr-box" style="display:none;">
-      La Memoria se arma con lo que cargaste en <strong>Novedades</strong> (las marcadas SI o EVALUAR) y el último <strong>Balance</strong> procesado del Ejercicio activo. Completá el dato de socios (todavía no viene del Padrón, hay que cargarlo a mano) y tocá "Generar borrador". Después podés editar el texto libremente antes de aprobarlo — nunca se pierde, cada generación queda como una versión nueva.
+      La Memoria se arma con lo que cargaste en <strong>Novedades</strong> (solo las marcadas <strong>SI</strong>) y el último <strong>Balance</strong> procesado del Ejercicio activo. Completá el dato de socios (todavía no viene del Padrón, hay que cargarlo a mano) y tocá "Generar borrador". Después podés editar el texto libremente antes de aprobarlo — nunca se pierde, cada generación queda como una versión nueva.
     </div>
+
+    <div id="avisoPendientes" style="display:none; background:var(--naranja); border:2px solid var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:16px; font-size:13px; font-weight:700; color:var(--petroleo);"></div>
 
     <div class="form-panel">
       <span class="field-label">Socios al cierre del Ejercicio</span>
@@ -159,6 +161,23 @@ function entrarApp() {
   document.getElementById('mainScreen').style.display = 'block';
   document.getElementById('mainScreen').classList.add('active');
   cargarVersiones();
+  chequearNovedadesPendientes();
+}
+
+function chequearNovedadesPendientes() {
+  jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(resEj) {
+    if (!resEj || !resEj.ok) return;
+    jsonp(EXEC_URL_GI + '?action=listarNovedades&idEjercicio=' + encodeURIComponent(resEj.ejercicio.idEjercicio), function(res) {
+      if (!res || !res.ok) return;
+      const pendientes = res.novedades.filter(n => n.considerarMemoria === 'EVALUAR').length;
+      const aprobadas = res.novedades.filter(n => n.considerarMemoria === 'SI').length;
+      const box = document.getElementById('avisoPendientes');
+      if (pendientes > 0) {
+        box.style.display = 'block';
+        box.innerHTML = '⚠️ Hay <strong>' + pendientes + '</strong> novedad(es) sin revisar (en "Evaluar") y ' + aprobadas + ' ya aprobadas. Las sin revisar no van a entrar en la Memoria. <a href="novedades.html" style="color:var(--petroleo); text-decoration:underline;">Ir a revisarlas</a>';
+      }
+    });
+  });
 }
 
 function cerrarSesion() {
