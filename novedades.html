@@ -283,15 +283,65 @@ function renderNovedades() {
     return;
   }
 
+  const CATEGORIAS = ['Administración','Seguridad','Mantenimiento','Infraestructura','Alumbrado','Pileta','Deportes','Actividades sociales','Cantina','Personal','Municipalidad','EMSA','SAMSA','Personas Jurídicas','Tesorería','Incidentes','Otros'];
+
   cont.innerHTML = lista.map(n => {
     const montoTxt = n.monto ? (' · $' + n.monto) : '';
-    return '<div class="novedad-card">' +
+    const opcionesCategoria = CATEGORIAS.map(c => '<option value="' + c + '"' + (c === n.categoria ? ' selected' : '') + '>' + c + '</option>').join('');
+    return '<div class="novedad-card" id="card-' + n.idNovedad + '">' +
       '<div class="novedad-header"><span class="novedad-titulo">' + escapeHtml(n.titulo) + '</span><span class="novedad-fecha">' + n.fecha + '</span></div>' +
       (n.descripcion ? '<div class="novedad-desc">' + escapeHtml(n.descripcion) + '</div>' : '') +
       '<span class="chip-categoria">' + n.categoria + montoTxt + '</span>' +
       '<span class="chip-memoria chip-' + n.considerarMemoria + '" onclick="ciclarMemoria(\'' + n.idNovedad + '\', \'' + n.considerarMemoria + '\')">¿Memoria? ' + n.considerarMemoria + '</span>' +
+      '<div style="margin-top:8px;"><button type="button" class="btn-ghost" style="display:inline; padding:4px 10px; font-size:11px;" onclick="toggleEditar(\'' + n.idNovedad + '\')">✏️ Editar</button>' +
+      '<button type="button" class="btn-ghost" style="display:inline; padding:4px 10px; font-size:11px; opacity:.6;" onclick="borrarNovedad(\'' + n.idNovedad + '\')">🗑️ Borrar</button></div>' +
+      '<div id="editForm-' + n.idNovedad + '" style="display:none; background:var(--petroleo); border-radius:12px; padding:12px; margin-top:8px;">' +
+        '<span class="field-label" style="color:var(--lima);">Fecha</span><input type="date" id="eFecha-' + n.idNovedad + '" value="' + n.fechaISO + '">' +
+        '<span class="field-label" style="color:var(--lima);">Título</span><input type="text" id="eTitulo-' + n.idNovedad + '" value="' + escapeHtml(n.titulo) + '">' +
+        '<span class="field-label" style="color:var(--lima);">Descripción</span><textarea id="eDescripcion-' + n.idNovedad + '">' + escapeHtml(n.descripcion) + '</textarea>' +
+        '<span class="field-label" style="color:var(--lima);">Categoría</span><select id="eCategoria-' + n.idNovedad + '">' + opcionesCategoria + '</select>' +
+        '<span class="field-label" style="color:var(--lima);">Monto</span><input type="number" id="eMonto-' + n.idNovedad + '" value="' + (n.monto || '') + '">' +
+        '<button type="button" class="btn-solid" style="margin-top:10px; margin-bottom:0;" onclick="guardarEdicionNovedad(\'' + n.idNovedad + '\')">Guardar cambios</button>' +
+        '<button type="button" class="btn-ghost" onclick="toggleEditar(\'' + n.idNovedad + '\')">Cancelar</button>' +
+      '</div>' +
       '</div>';
   }).join('');
+}
+
+function toggleEditar(idNovedad) {
+  const el = document.getElementById('editForm-' + idNovedad);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function guardarEdicionNovedad(idNovedad) {
+  const params = new URLSearchParams({
+    action: 'actualizarNovedad',
+    idNovedad: idNovedad,
+    fecha: document.getElementById('eFecha-' + idNovedad).value,
+    titulo: document.getElementById('eTitulo-' + idNovedad).value,
+    descripcion: document.getElementById('eDescripcion-' + idNovedad).value,
+    categoria: document.getElementById('eCategoria-' + idNovedad).value,
+    monto: document.getElementById('eMonto-' + idNovedad).value,
+    pin: PIN_SESION
+  });
+  jsonp(EXEC_URL_GI + '?' + params.toString(), function(res) {
+    if (res && res.ok) {
+      cargarNovedades();
+    } else {
+      alert('Error: ' + (res && res.error ? res.error : 'desconocido'));
+    }
+  });
+}
+
+function borrarNovedad(idNovedad) {
+  if (!confirm('¿Borrar esta novedad? No se puede deshacer.')) return;
+  jsonp(EXEC_URL_GI + '?action=eliminarNovedad&idNovedad=' + encodeURIComponent(idNovedad) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    if (res && res.ok) {
+      cargarNovedades();
+    } else {
+      alert('Error: ' + (res && res.error ? res.error : 'desconocido'));
+    }
+  });
 }
 
 function ciclarMemoria(idNovedad, actual) {

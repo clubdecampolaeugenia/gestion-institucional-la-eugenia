@@ -114,7 +114,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v15-notas-futuras-blindadas-09ago-2000' };
+      resultado = { ok: true, version: 'v16-editar-novedades-09ago-2130' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'listarEjercicios') {
@@ -868,6 +868,7 @@ function listarNovedades(params) {
       idNovedad: fila[idx.ID_NOVEDAD],
       idEjercicio: fila[idx.ID_EJERCICIO],
       fecha: fila[idx.FECHA] ? Utilities.formatDate(new Date(fila[idx.FECHA]), Session.getScriptTimeZone(), 'dd/MM/yyyy') : '',
+      fechaISO: fila[idx.FECHA] ? Utilities.formatDate(new Date(fila[idx.FECHA]), Session.getScriptTimeZone(), 'yyyy-MM-dd') : '',
       titulo: fila[idx.TITULO],
       descripcion: fila[idx.DESCRIPCION],
       categoria: fila[idx.CATEGORIA],
@@ -890,9 +891,22 @@ function actualizarNovedad(params) {
 
   for (let i = 1; i < datos.length; i++) {
     if (String(datos[i][idx.ID_NOVEDAD]) === String(params.idNovedad)) {
+      // Si se cambia la fecha, valida que siga cayendo dentro del Ejercicio al que ya pertenece esta novedad
+      if (params.fecha) {
+        const idEjercicioNovedad = datos[i][idx.ID_EJERCICIO];
+        const ejercicios = listarEjercicios();
+        const ejercicioDeLaNovedad = ejercicios.ok ? ejercicios.ejercicios.find(e => e.idEjercicio === idEjercicioNovedad) : null;
+        if (ejercicioDeLaNovedad) {
+          const chequeo = fechaEnRangoEjercicio(params.fecha, ejercicioDeLaNovedad);
+          if (!chequeo.ok) return chequeo;
+        }
+        hoja.getRange(i + 1, idx.FECHA + 1).setValue(new Date(params.fecha));
+      }
       if (params.considerarMemoria) hoja.getRange(i + 1, idx.CONSIDERAR_MEMORIA + 1).setValue(params.considerarMemoria);
       if (params.titulo) hoja.getRange(i + 1, idx.TITULO + 1).setValue(params.titulo);
       if (params.descripcion) hoja.getRange(i + 1, idx.DESCRIPCION + 1).setValue(params.descripcion);
+      if (params.categoria) hoja.getRange(i + 1, idx.CATEGORIA + 1).setValue(params.categoria);
+      if (params.monto !== undefined) hoja.getRange(i + 1, idx.MONTO + 1).setValue(params.monto);
       return { ok: true };
     }
   }
