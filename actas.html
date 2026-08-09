@@ -203,7 +203,7 @@ function agregarNota() {
   const texto = document.getElementById('notaTexto').value.trim();
   if (!texto) return;
   document.getElementById('loadingText').textContent = 'Guardando nota...';
-  jsonp(EXEC_URL_GI + '?action=guardarNota&texto=' + encodeURIComponent(texto) + '&cargadoPor=' + encodeURIComponent(PIN_SESION), function(res) {
+  jsonp(EXEC_URL_GI + '?action=guardarNota&texto=' + encodeURIComponent(texto) + '&cargadoPor=' + encodeURIComponent(PIN_SESION) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
     document.getElementById('loadingText').textContent = '';
     if (res && res.ok) {
       document.getElementById('notaTexto').value = '';
@@ -252,7 +252,7 @@ function generarBorrador() {
   const presentes = document.getElementById('fPresentes').value;
   if (!fecha || !presentes) { alert('Completá fecha y presentes'); return; }
   document.getElementById('loadingText').textContent = 'Generando borrador...';
-  const params = 'action=generarBorradorActa&fechaReunion=' + encodeURIComponent(fecha) + '&horaInicio=' + encodeURIComponent(hora) + '&presentes=' + encodeURIComponent(presentes);
+  const params = 'action=generarBorradorActa&fechaReunion=' + encodeURIComponent(fecha) + '&horaInicio=' + encodeURIComponent(hora) + '&presentes=' + encodeURIComponent(presentes) + '&pin=' + encodeURIComponent(PIN_SESION);
   jsonp(EXEC_URL_GI + '?' + params, function(res) {
     document.getElementById('loadingText').textContent = '';
     if (res && res.ok) {
@@ -320,7 +320,7 @@ function agregarPuntoVacio() {
 function guardarCambiosActa() {
   const horaFin = document.getElementById('eHoraFin').value;
   document.getElementById('loadingText').textContent = 'Guardando...';
-  const params = 'action=actualizarActa&idActa=' + ACTA_ACTUAL.idActa + '&puntos=' + encodeURIComponent(JSON.stringify(ACTA_ACTUAL.puntos)) + '&horaFin=' + encodeURIComponent(horaFin);
+  const params = 'action=actualizarActa&idActa=' + ACTA_ACTUAL.idActa + '&puntos=' + encodeURIComponent(JSON.stringify(ACTA_ACTUAL.puntos)) + '&horaFin=' + encodeURIComponent(horaFin) + '&pin=' + encodeURIComponent(PIN_SESION);
   jsonp(EXEC_URL_GI + '?' + params, function(res) {
     document.getElementById('loadingText').textContent = '';
     if (res && res.ok) {

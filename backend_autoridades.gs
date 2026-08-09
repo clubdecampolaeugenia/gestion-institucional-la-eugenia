@@ -15,8 +15,40 @@
 const SHEET_ID = '1mT5ezYh7R-59APw6JF2B2O6EprTj7xbguys1lpvh6dw';
 const HOJA_AUTORIDADES = 'AUTORIDADES';
 
+const PINES_CGV_SHEET_ID = '1altioUeYlQW8NXWYVjHf5v_4ocJuQ-K9N0EfdYQSoBc';
+
+function validarPinInterno(pin, moduloRequerido) {
+  if (!pin) return false;
+  const hoja = SpreadsheetApp.openById(PINES_CGV_SHEET_ID).getSheets()[0];
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const idx = {};
+  headers.forEach((h, i) => idx[h] = i);
+
+  for (let i = 1; i < datos.length; i++) {
+    const fila = datos[i];
+    if (String(fila[idx.PIN]) === String(pin)) {
+      if (fila[idx.ACTIVO] !== 'SI') return false;
+      const modulos = String(fila[idx.MODULOS] || '');
+      return modulos === 'ALL' || modulos.split(',').map(m => m.trim()).includes(moduloRequerido);
+    }
+  }
+  return false;
+}
+
+// Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
+// no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'procesarBalance', 'actualizarEstadoBalance'];
+
 function doGet(e) {
   const action = e.parameter.action;
+
+  if (ACCIONES_PROTEGIDAS.indexOf(action) !== -1) {
+    if (!validarPinInterno(e.parameter.pin, 'gestion-institucional')) {
+      return jsonpResponse({ ok: false, error: 'PIN inválido o sin permiso para este módulo' }, e.parameter.callback);
+    }
+  }
+
   let resultado;
   try {
     if (action === 'listarAutoridades') {

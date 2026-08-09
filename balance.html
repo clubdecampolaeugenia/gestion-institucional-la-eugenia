@@ -152,7 +152,7 @@ function procesarBalance() {
   document.getElementById('loadingText').innerHTML = '<span class="spinner"></span> Leyendo el PDF y consultando a la IA... puede tardar hasta un minuto.';
   document.getElementById('resultadoContainer').innerHTML = '';
 
-  jsonp(EXEC_URL_GI + '?action=procesarBalance', function(res) {
+  jsonp(EXEC_URL_GI + '?action=procesarBalance&pin=' + encodeURIComponent(PIN_SESION), function(res) {
     btn.disabled = false;
     document.getElementById('loadingText').textContent = '';
     if (!res || !res.ok) {
