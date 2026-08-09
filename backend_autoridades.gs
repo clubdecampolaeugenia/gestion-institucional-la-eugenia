@@ -114,7 +114,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v7-maxtokens8000-09ago-1130' };
+      resultado = { ok: true, version: 'v8-thinking-disabled-16k-09ago-1140' };
     } else {
       resultado = { ok: false, error: 'Acción no reconocida' };
     }
@@ -473,7 +473,8 @@ function procesarBalance() {
 
   const payload = {
     model: 'claude-sonnet-5',
-    max_tokens: 8000,
+    max_tokens: 16000,
+    thinking: { type: 'disabled' },
     system: PROMPT_REVISION_BALANCE,
     messages: [{ role: 'user', content: contentBlocks }]
   };
