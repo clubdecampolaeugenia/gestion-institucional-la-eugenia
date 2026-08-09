@@ -490,8 +490,17 @@ function procesarBalance() {
   }
 
   const data = JSON.parse(response.getContentText());
-  let textoRespuesta = data.content && data.content[0] ? data.content[0].text : '';
-  textoRespuesta = textoRespuesta.replace(/```json|```/g, '').trim();
+
+  if (!data.content || !data.content.length) {
+    return { ok: false, error: 'La API no devolvió contenido. Respuesta cruda: ' + response.getContentText().substring(0, 500) };
+  }
+
+  const bloqueTexto = data.content.find(b => b.type === 'text');
+  if (!bloqueTexto || !bloqueTexto.text) {
+    return { ok: false, error: 'No se encontró bloque de texto en la respuesta. Tipos recibidos: ' + data.content.map(b => b.type).join(', ') };
+  }
+
+  let textoRespuesta = bloqueTexto.text.replace(/```json|```/g, '').trim();
 
   let analisis;
   try {
