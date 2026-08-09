@@ -19,10 +19,10 @@ const PINES_CGV_SHEET_ID = '1altioUeYlQW8NXWYVjHf5v_4ocJuQ-K9N0EfdYQSoBc';
 
 function validarPinInterno(pin, moduloRequerido) {
   if (!pin) return false;
-  const hoja = SpreadsheetApp.openById(PINES_CGV_SHEET_ID).getSheets()[0];
+  const hoja = SpreadsheetApp.openById(PINES_CGV_SHEET_ID).getSheetByName('PINES_CGV');
+  if (!hoja) return false;
   const datos = hoja.getDataRange().getValues();
 
-  // Busca la fila real de encabezados (puede no ser la fila 0 si hay una fila en blanco arriba)
   let filaHeaders = -1;
   for (let i = 0; i < datos.length; i++) {
     if (datos[i].indexOf('PIN') !== -1) { filaHeaders = i; break; }
