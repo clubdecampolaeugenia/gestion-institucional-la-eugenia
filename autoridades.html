@@ -74,7 +74,8 @@
   </div>
 
   <div id="mainScreen">
-    <div style="background:var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:16px; font-size:13px; color:var(--hueso); line-height:1.5;">
+    <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px; opacity:.7;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
+    <div id="instrBox" style="display:none; background:var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:16px; font-size:13px; color:var(--hueso); line-height:1.5;">
       Cargá acá quién ocupa cada cargo. Si ya hay alguien en ese cargo, al guardar uno nuevo el anterior queda marcado como finalizado automáticamente — no hay que borrar nada a mano. El vencimiento del mandato se calcula solo, según el Estatuto.
     </div>
 
@@ -133,6 +134,14 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('mainScreen').classList.add('active');
   cargarAutoridades();
 });
+
+function toggleInstrucciones() {
+  const box = document.getElementById('instrBox');
+  const flecha = document.getElementById('instrFlecha');
+  const abrir = box.style.display === 'none';
+  box.style.display = abrir ? 'block' : 'none';
+  flecha.textContent = abrir ? '▴' : '▾';
+}
 
 function jsonp(url, cb) {
   const cbName = 'cb_' + Date.now() + Math.floor(Math.random()*1000);
