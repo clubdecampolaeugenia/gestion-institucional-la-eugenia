@@ -114,7 +114,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v17-chip-memoria-y-ejercicio-09ago-2200' };
+      resultado = { ok: true, version: 'v18-ejercicio-forzado-por-codigo-09ago-2230' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'listarEjercicios') {
@@ -1089,6 +1089,15 @@ function generarBorradorMemoria(params) {
   const bloqueTexto = (data.content || []).find(b => b.type === 'text');
   if (!bloqueTexto) return { ok: false, error: 'La IA no devolvió texto' };
 
+  // Se fuerza por código, no se confía en que la IA siempre lo incluya en la redacción
+  let textoFinal = bloqueTexto.text;
+  if (textoFinal.indexOf('Ejercicio Económico N.') === -1 && textoFinal.indexOf('Ejercicio N.') === -1) {
+    textoFinal = textoFinal.replace(
+      /correspondientes al ejercicio finalizado el/i,
+      'correspondientes al Ejercicio Económico N.\u00b0 ' + ej.numero + ', finalizado el'
+    );
+  }
+
   const hoja = getHojaDocumentos();
   const datos = hoja.getDataRange().getValues();
   let version = 1;
@@ -1097,9 +1106,9 @@ function generarBorradorMemoria(params) {
   }
 
   const nuevoId = 'DOC-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
-  hoja.appendRow([nuevoId, ej.idEjercicio, 'MEMORIA', version, 'BORRADOR', bloqueTexto.text, 'IA', new Date()]);
+  hoja.appendRow([nuevoId, ej.idEjercicio, 'MEMORIA', version, 'BORRADOR', textoFinal, 'IA', new Date()]);
 
-  return { ok: true, idDocumento: nuevoId, contenido: bloqueTexto.text, novedadesUsadas: novedadesRelevantes.length, version: version, pendientesDeEvaluar: pendientesDeEvaluar };
+  return { ok: true, idDocumento: nuevoId, contenido: textoFinal, novedadesUsadas: novedadesRelevantes.length, version: version, pendientesDeEvaluar: pendientesDeEvaluar };
 }
 
 function listarDocumentos(params) {
