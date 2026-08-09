@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guardar pendientes Ejercicio 38</title>
+<style>
+  body { font-family: sans-serif; background: #135457; color: #f5f3ec; padding: 20px; }
+  .item { padding: 10px 14px; margin-bottom: 8px; border-radius: 10px; background: rgba(255,255,255,0.08); }
+  .ok { background: #2d6a4f; }
+  .error { background: #c0392b; }
+  h1 { font-size: 16px; }
+</style>
+</head>
+<body>
+<h1>Guardando 3 notas pendientes para el Ejercicio 38...</h1>
+<div id="log"></div>
+
+<script>
+const EXEC_URL_GI = 'https://script.google.com/macros/s/AKfycbyBxlDAteVncpf2hyQ-Nna6YZjMiZodntG9gZZ9aPXPei1As_yhqMUCnjnM9mHmJYYZJg/exec';
+const NOTAS = ["PENDIENTE EJERCICIO 38 — Renovación integral del sector de ingreso al Club (pavimento, pintura casilla de guardia, iluminación, herrería del portón). Ocurrió en julio de 2026, fuera del período del Ejercicio 37.", "PENDIENTE EJERCICIO 38 — Torneo de Pádel organizado por un grupo de socios. Ocurrió el 13/06/2026, fuera del período del Ejercicio 37.", "PENDIENTE EJERCICIO 38 — Segunda etapa del Centro de Gestión Vecinal (desde junio 2026): se amplió con reportes vecinales, novedades de Intendencia/mantenimiento, cuota y pagos, acceso al Boletín, información de Tesorería, canal de objetos/animales perdidos. Se incorporó EugenIA, el mapa interactivo del barrio (accesible por QR, útil para visitantes, proveedores, residentes nuevos y seguridad). El CGV pasó de ser un menú de contactos a un ecosistema digital propio del Club."];
+
+function jsonp(url, cb) {
+  const cbName = 'cb_' + Date.now() + Math.floor(Math.random()*100000);
+  window[cbName] = function(res) { delete window[cbName]; document.body.removeChild(script); cb(res); };
+  const script = document.createElement('script');
+  script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+  document.body.appendChild(script);
+}
+
+const log = document.getElementById('log');
+
+async function guardarTodo() {
+  for (const texto of NOTAS) {
+    const div = document.createElement('div');
+    div.className = 'item';
+    div.textContent = texto.substring(0, 60) + '... — guardando...';
+    log.appendChild(div);
+
+    await new Promise(resolve => {
+      const params = new URLSearchParams({ action: 'guardarNota', texto: texto, cargadoPor: '1923', pin: '1923' });
+      jsonp(EXEC_URL_GI + '?' + params.toString(), function(res) {
+        if (res && res.ok) {
+          div.className = 'item ok';
+          div.textContent = '\u2705 ' + texto.substring(0, 70) + '...';
+        } else {
+          div.className = 'item error';
+          div.textContent = '\u274c error';
+        }
+        resolve();
+      });
+    });
+  }
+  const done = document.createElement('h1');
+  done.textContent = '\u2705 Listo. Guardadas en Bit\u00e1cora para cuando abramos el 38.';
+  log.appendChild(done);
+}
+
+guardarTodo();
+</script>
+</body>
+</html>

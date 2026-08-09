@@ -114,7 +114,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v14-validacion-fecha-ejercicio-09ago-1600' };
+      resultado = { ok: true, version: 'v15-notas-futuras-blindadas-09ago-2000' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'listarEjercicios') {
@@ -276,6 +276,7 @@ function listarNotasPendientes() {
     const fila = datos[i];
     if (!fila[idx.ID_NOTA]) continue;
     if (fila[idx.PROCESADA] === true || fila[idx.PROCESADA] === 'TRUE') continue;
+    if (String(fila[idx.TEXTO]).indexOf('PENDIENTE EJERCICIO') === 0) continue;
     notas.push({
       idNota: fila[idx.ID_NOTA],
       fechaCarga: fila[idx.FECHA_CARGA] ? Utilities.formatDate(new Date(fila[idx.FECHA_CARGA]), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm') : '',
@@ -382,6 +383,8 @@ function generarBorradorActa(params) {
     const fila = datosBit[i];
     if (!fila[idxBit.ID_NOTA]) continue;
     if (fila[idxBit.PROCESADA] === true || fila[idxBit.PROCESADA] === 'TRUE') continue;
+    // Las notas marcadas para un Ejercicio futuro no se usan en actas del Ejercicio actual
+    if (String(fila[idxBit.TEXTO]).indexOf('PENDIENTE EJERCICIO') === 0) continue;
     puntos.push({ orden: puntos.length + 1, texto: fila[idxBit.TEXTO] });
     idsNotasUsadas.push({ row: i + 1, id: fila[idxBit.ID_NOTA] });
   }
