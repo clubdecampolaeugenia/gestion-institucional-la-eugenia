@@ -368,16 +368,23 @@ function getHojaBalances() {
   return SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_BALANCES);
 }
 
-const PROMPT_REVISION_BALANCE = `Sos un asistente contable-legal para una asociación civil sin fines de lucro (Club de Campo "La Eugenia", CUIT 30-63417128-9). Vas a recibir un PDF de Estados Contables / Balance.
+const PROMPT_REVISION_BALANCE = `Sos un asistente contable-legal para una asociación civil sin fines de lucro (Club de Campo "La Eugenia", CUIT 30-63417128-9). Vas a recibir uno o más PDF relacionados con el Balance del ejercicio.
 
-Revisá el documento y respondé ÚNICAMENTE con un JSON válido (sin texto adicional, sin markdown, sin backticks), con esta estructura exacta:
+IMPORTANTE — distinción de tipo de documento: puede haber dos tipos de archivo muy distintos, y NUNCA hay que tratarlos como si fueran lo mismo ni compararlos como si usaran la misma base de valuación:
+- "ESTADOS_CONTABLES_DEFINITIVOS": el/los documento(s) formal(es) para presentar a la Asamblea (Estado de Situación Patrimonial, Estado de Recursos y Gastos, Estado de Evolución del Patrimonio Neto, Estado de Flujo de Efectivo, Notas, Anexos, Informe del Auditor). Suelen estar en moneda homogénea/ajustada por inflación (RT 54).
+- "HOJA_DE_TRABAJO_INTERNA": un balance de sumas y saldos, listado de cuentas contables con números de cuenta (ej. "10000000 ACTIVO"), sin ajuste por inflación, uso interno del estudio contable, NO es lo que se presenta a la Asamblea.
+
+Revisá el/los documento(s) y respondé ÚNICAMENTE con un JSON válido (sin texto adicional, sin markdown, sin backticks), con esta estructura exacta:
 
 {
+  "documentosRecibidos": [
+    { "tipo": "ESTADOS_CONTABLES_DEFINITIVOS o HOJA_DE_TRABAJO_INTERNA", "descripcion": "breve" }
+  ],
   "denominacionEncontrada": "texto",
   "cuitEncontrado": "texto",
   "periodoInicio": "DD/MM/AAAA",
   "periodoCierre": "DD/MM/AAAA",
-  "activoTotal": "número o texto",
+  "activoTotal": "número o texto (tomado de ESTADOS_CONTABLES_DEFINITIVOS si está disponible; si no, aclarar que es de la hoja de trabajo)",
   "pasivoTotal": "número o texto",
   "patrimonioNeto": "número o texto",
   "superavitEjercicio": "número o texto",
@@ -393,11 +400,12 @@ Revisá el documento y respondé ÚNICAMENTE con un JSON válido (sin texto adic
 Reglas de revisión (basadas en errores reales ya detectados en este tipo de documento):
 1. CRÍTICO: si en cualquier parte del documento (incluyendo el informe del auditor) aparece el nombre de una entidad distinta a "Club de Campo La Eugenia" — son documentos reutilizados de otro cliente sin corregir.
 2. CRÍTICO: si los encabezados de fecha de cualquier cuadro comparativo no coinciden con el período informado en la carátula (ej. dice "AL 30/04/2025" pero los valores corresponden al cierre real informado).
-3. OBSERVACIÓN: si Activo Total no es exactamente igual a Pasivo Total + Patrimonio Neto (verificar la ecuación contable).
-4. OBSERVACIÓN: diferencias de centavos entre cuadros que deberían coincidir.
+3. OBSERVACIÓN: si Activo Total no es exactamente igual a Pasivo Total + Patrimonio Neto, DENTRO DEL MISMO DOCUMENTO (verificar la ecuación contable). No marques como error una diferencia entre la hoja de trabajo y los Estados Contables definitivos — esa diferencia es esperable por el ajuste por inflación, aclaralo como DATO_CORRECTO si corresponde, nunca como error.
+4. OBSERVACIÓN: diferencias de centavos entre cuadros que deberían coincidir dentro del mismo documento.
 5. ADVERTENCIA: notas contables con redacción ambigua o incompleta (ej. índices de ajuste por inflación sin especificar claramente).
-6. Nunca corrijas el documento vos mismo. Solo señalá. Si algo requiere juicio profesional, decilo explícitamente en el texto de la observación ("Consultar al profesional responsable").
-7. Si no encontrás problemas en una categoría, no incluyas entradas de ese tipo — no inventes observaciones para rellenar.
+6. Si solo recibiste la HOJA_DE_TRABAJO_INTERNA y no los ESTADOS_CONTABLES_DEFINITIVOS, indicalo como OBSERVACIÓN: "Solo se recibió la hoja de trabajo interna, no los Estados Contables definitivos para presentar a la Asamblea."
+7. Nunca corrijas el documento vos mismo. Solo señalá. Si algo requiere juicio profesional, decilo explícitamente en el texto de la observación ("Consultar al profesional responsable").
+8. Si no encontrás problemas en una categoría, no incluyas entradas de ese tipo — no inventes observaciones para rellenar.
 
 Respondé solo el JSON.`;
 
