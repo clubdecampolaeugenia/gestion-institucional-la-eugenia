@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#135457">
+<link rel="apple-touch-icon" href="https://i.imgur.com/UgiYLGk.png">
+<link rel="icon" type="image/png" href="https://i.imgur.com/UgiYLGk.png">
+<title>Balance – Gestión Institucional La Eugenia</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --petroleo: #135457; --lima: #c4df57; --naranja: #deaf4d; --verdecl: #b7d6b5;
+    --blanco: #ffffff; --hueso: #f5f3ec; --negro: #000000; --error: #c0392b;
+  }
+  body { margin: 0; min-height: 100vh; background: var(--petroleo); font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
+  @keyframes fadeInScreen { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes shakeError { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 40%{transform:translateX(6px);} 60%{transform:translateX(-4px);} 80%{transform:translateX(4px);} }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 560px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
+  .logo-wrap img { width: 140px; display: block; margin: 0 auto; filter: drop-shadow(0 4px 7px rgba(0,0,0,0.2)); }
+  h1 { margin: 2px 0 4px; color: var(--negro); font-family: Impact, sans-serif; font-size: 24px; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
+  .subtitle { text-align: center; color: var(--petroleo); font-size: 13px; margin-bottom: 18px; }
+
+  #pinScreen { display: block; animation: fadeInScreen .3s ease-out; }
+  #mainScreen { display: none; }
+  #mainScreen.active { animation: fadeInScreen .3s ease-out; }
+  .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
+  .pin-input { display: block; width: 100%; text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; border: 2px solid var(--petroleo); border-radius: 16px; padding: 12px; background: var(--blanco); color: var(--petroleo); outline: none; margin-bottom: 12px; }
+  .pin-input.error { animation: shakeError .35s ease-in-out; border-color: var(--error); }
+  .pin-error { text-align: center; color: var(--error); font-size: 13px; font-weight: 700; min-height: 18px; margin-bottom: 8px; }
+
+  .instr-box { background: var(--petroleo); border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; font-size: 13px; color: var(--hueso); line-height: 1.5; }
+  .instr-box a { color: var(--lima); font-weight: 700; }
+
+  .btn-solid, .btn-outline, .btn-ghost { transition: transform .08s, box-shadow .08s, opacity .15s; }
+  .btn-solid { display: block; width: 100%; padding: 14px; border-radius: 24px; border: 2px solid var(--petroleo); background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
+  .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 2px solid var(--petroleo); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
+  .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; text-align: center; }
+  .btn-solid:active, .btn-outline:active { transform: scale(.96); box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  .btn-solid:disabled { opacity: .6; }
+
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--petroleo); border-top-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 6px; vertical-align: middle; }
+
+  .resultado-box { background: var(--blanco); border-radius: 16px; padding: 16px; margin-top: 16px; }
+  .resultado-titulo { font-family: Impact, sans-serif; font-size: 15px; color: var(--petroleo); text-transform: uppercase; margin-bottom: 8px; }
+  .dato-linea { font-size: 13px; color: var(--petroleo); margin-bottom: 3px; }
+  .dato-linea strong { font-weight: 900; }
+
+  .obs-item { border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; font-size: 13px; }
+  .obs-CRITICO { background: #f3c6c6; border-left: 4px solid var(--error); color: #7a1f1f; }
+  .obs-OBSERVACION { background: #fdeecb; border-left: 4px solid var(--naranja); color: #7a5c1f; }
+  .obs-ADVERTENCIA { background: #fff8db; border-left: 4px solid #e0c94f; color: #6b6320; }
+  .obs-DATO_CORRECTO { background: var(--verdecl); border-left: 4px solid var(--petroleo); color: var(--petroleo); }
+  .obs-tipo { font-weight: 900; text-transform: uppercase; font-size: 10px; display: block; margin-bottom: 2px; }
+
+  .divider { border: none; border-top: 1.5px solid #9bb583; margin: 16px 0; }
+  .loading-text { text-align: center; color: var(--petroleo); font-size: 13px; font-weight: 700; min-height: 20px; }
+  .empty-msg { text-align: center; color: var(--petroleo); opacity: .6; font-size: 13px; padding: 10px 0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo-wrap"><img src="https://i.imgur.com/UgiYLGk.png" alt="Logo La Eugenia"></div>
+  <h1>Gestión Institucional</h1>
+  <div class="subtitle"><strong style="color:var(--negro);">Balance</strong></div>
+
+  <div id="pinScreen">
+    <div class="pin-label">Ingresá el PIN</div>
+    <input class="pin-input" type="password" inputmode="numeric" maxlength="4" id="pinInput" placeholder="····">
+    <div class="pin-error" id="pinError"></div>
+    <button type="button" class="btn-solid" onclick="verificarPin()">Ingresar</button>
+  </div>
+
+  <div id="mainScreen">
+    <div class="instr-box">
+      1. Subí el PDF del Balance a la carpeta de Drive <a href="https://drive.google.com/drive/folders/189c_jJ7CkLdHISks0PI2KoBpfC-1_eX1" target="_blank">Balances_Gestion_Institucional_La_Eugenia</a><br>
+      2. Volvé acá y tocá "Procesar último Balance"
+    </div>
+
+    <button type="button" class="btn-solid" id="btnProcesar" onclick="procesarBalance()">Procesar último Balance</button>
+
+    <div class="loading-text" id="loadingText"></div>
+
+    <div id="resultadoContainer"></div>
+
+    <hr class="divider">
+    <div class="field-label" style="color:var(--petroleo); font-weight:900; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Historial de revisiones</div>
+    <div id="listaBalances"></div>
+
+    <hr class="divider">
+    <button type="button" class="btn-ghost" onclick="cerrarSesion()">Cerrar sesión</button>
+  </div>
+</div>
+
+<script>
+const EXEC_URL_PINES_CGV_CHECK = 'https://script.google.com/macros/s/AKfycbyt4PoL_IWHaXRlMNDy2cPtWmvj7f0-DLpSe5IHir54yPDNg8osPtX_0ezoopC4aGR_7A/exec';
+const EXEC_URL_GI = 'https://script.google.com/macros/s/AKfycbyBxlDAteVncpf2hyQ-Nna6YZjMiZodntG9gZZ9aPXPei1As_yhqMUCnjnM9mHmJYYZJg/exec';
+
+let PIN_SESION = '';
+
+document.addEventListener('DOMContentLoaded', function() {
+  const savedPin = localStorage.getItem('cgv_pin');
+  if (!savedPin) return;
+  PIN_SESION = savedPin;
+  jsonp(EXEC_URL_PINES_CGV_CHECK + '?action=validarPin&pin=' + encodeURIComponent(savedPin) + '&modulo=gestion-institucional', function(res) {
+    if (res && res.ok && res.valido) entrarApp();
+  });
+});
+
+function jsonp(url, cb) {
+  const cbName = 'cb_' + Date.now() + Math.floor(Math.random()*100000);
+  window[cbName] = function(res) { delete window[cbName]; document.body.removeChild(script); cb(res); };
+  const script = document.createElement('script');
+  script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+  document.body.appendChild(script);
+}
+
+function verificarPin() {
+  const pin = document.getElementById('pinInput').value;
+  jsonp(EXEC_URL_PINES_CGV_CHECK + '?action=validarPin&pin=' + encodeURIComponent(pin) + '&modulo=gestion-institucional', function(res) {
+    if (res && res.ok && res.valido) {
+      PIN_SESION = pin;
+      localStorage.setItem('cgv_pin', pin);
+      entrarApp();
+    } else {
+      const input = document.getElementById('pinInput');
+      input.classList.add('error');
+      document.getElementById('pinError').textContent = 'PIN incorrecto';
+      setTimeout(() => input.classList.remove('error'), 400);
+    }
+  });
+}
+
+function entrarApp() {
+  document.getElementById('pinScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'block';
+  document.getElementById('mainScreen').classList.add('active');
+  cargarBalances();
+}
+
+function cerrarSesion() {
+  localStorage.removeItem('cgv_pin');
+  location.reload();
+}
+
+function procesarBalance() {
+  const btn = document.getElementById('btnProcesar');
+  btn.disabled = true;
+  document.getElementById('loadingText').innerHTML = '<span class="spinner"></span> Leyendo el PDF y consultando a la IA... puede tardar hasta un minuto.';
+  document.getElementById('resultadoContainer').innerHTML = '';
+
+  jsonp(EXEC_URL_GI + '?action=procesarBalance', function(res) {
+    btn.disabled = false;
+    document.getElementById('loadingText').textContent = '';
+    if (!res || !res.ok) {
+      document.getElementById('resultadoContainer').innerHTML = '<div class="obs-item obs-CRITICO"><span class="obs-tipo">Error</span>' + escapeHtml(res && res.error ? res.error : 'desconocido') + '</div>';
+      return;
+    }
+    mostrarResultado(res.analisis, res.estado);
+    cargarBalances();
+  });
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function mostrarResultado(analisis, estado) {
+  const cont = document.getElementById('resultadoContainer');
+  let html = '<div class="resultado-box">';
+  html += '<div class="resultado-titulo">Resultado del análisis</div>';
+  html += '<div class="dato-linea"><strong>Entidad:</strong> ' + escapeHtml(analisis.denominacionEncontrada || '—') + '</div>';
+  html += '<div class="dato-linea"><strong>Período:</strong> ' + escapeHtml(analisis.periodoInicio || '—') + ' a ' + escapeHtml(analisis.periodoCierre || '—') + '</div>';
+  html += '<div class="dato-linea"><strong>Activo:</strong> $' + escapeHtml(String(analisis.activoTotal || '—')) + ' · <strong>Pasivo:</strong> $' + escapeHtml(String(analisis.pasivoTotal || '—')) + ' · <strong>PN:</strong> $' + escapeHtml(String(analisis.patrimonioNeto || '—')) + '</div>';
+  html += '<div class="dato-linea"><strong>Superávit del ejercicio:</strong> $' + escapeHtml(String(analisis.superavitEjercicio || '—')) + '</div>';
+  html += '<div class="dato-linea"><strong>Cuadra Activo = Pasivo + PN:</strong> ' + (analisis.cuadraActivoPasivoPN ? '✅ Sí' : '❌ No') + '</div>';
+  html += '</div>';
+
+  (analisis.observaciones || []).forEach(o => {
+    html += '<div class="obs-item obs-' + o.tipo + '"><span class="obs-tipo">' + o.tipo.replace('_', ' ') + '</span>' + escapeHtml(o.texto) + '</div>';
+  });
+
+  cont.innerHTML = html;
+}
+
+function cargarBalances() {
+  jsonp(EXEC_URL_GI + '?action=listarBalances', function(res) {
+    const cont = document.getElementById('listaBalances');
+    cont.innerHTML = '';
+    if (!res || !res.ok || res.balances.length === 0) {
+      cont.innerHTML = '<div class="empty-msg">Todavía no se procesó ningún balance.</div>';
+      return;
+    }
+    res.balances.forEach(b => {
+      const div = document.createElement('div');
+      div.className = 'dato-linea';
+      div.style.cssText = 'background:var(--blanco); border-radius:10px; padding:8px 12px; margin-bottom:6px; cursor:pointer;';
+      div.textContent = 'Versión ' + b.version + ' — ' + b.estado;
+      div.onclick = () => verDetalle(b.idBalance);
+      cont.appendChild(div);
+    });
+  });
+}
+
+function verDetalle(idBalance) {
+  jsonp(EXEC_URL_GI + '?action=obtenerBalance&idBalance=' + idBalance, function(res) {
+    if (res && res.ok) {
+      mostrarResultado(res.balance.datosExtraidos, res.balance.estado);
+      document.getElementById('resultadoContainer').scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+}
+</script>
+</body>
+</html>

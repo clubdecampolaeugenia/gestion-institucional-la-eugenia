@@ -35,6 +35,14 @@ function doGet(e) {
       resultado = generarBorradorActa(e.parameter);
     } else if (action === 'actualizarActa') {
       resultado = actualizarActa(e.parameter);
+    } else if (action === 'procesarBalance') {
+      resultado = procesarBalance();
+    } else if (action === 'listarBalances') {
+      resultado = listarBalances();
+    } else if (action === 'obtenerBalance') {
+      resultado = obtenerBalance(e.parameter.idBalance);
+    } else if (action === 'actualizarEstadoBalance') {
+      resultado = actualizarEstadoBalance(e.parameter);
     } else {
       resultado = { ok: false, error: 'Acción no reconocida' };
     }
@@ -318,4 +326,194 @@ function actualizarActa(params) {
     }
   }
   return { ok: false, error: 'Acta no encontrada' };
+}
+
+// ============ BALANCE ============
+const HOJA_BALANCES = 'BALANCES';
+const CARPETA_BALANCES_ID = '189c_jJ7CkLdHISks0PI2KoBpfC-1_eX1'; // Balances_Gestion_Institucional_La_Eugenia
+
+function getHojaBalances() {
+  return SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_BALANCES);
+}
+
+const PROMPT_REVISION_BALANCE = `Sos un asistente contable-legal para una asociación civil sin fines de lucro (Club de Campo "La Eugenia", CUIT 30-63417128-9). Vas a recibir un PDF de Estados Contables / Balance.
+
+Revisá el documento y respondé ÚNICAMENTE con un JSON válido (sin texto adicional, sin markdown, sin backticks), con esta estructura exacta:
+
+{
+  "denominacionEncontrada": "texto",
+  "cuitEncontrado": "texto",
+  "periodoInicio": "DD/MM/AAAA",
+  "periodoCierre": "DD/MM/AAAA",
+  "activoTotal": "número o texto",
+  "pasivoTotal": "número o texto",
+  "patrimonioNeto": "número o texto",
+  "superavitEjercicio": "número o texto",
+  "cuadraActivoPasivoPN": true o false,
+  "observaciones": [
+    { "tipo": "CRITICO", "texto": "descripción específica y concreta del hallazgo" },
+    { "tipo": "OBSERVACION", "texto": "..." },
+    { "tipo": "ADVERTENCIA", "texto": "..." },
+    { "tipo": "DATO_CORRECTO", "texto": "..." }
+  ]
+}
+
+Reglas de revisión (basadas en errores reales ya detectados en este tipo de documento):
+1. CRÍTICO: si en cualquier parte del documento (incluyendo el informe del auditor) aparece el nombre de una entidad distinta a "Club de Campo La Eugenia" — son documentos reutilizados de otro cliente sin corregir.
+2. CRÍTICO: si los encabezados de fecha de cualquier cuadro comparativo no coinciden con el período informado en la carátula (ej. dice "AL 30/04/2025" pero los valores corresponden al cierre real informado).
+3. OBSERVACIÓN: si Activo Total no es exactamente igual a Pasivo Total + Patrimonio Neto (verificar la ecuación contable).
+4. OBSERVACIÓN: diferencias de centavos entre cuadros que deberían coincidir.
+5. ADVERTENCIA: notas contables con redacción ambigua o incompleta (ej. índices de ajuste por inflación sin especificar claramente).
+6. Nunca corrijas el documento vos mismo. Solo señalá. Si algo requiere juicio profesional, decilo explícitamente en el texto de la observación ("Consultar al profesional responsable").
+7. Si no encontrás problemas en una categoría, no incluyas entradas de ese tipo — no inventes observaciones para rellenar.
+
+Respondé solo el JSON.`;
+
+function procesarBalance() {
+  const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+  if (!apiKey) {
+    return { ok: false, error: 'Falta configurar ANTHROPIC_API_KEY en Script Properties' };
+  }
+
+  // Busca el archivo más reciente en la carpeta de Balances
+  const carpeta = DriveApp.getFolderById(CARPETA_BALANCES_ID);
+  const archivos = carpeta.getFilesByType(MimeType.PDF);
+  let archivoMasReciente = null;
+  while (archivos.hasNext()) {
+    const f = archivos.next();
+    if (!archivoMasReciente || f.getLastUpdated() > archivoMasReciente.getLastUpdated()) {
+      archivoMasReciente = f;
+    }
+  }
+  if (!archivoMasReciente) {
+    return { ok: false, error: 'No hay ningún PDF en la carpeta de Balances. Subí uno primero.' };
+  }
+
+  const blob = archivoMasReciente.getBlob();
+  const base64Pdf = Utilities.base64Encode(blob.getBytes());
+
+  const payload = {
+    model: 'claude-sonnet-5',
+    max_tokens: 2000,
+    system: PROMPT_REVISION_BALANCE,
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64Pdf } },
+        { type: 'text', text: 'Revisá este balance según las reglas indicadas y respondé solo el JSON.' }
+      ]
+    }]
+  };
+
+  const response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+
+  const status = response.getResponseCode();
+  if (status !== 200) {
+    return { ok: false, error: 'Error de la API de Anthropic (' + status + '): ' + response.getContentText() };
+  }
+
+  const data = JSON.parse(response.getContentText());
+  let textoRespuesta = data.content && data.content[0] ? data.content[0].text : '';
+  textoRespuesta = textoRespuesta.replace(/```json|```/g, '').trim();
+
+  let analisis;
+  try {
+    analisis = JSON.parse(textoRespuesta);
+  } catch (e) {
+    return { ok: false, error: 'La IA no devolvió JSON válido: ' + textoRespuesta.substring(0, 300) };
+  }
+
+  // Guarda en la hoja BALANCES
+  const hoja = getHojaBalances();
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const idx = {};
+  headers.forEach((h, i) => idx[h] = i);
+
+  // Calcula versión (cuántos balances ya existen para este archivo/ejercicio)
+  let version = 1;
+  for (let i = 1; i < datos.length; i++) {
+    if (datos[i][idx.ID_BALANCE]) version++;
+  }
+
+  const nuevoId = 'BAL-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
+  const hayCriticos = analisis.observaciones.some(o => o.tipo === 'CRITICO');
+  const estadoInicial = hayCriticos ? 'OBSERVADO' : 'EN_REVISION';
+
+  hoja.appendRow([
+    nuevoId,
+    '',
+    archivoMasReciente.getUrl(),
+    version,
+    estadoInicial,
+    JSON.stringify(analisis),
+    JSON.stringify(analisis.observaciones)
+  ]);
+
+  return { ok: true, idBalance: nuevoId, analisis: analisis, estado: estadoInicial };
+}
+
+function listarBalances() {
+  const hoja = getHojaBalances();
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const idx = {};
+  headers.forEach((h, i) => idx[h] = i);
+
+  const balances = [];
+  for (let i = 1; i < datos.length; i++) {
+    const fila = datos[i];
+    if (!fila[idx.ID_BALANCE]) continue;
+    balances.push({ idBalance: fila[idx.ID_BALANCE], version: fila[idx.VERSION], estado: fila[idx.ESTADO] });
+  }
+  balances.sort((a, b) => b.version - a.version);
+  return { ok: true, balances: balances };
+}
+
+function obtenerBalance(idBalance) {
+  const hoja = getHojaBalances();
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const idx = {};
+  headers.forEach((h, i) => idx[h] = i);
+
+  for (let i = 1; i < datos.length; i++) {
+    if (String(datos[i][idx.ID_BALANCE]) === String(idBalance)) {
+      const fila = datos[i];
+      return {
+        ok: true,
+        balance: {
+          idBalance: fila[idx.ID_BALANCE],
+          archivoUrl: fila[idx.ARCHIVO_PDF_URL],
+          version: fila[idx.VERSION],
+          estado: fila[idx.ESTADO],
+          datosExtraidos: fila[idx.DATOS_EXTRAIDOS] ? JSON.parse(fila[idx.DATOS_EXTRAIDOS]) : {},
+          observaciones: fila[idx.OBSERVACIONES] ? JSON.parse(fila[idx.OBSERVACIONES]) : []
+        }
+      };
+    }
+  }
+  return { ok: false, error: 'Balance no encontrado' };
+}
+
+function actualizarEstadoBalance(params) {
+  const hoja = getHojaBalances();
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const idx = {};
+  headers.forEach((h, i) => idx[h] = i);
+
+  for (let i = 1; i < datos.length; i++) {
+    if (String(datos[i][idx.ID_BALANCE]) === String(params.idBalance)) {
+      hoja.getRange(i + 1, idx.ESTADO + 1).setValue(params.estado);
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'Balance no encontrado' };
 }

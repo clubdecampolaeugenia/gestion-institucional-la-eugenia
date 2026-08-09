@@ -109,7 +109,7 @@ let PIN_SESION = '';
 // cuando esos módulos (Balance, Memoria, Asamblea, Padrón) tengan su propio backend.
 const HITOS = [
   { nombre: 'Ejercicio cerrado', detalle: '30/04/2026 — Ejercicio N.º 37', estado: 'COMPLETO', link: null, manual: true },
-  { nombre: 'Balance', detalle: 'Recibido, con errores detectados (entidad y fechas)', estado: 'OBSERVADO', link: null, manual: true },
+  { nombre: 'Balance', detalle: 'Recibido, con errores detectados (entidad y fechas)', estado: 'OBSERVADO', link: 'balance.html', manual: false },
   { nombre: 'Informe Comisión Revisora', detalle: 'Falta informe formal firmado (Art. 36)', estado: 'PENDIENTE', link: null, manual: true },
   { nombre: 'Memoria', detalle: 'Borrador redactado, falta aprobación de CD', estado: 'PROGRESO', link: null, manual: true },
   { nombre: 'Acta CD — aprobación y convocatoria', detalle: 'Borrador generado, pendiente de contrastar y firmar', estado: 'PROGRESO', link: null, manual: true },
@@ -163,6 +163,7 @@ function entrarApp() {
   renderHitos();
   cargarEstadoAutoridades();
   cargarEstadoActas();
+  cargarEstadoBalance();
 }
 
 function cerrarSesion() {
@@ -236,6 +237,23 @@ function cargarEstadoActas() {
       actualizarHito('Bitácora y Actas', 'PROGRESO', total + ' acta(s) — ' + borradores + ' en borrador');
     } else {
       actualizarHito('Bitácora y Actas', 'COMPLETO', total + ' acta(s), todas cerradas');
+    }
+  });
+}
+
+function cargarEstadoBalance() {
+  jsonp(EXEC_URL_GI + '?action=listarBalances', function(res) {
+    if (!res || !res.ok || res.balances.length === 0) {
+      actualizarHito('Balance', 'NOINICIADO', 'Todavía no se procesó ningún balance');
+      return;
+    }
+    const ultimo = res.balances[0];
+    if (ultimo.estado === 'OBSERVADO') {
+      actualizarHito('Balance', 'OBSERVADO', 'Versión ' + ultimo.version + ' — con observaciones de la IA');
+    } else if (ultimo.estado === 'APROBADO_ASAMBLEA') {
+      actualizarHito('Balance', 'COMPLETO', 'Versión ' + ultimo.version + ' — aprobado por Asamblea');
+    } else {
+      actualizarHito('Balance', 'PROGRESO', 'Versión ' + ultimo.version + ' — ' + ultimo.estado);
     }
   });
 }
