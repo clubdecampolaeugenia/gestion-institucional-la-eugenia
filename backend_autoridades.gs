@@ -74,7 +74,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -114,7 +114,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v10-observaciones-resolubles-09ago-1250' };
+      resultado = { ok: true, version: 'v11-novedades-09ago-1400' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'listarEjercicios') {
@@ -123,6 +123,12 @@ function doGet(e) {
       resultado = cerrarYAbrirNuevoEjercicio(e.parameter);
     } else if (action === 'actualizarObservacionBalance') {
       resultado = actualizarObservacionBalance(e.parameter);
+    } else if (action === 'guardarNovedad') {
+      resultado = guardarNovedad(e.parameter);
+    } else if (action === 'listarNovedades') {
+      resultado = listarNovedades(e.parameter);
+    } else if (action === 'actualizarNovedad') {
+      resultado = actualizarNovedad(e.parameter);
     } else {
       resultado = { ok: false, error: 'Acción no reconocida' };
     }
@@ -770,4 +776,89 @@ function cerrarYAbrirNuevoEjercicio(params) {
   hoja.appendRow([nuevoId, nuevoNumero, nuevoInicio, nuevoCierre, 'ABIERTO', nuevoLimiteAsamblea]);
 
   return { ok: true, ejercicioAnteriorCerrado: activo[idx.ID_EJERCICIO], nuevoEjercicio: nuevoId, nuevoNumero: nuevoNumero };
+}
+
+// ============ NOVEDADES ============
+const HOJA_NOVEDADES = 'NOVEDADES';
+
+// Regla por defecto: Personal nunca se marca SI automáticamente (ver criterio de Memoria)
+const CONSIDERAR_MEMORIA_DEFAULT = { 'Personal': 'NO' };
+
+function getHojaNovedades() {
+  return SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_NOVEDADES);
+}
+
+function guardarNovedad(params) {
+  const hoja = getHojaNovedades();
+  const nuevoId = 'NOV-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
+
+  const ejercicioActivo = obtenerEjercicioActivo();
+  const idEjercicioActual = ejercicioActivo.ok ? ejercicioActivo.ejercicio.idEjercicio : '';
+
+  const considerarMemoria = params.considerarMemoria || CONSIDERAR_MEMORIA_DEFAULT[params.categoria] || 'EVALUAR';
+
+  hoja.appendRow([
+    nuevoId,
+    idEjercicioActual,
+    new Date(params.fecha),
+    params.titulo,
+    params.descripcion || '',
+    params.categoria,
+    params.monto || '',
+    'MANUAL',
+    '',
+    considerarMemoria,
+    params.responsable || ''
+  ]);
+
+  return { ok: true, idNovedad: nuevoId };
+}
+
+function listarNovedades(params) {
+  const hoja = getHojaNovedades();
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const idx = {};
+  headers.forEach((h, i) => idx[h] = i);
+
+  const filtroEjercicio = params && params.idEjercicio ? params.idEjercicio : null;
+
+  const novedades = [];
+  for (let i = 1; i < datos.length; i++) {
+    const fila = datos[i];
+    if (!fila[idx.ID_NOVEDAD]) continue;
+    if (filtroEjercicio && fila[idx.ID_EJERCICIO] !== filtroEjercicio) continue;
+    novedades.push({
+      idNovedad: fila[idx.ID_NOVEDAD],
+      idEjercicio: fila[idx.ID_EJERCICIO],
+      fecha: fila[idx.FECHA] ? Utilities.formatDate(new Date(fila[idx.FECHA]), Session.getScriptTimeZone(), 'dd/MM/yyyy') : '',
+      titulo: fila[idx.TITULO],
+      descripcion: fila[idx.DESCRIPCION],
+      categoria: fila[idx.CATEGORIA],
+      monto: fila[idx.MONTO],
+      origen: fila[idx.ORIGEN],
+      considerarMemoria: fila[idx.CONSIDERAR_MEMORIA],
+      responsable: fila[idx.RESPONSABLE]
+    });
+  }
+  novedades.sort((a, b) => new Date(b.fecha.split('/').reverse().join('-')) - new Date(a.fecha.split('/').reverse().join('-')));
+  return { ok: true, novedades: novedades };
+}
+
+function actualizarNovedad(params) {
+  const hoja = getHojaNovedades();
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const idx = {};
+  headers.forEach((h, i) => idx[h] = i);
+
+  for (let i = 1; i < datos.length; i++) {
+    if (String(datos[i][idx.ID_NOVEDAD]) === String(params.idNovedad)) {
+      if (params.considerarMemoria) hoja.getRange(i + 1, idx.CONSIDERAR_MEMORIA + 1).setValue(params.considerarMemoria);
+      if (params.titulo) hoja.getRange(i + 1, idx.TITULO + 1).setValue(params.titulo);
+      if (params.descripcion) hoja.getRange(i + 1, idx.DESCRIPCION + 1).setValue(params.descripcion);
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'Novedad no encontrada' };
 }

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#135457">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="icon" type="image/png" href="logo.png">
+<title>Novedades – Gestión Institucional La Eugenia</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --petroleo: #135457; --lima: #c4df57; --naranja: #deaf4d; --verdecl: #b7d6b5;
+    --blanco: #ffffff; --hueso: #f5f3ec; --negro: #000000; --error: #c0392b;
+  }
+  body { margin: 0; min-height: 100vh; background: var(--petroleo); font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
+  @keyframes fadeInScreen { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes shakeError { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 40%{transform:translateX(6px);} 60%{transform:translateX(-4px);} 80%{transform:translateX(4px);} }
+
+  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 560px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
+  .logo-wrap img { width: 140px; display: block; margin: 0 auto; filter: drop-shadow(0 4px 7px rgba(0,0,0,0.2)); }
+  h1 { margin: 2px 0 4px; color: var(--negro); font-family: Impact, sans-serif; font-size: 24px; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
+  .subtitle { text-align: center; color: var(--petroleo); font-size: 13px; margin-bottom: 18px; text-transform: uppercase; letter-spacing: .5px; }
+
+  #pinScreen { display: block; animation: fadeInScreen .3s ease-out; }
+  #mainScreen { display: none; }
+  #mainScreen.active { animation: fadeInScreen .3s ease-out; }
+  .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
+  .pin-input { display: block; width: 100%; text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; border: 2px solid var(--petroleo); border-radius: 16px; padding: 12px; background: var(--blanco); color: var(--petroleo); outline: none; margin-bottom: 12px; }
+  .pin-input.error { animation: shakeError .35s ease-in-out; border-color: var(--error); }
+  .pin-error { text-align: center; color: var(--error); font-size: 13px; font-weight: 700; min-height: 18px; margin-bottom: 8px; }
+
+  .btn-solid { display: block; width: 100%; padding: 14px; border-radius: 24px; border: 2px solid var(--petroleo); background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
+  .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 2px solid var(--petroleo); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
+  .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; text-align: center; }
+  .btn-solid:active, .btn-outline:active { transform: scale(.96); }
+
+  .field-label { color: var(--petroleo); font-size: 11px; font-weight: 900; text-transform: uppercase; margin: 10px 0 4px; display: block; }
+  .field-label:first-child { margin-top: 0; }
+  input[type=text], input[type=date], input[type=number], select, textarea { width: 100%; border: 2px solid var(--petroleo); border-radius: 12px; padding: 10px 12px; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; }
+  textarea { min-height: 70px; resize: vertical; }
+
+  .form-panel { background: var(--petroleo); border-radius: 16px; padding: 16px; margin-bottom: 14px; display: none; }
+  .form-panel.open { display: block; }
+  .form-panel .field-label { color: var(--lima); }
+
+  .novedad-card { background: var(--blanco); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+  .novedad-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+  .novedad-titulo { font-weight: 900; color: var(--petroleo); font-size: 14px; }
+  .novedad-fecha { font-size: 11px; color: var(--petroleo); opacity: .6; white-space: nowrap; }
+  .novedad-desc { font-size: 13px; color: var(--petroleo); margin-bottom: 6px; }
+  .chip-categoria { display: inline-block; background: var(--verdecl); border-radius: 12px; padding: 3px 10px; font-size: 10px; font-weight: 900; color: var(--petroleo); text-transform: uppercase; margin-right: 6px; }
+  .chip-memoria { display: inline-block; border-radius: 12px; padding: 3px 10px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+  .chip-SI { background: var(--verdecl); color: var(--petroleo); }
+  .chip-NO { background: #e8e8e8; color: #888; }
+  .chip-EVALUAR { background: var(--naranja); color: var(--petroleo); }
+  .chip-memoria { cursor: pointer; border: 2px solid transparent; }
+  .chip-memoria:active { transform: scale(.95); }
+
+  .filtro-cat { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .filtro-chip { padding: 6px 12px; border-radius: 14px; border: 2px solid var(--petroleo); background: transparent; color: var(--petroleo); font-size: 11px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .filtro-chip.active { background: var(--petroleo); color: var(--lima); }
+
+  .divider { border: none; border-top: 1.5px solid #9bb583; margin: 16px 0; }
+  .loading-text { text-align: center; color: var(--petroleo); font-size: 13px; font-weight: 700; min-height: 20px; }
+  .empty-msg { text-align: center; color: var(--petroleo); opacity: .6; font-size: 13px; padding: 20px 0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <a href="index.html" style="display:inline-block; text-align:left; color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:none; opacity:.75; margin-bottom:10px;">&larr; Volver al panel</a>
+  <a href="index.html" class="logo-wrap" style="cursor:pointer;"><img src="logo.png" alt="Logo La Eugenia"></a>
+  <h1>Gestión Institucional</h1>
+  <div class="subtitle"><strong style="color:var(--negro); text-transform:uppercase;">Novedades</strong></div>
+
+  <div id="pinScreen">
+    <div class="pin-label">Ingresá el PIN</div>
+    <input class="pin-input" type="password" inputmode="numeric" maxlength="4" id="pinInput" placeholder="····">
+    <div class="pin-error" id="pinError"></div>
+    <button type="button" class="btn-solid" onclick="verificarPin()">Ingresar</button>
+  </div>
+
+  <div id="mainScreen">
+    <div style="background:var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:16px; font-size:13px; color:var(--hueso); line-height:1.5;">
+      Vas cargando acá los hechos relevantes del año — obras, gestiones, eventos, gastos puntuales. Esto es lo que va a alimentar el borrador de la Memoria. Marcá "¿Va a Memoria?" en cada una: <strong>Sí</strong> / <strong>No</strong> / <strong>Evaluar</strong> — las de categoría Personal arrancan en "No" por defecto, tocá el chip para cambiarlo.
+    </div>
+
+    <button type="button" class="btn-outline" onclick="toggleForm()">➕ Cargar novedad</button>
+
+    <div class="form-panel" id="formPanel">
+      <span class="field-label">Fecha</span>
+      <input type="date" id="fFecha">
+      <span class="field-label">Título</span>
+      <input type="text" id="fTitulo" placeholder="Ej: Reparación del tractor">
+      <span class="field-label">Descripción</span>
+      <textarea id="fDescripcion" placeholder="Detalle de lo que pasó"></textarea>
+      <span class="field-label">Categoría</span>
+      <select id="fCategoria">
+        <option>Administración</option>
+        <option>Seguridad</option>
+        <option>Mantenimiento</option>
+        <option>Infraestructura</option>
+        <option>Alumbrado</option>
+        <option>Pileta</option>
+        <option>Deportes</option>
+        <option>Actividades sociales</option>
+        <option>Cantina</option>
+        <option>Personal</option>
+        <option>Municipalidad</option>
+        <option>EMSA</option>
+        <option>SAMSA</option>
+        <option>Personas Jurídicas</option>
+        <option>Tesorería</option>
+        <option>Incidentes</option>
+        <option>Otros</option>
+      </select>
+      <span class="field-label">Monto (opcional)</span>
+      <input type="number" id="fMonto" placeholder="$">
+      <span class="field-label">Responsable (opcional)</span>
+      <input type="text" id="fResponsable">
+      <button type="button" class="btn-solid" style="margin-top:14px;" onclick="guardarNovedad()">Guardar</button>
+      <button type="button" class="btn-ghost" onclick="toggleForm()">Cancelar</button>
+    </div>
+
+    <div class="filtro-cat" id="filtroCat"></div>
+
+    <div id="listaNovedades"></div>
+
+    <div class="loading-text" id="loadingText"></div>
+    <hr class="divider">
+    <button type="button" class="btn-ghost" onclick="cerrarSesion()">Cerrar sesión</button>
+  </div>
+</div>
+
+<script>
+const EXEC_URL_PINES_CGV_CHECK = 'https://script.google.com/macros/s/AKfycbyt4PoL_IWHaXRlMNDy2cPtWmvj7f0-DLpSe5IHir54yPDNg8osPtX_0ezoopC4aGR_7A/exec';
+const EXEC_URL_GI = 'https://script.google.com/macros/s/AKfycbyBxlDAteVncpf2hyQ-Nna6YZjMiZodntG9gZZ9aPXPei1As_yhqMUCnjnM9mHmJYYZJg/exec';
+
+let PIN_SESION = '';
+let NOVEDADES_TODAS = [];
+let FILTRO_ACTUAL = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+  const savedPin = localStorage.getItem('cgv_pin');
+  if (!savedPin) return;
+  PIN_SESION = savedPin;
+  entrarApp();
+});
+
+function jsonp(url, cb) {
+  const cbName = 'cb_' + Date.now() + Math.floor(Math.random()*100000);
+  window[cbName] = function(res) { delete window[cbName]; document.body.removeChild(script); cb(res); };
+  const script = document.createElement('script');
+  script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+  document.body.appendChild(script);
+}
+
+function verificarPin() {
+  const pin = document.getElementById('pinInput').value;
+  jsonp(EXEC_URL_PINES_CGV_CHECK + '?action=validarPin&pin=' + encodeURIComponent(pin) + '&modulo=gestion-institucional', function(res) {
+    if (res && res.ok && res.valido) {
+      PIN_SESION = pin;
+      localStorage.setItem('cgv_pin', pin);
+      entrarApp();
+    } else {
+      const input = document.getElementById('pinInput');
+      input.classList.add('error');
+      document.getElementById('pinError').textContent = 'PIN incorrecto';
+      setTimeout(() => input.classList.remove('error'), 400);
+    }
+  });
+}
+
+function entrarApp() {
+  document.getElementById('pinScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'block';
+  document.getElementById('mainScreen').classList.add('active');
+  cargarNovedades();
+}
+
+function cerrarSesion() {
+  localStorage.removeItem('cgv_pin');
+  location.reload();
+}
+
+function toggleForm() {
+  const f = document.getElementById('formPanel');
+  f.classList.toggle('open');
+  if (f.classList.contains('open') && !document.getElementById('fFecha').value) {
+    document.getElementById('fFecha').value = new Date().toISOString().split('T')[0];
+  }
+}
+
+function guardarNovedad() {
+  const fecha = document.getElementById('fFecha').value;
+  const titulo = document.getElementById('fTitulo').value;
+  if (!fecha || !titulo) { alert('Completá al menos fecha y título'); return; }
+
+  const params = new URLSearchParams({
+    action: 'guardarNovedad',
+    fecha: fecha,
+    titulo: titulo,
+    descripcion: document.getElementById('fDescripcion').value,
+    categoria: document.getElementById('fCategoria').value,
+    monto: document.getElementById('fMonto').value,
+    responsable: document.getElementById('fResponsable').value,
+    pin: PIN_SESION
+  });
+
+  document.getElementById('loadingText').textContent = 'Guardando...';
+  jsonp(EXEC_URL_GI + '?' + params.toString(), function(res) {
+    document.getElementById('loadingText').textContent = '';
+    if (res && res.ok) {
+      toggleForm();
+      ['fTitulo','fDescripcion','fMonto','fResponsable'].forEach(id => document.getElementById(id).value = '');
+      cargarNovedades();
+    } else {
+      alert('Error: ' + (res && res.error ? res.error : 'desconocido'));
+    }
+  });
+}
+
+function cargarNovedades() {
+  document.getElementById('loadingText').textContent = 'Cargando...';
+  jsonp(EXEC_URL_GI + '?action=listarNovedades', function(res) {
+    document.getElementById('loadingText').textContent = '';
+    if (!res || !res.ok) return;
+    NOVEDADES_TODAS = res.novedades;
+    renderFiltros();
+    renderNovedades();
+  });
+}
+
+function renderFiltros() {
+  const categorias = [...new Set(NOVEDADES_TODAS.map(n => n.categoria))];
+  const cont = document.getElementById('filtroCat');
+  if (categorias.length === 0) { cont.innerHTML = ''; return; }
+  let html = '<button type="button" class="filtro-chip' + (FILTRO_ACTUAL === null ? ' active' : '') + '" onclick="aplicarFiltro(null)">Todas</button>';
+  categorias.forEach(c => {
+    html += '<button type="button" class="filtro-chip' + (FILTRO_ACTUAL === c ? ' active' : '') + '" onclick="aplicarFiltro(\'' + c + '\')">' + c + '</button>';
+  });
+  cont.innerHTML = html;
+}
+
+function aplicarFiltro(cat) {
+  FILTRO_ACTUAL = cat;
+  renderFiltros();
+  renderNovedades();
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+function renderNovedades() {
+  const cont = document.getElementById('listaNovedades');
+  const lista = FILTRO_ACTUAL ? NOVEDADES_TODAS.filter(n => n.categoria === FILTRO_ACTUAL) : NOVEDADES_TODAS;
+
+  if (lista.length === 0) {
+    cont.innerHTML = '<div class="empty-msg">No hay novedades cargadas todavía.</div>';
+    return;
+  }
+
+  cont.innerHTML = lista.map(n => {
+    const montoTxt = n.monto ? (' · $' + n.monto) : '';
+    return '<div class="novedad-card">' +
+      '<div class="novedad-header"><span class="novedad-titulo">' + escapeHtml(n.titulo) + '</span><span class="novedad-fecha">' + n.fecha + '</span></div>' +
+      (n.descripcion ? '<div class="novedad-desc">' + escapeHtml(n.descripcion) + '</div>' : '') +
+      '<span class="chip-categoria">' + n.categoria + montoTxt + '</span>' +
+      '<span class="chip-memoria chip-' + n.considerarMemoria + '" onclick="ciclarMemoria(\'' + n.idNovedad + '\', \'' + n.considerarMemoria + '\')">¿Memoria? ' + n.considerarMemoria + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+function ciclarMemoria(idNovedad, actual) {
+  const siguiente = actual === 'SI' ? 'NO' : actual === 'NO' ? 'EVALUAR' : 'SI';
+  jsonp(EXEC_URL_GI + '?action=actualizarNovedad&idNovedad=' + encodeURIComponent(idNovedad) + '&considerarMemoria=' + siguiente + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    if (res && res.ok) cargarNovedades();
+  });
+}
+</script>
+</body>
+</html>
