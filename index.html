@@ -18,7 +18,7 @@
   @keyframes fadeInScreen { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes shakeError { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 40%{transform:translateX(6px);} 60%{transform:translateX(-4px);} 80%{transform:translateX(4px);} }
 
-  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 520px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
+  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 560px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
   .logo-wrap img { width: 150px; display: block; margin: 0 auto; filter: drop-shadow(0 4px 7px rgba(0,0,0,0.2)); }
   h1 { margin: 2px 0 4px; color: var(--negro); font-family: Impact, sans-serif; font-size: 26px; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
   .subtitle { text-align: center; color: var(--petroleo); font-size: 14px; margin-bottom: 20px; }
@@ -31,39 +31,28 @@
   .pin-input.error { animation: shakeError .35s ease-in-out; border-color: var(--error); }
   .pin-error { text-align: center; color: var(--error); font-size: 13px; font-weight: 700; min-height: 18px; margin-bottom: 8px; }
 
-  .btn-solid, .btn-outline, .btn-ghost { transition: transform .08s, box-shadow .08s, opacity .15s; }
-  .btn-solid { display: block; width: 100%; padding: 14px; border-radius: 24px; border: 2px solid var(--petroleo); background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
-  .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 2px solid var(--petroleo); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
+  .ejercicio-box { background: var(--petroleo); border-radius: 16px; padding: 14px 16px; margin-bottom: 18px; text-align: center; }
+  .ejercicio-titulo { color: var(--lima); font-family: Impact, sans-serif; font-size: 15px; letter-spacing: .5px; text-transform: uppercase; }
+  .ejercicio-sub { color: var(--hueso); font-size: 12px; margin-top: 2px; }
+
+  .grid-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mod-card { background: var(--blanco); border-radius: 16px; padding: 16px 12px; text-align: center; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: transform .08s; }
+  .mod-card:active { transform: scale(.96); }
+  .mod-icon { font-size: 26px; }
+  .mod-nombre { color: var(--petroleo); font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; }
+  .mod-card.disabled { opacity: .45; pointer-events: none; }
+  .mod-card.disabled .mod-nombre::after { content: ' (próx.)'; font-weight: 400; text-transform: none; font-size: 10px; }
+
   .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; text-align: center; }
-  .btn-solid:active, .btn-outline:active { transform: scale(.96); box-shadow: 0 2px 6px rgba(0,0,0,.25); }
-
-  .organo-header { font-family: Impact, sans-serif; font-size: 18px; color: var(--petroleo); text-transform: uppercase; letter-spacing: .5px; margin: 18px 0 10px; }
-  .cargo-card { background: var(--blanco); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-  .cargo-info { flex: 1; }
-  .cargo-nombre { font-weight: 900; color: var(--petroleo); font-size: 15px; }
-  .cargo-tipo { font-size: 12px; color: var(--petroleo); opacity: .75; }
-  .vence-badge { font-size: 11px; font-weight: 900; text-transform: uppercase; padding: 5px 10px; border-radius: 20px; white-space: nowrap; }
-  .vence-ok { background: var(--verdecl); color: var(--petroleo); }
-  .vence-pronto { background: var(--naranja); color: var(--petroleo); }
-  .vence-este-anio { background: var(--error); color: var(--blanco); }
-  .vacante-card { background: rgba(192,57,43,0.12); border: 2px dashed var(--error); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; color: var(--error); font-weight: 700; font-size: 13px; text-align: center; }
-
-  .form-panel { background: var(--petroleo); border-radius: 16px; padding: 16px; margin-top: 14px; display: none; }
-  .form-panel.open { display: block; }
-  .field-label { color: var(--lima); font-size: 11px; font-weight: 900; text-transform: uppercase; margin: 10px 0 4px; display: block; }
-  .field-label:first-child { margin-top: 0; }
-  input[type=text], input[type=date], select { width: 100%; border: 2px solid var(--lima); border-radius: 12px; padding: 10px 12px; background: var(--hueso); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; }
-
-  .resumen-alerta { background: var(--naranja); border: 2px solid var(--petroleo); border-radius: 16px; padding: 12px 14px; margin-bottom: 16px; color: var(--petroleo); font-size: 13px; font-weight: 700; display: none; }
-  .loading-text { text-align: center; color: var(--hueso); font-size: 13px; font-weight: 700; min-height: 20px; }
-  .divider { border: none; border-top: 1.5px solid #9bb583; margin: 16px 0; }
+  .btn-solid { display: block; width: 100%; padding: 14px; border-radius: 24px; border: 2px solid var(--petroleo); background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
+  .divider { border: none; border-top: 1.5px solid #9bb583; margin: 18px 0 8px; }
 </style>
 </head>
 <body>
 <div class="card">
   <div class="logo-wrap"><img src="https://i.imgur.com/UgiYLGk.png" alt="Logo La Eugenia"></div>
   <h1>Gestión Institucional</h1>
-  <div class="subtitle"><strong style="color:var(--negro);">Autoridades</strong></div>
+  <div class="subtitle"><strong style="color:var(--negro);">Club de Campo La Eugenia</strong></div>
 
   <div id="pinScreen">
     <div class="pin-label">Ingresá el PIN</div>
@@ -73,68 +62,69 @@
   </div>
 
   <div id="mainScreen">
-    <div class="resumen-alerta" id="resumenAlerta"></div>
-
-    <button type="button" class="btn-outline" onclick="toggleForm()">➕ Agregar / cerrar mandato</button>
-
-    <div class="form-panel" id="formPanel">
-      <span class="field-label">Órgano</span>
-      <select id="fOrgano" onchange="actualizarCargos()">
-        <option value="COMISION_DIRECTIVA">Comisión Directiva</option>
-        <option value="REVISORA_CUENTAS">Comisión Revisora de Cuentas</option>
-        <option value="ARQUITECTURA">Comisión de Arquitectura</option>
-      </select>
-      <span class="field-label">Cargo</span>
-      <select id="fCargo"></select>
-      <span class="field-label">Nombre y apellido</span>
-      <input type="text" id="fNombre" placeholder="Ej: Javier Stefañuk">
-      <span class="field-label">DNI (opcional)</span>
-      <input type="text" id="fDni">
-      <span class="field-label">Fecha de inicio de mandato</span>
-      <input type="date" id="fFechaInicio">
-      <button type="button" class="btn-solid" style="margin-top:14px;" onclick="guardarAutoridad()">Guardar</button>
-      <button type="button" class="btn-ghost" onclick="toggleForm()">Cancelar</button>
+    <div class="ejercicio-box">
+      <div class="ejercicio-titulo">Ejercicio N.º 37</div>
+      <div class="ejercicio-sub">01/05/2025 – 30/04/2026 · Asamblea pendiente (24/10/2026)</div>
     </div>
 
-    <div id="listaOrganos"></div>
+    <div class="grid-cards">
+      <a class="mod-card" href="autoridades.html">
+        <span class="mod-icon">🧑‍⚖️</span>
+        <span class="mod-nombre">Autoridades</span>
+      </a>
+      <a class="mod-card" href="actas.html">
+        <span class="mod-icon">📝</span>
+        <span class="mod-nombre">Bitácora y Actas</span>
+      </a>
+      <a class="mod-card disabled" href="#">
+        <span class="mod-icon">💰</span>
+        <span class="mod-nombre">Balance</span>
+      </a>
+      <a class="mod-card disabled" href="#">
+        <span class="mod-icon">📜</span>
+        <span class="mod-nombre">Memoria</span>
+      </a>
+      <a class="mod-card disabled" href="#">
+        <span class="mod-icon">🏛️</span>
+        <span class="mod-nombre">Asamblea</span>
+      </a>
+      <a class="mod-card disabled" href="#">
+        <span class="mod-icon">📋</span>
+        <span class="mod-nombre">Padrón</span>
+      </a>
+      <a class="mod-card disabled" href="#">
+        <span class="mod-icon">📰</span>
+        <span class="mod-nombre">Novedades</span>
+      </a>
+      <a class="mod-card disabled" href="#">
+        <span class="mod-icon">📁</span>
+        <span class="mod-nombre">Documentos</span>
+      </a>
+    </div>
 
-    <div class="loading-text" id="loadingText"></div>
     <hr class="divider">
     <button type="button" class="btn-ghost" onclick="cerrarSesion()">Cerrar sesión</button>
   </div>
 </div>
 
 <script>
-// ⚠️ Completar con la URL /exec del backend de Gestión Institucional una vez desplegado
-const EXEC_URL_GI = 'https://script.google.com/macros/s/AKfycbyBxlDAteVncpf2hyQ-Nna6YZjMiZodntG9gZZ9aPXPei1As_yhqMUCnjnM9mHmJYYZJg/exec';
 const EXEC_URL_PINES_CGV_CHECK = 'https://script.google.com/macros/s/AKfycbyt4PoL_IWHaXRlMNDy2cPtWmvj7f0-DLpSe5IHir54yPDNg8osPtX_0ezoopC4aGR_7A/exec';
-
-const CARGOS_POR_ORGANO = {
-  COMISION_DIRECTIVA: ['Presidente','Vicepresidente','Secretario','Prosecretario','Tesorero','Protesorero','Vocal Titular 1°','Vocal Titular 2°','Vocal Titular 3°','Vocal Suplente 1°','Vocal Suplente 2°','Vocal Suplente 3°'],
-  REVISORA_CUENTAS: ['Revisor Titular','Revisor Suplente'],
-  ARQUITECTURA: ['Miembro Arquitectura 1','Miembro Arquitectura 2','Miembro Arquitectura 3','Miembro Arquitectura 4','Miembro Arquitectura 5']
-};
-const NOMBRES_ORGANO = { COMISION_DIRECTIVA: 'Comisión Directiva', REVISORA_CUENTAS: 'Comisión Revisora de Cuentas', ARQUITECTURA: 'Comisión de Arquitectura' };
 
 let PIN_SESION = '';
 
 document.addEventListener('DOMContentLoaded', function() {
-  actualizarCargos();
   const savedPin = localStorage.getItem('cgv_pin');
   if (!savedPin) return;
   PIN_SESION = savedPin;
   jsonp(EXEC_URL_PINES_CGV_CHECK + '?action=validarPin&pin=' + encodeURIComponent(savedPin) + '&modulo=gestion-institucional', function(res) {
     if (res && res.ok && res.valido) {
-      document.getElementById('pinScreen').style.display = 'none';
-      document.getElementById('mainScreen').style.display = 'block';
-      document.getElementById('mainScreen').classList.add('active');
-      cargarAutoridades();
+      entrarApp();
     }
   });
 });
 
 function jsonp(url, cb) {
-  const cbName = 'cb_' + Date.now() + Math.floor(Math.random()*1000);
+  const cbName = 'cb_' + Date.now() + Math.floor(Math.random()*100000);
   window[cbName] = function(res) { delete window[cbName]; document.body.removeChild(script); cb(res); };
   const script = document.createElement('script');
   script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
@@ -147,10 +137,7 @@ function verificarPin() {
     if (res && res.ok && res.valido) {
       PIN_SESION = pin;
       localStorage.setItem('cgv_pin', pin);
-      document.getElementById('pinScreen').style.display = 'none';
-      document.getElementById('mainScreen').style.display = 'block';
-      document.getElementById('mainScreen').classList.add('active');
-      cargarAutoridades();
+      entrarApp();
     } else {
       const input = document.getElementById('pinInput');
       input.classList.add('error');
@@ -160,92 +147,15 @@ function verificarPin() {
   });
 }
 
+function entrarApp() {
+  document.getElementById('pinScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'block';
+  document.getElementById('mainScreen').classList.add('active');
+}
+
 function cerrarSesion() {
   localStorage.removeItem('cgv_pin');
   location.reload();
-}
-
-function actualizarCargos() {
-  const organo = document.getElementById('fOrgano').value;
-  const sel = document.getElementById('fCargo');
-  sel.innerHTML = CARGOS_POR_ORGANO[organo].map(c => `<option value="${c}">${c}</option>`).join('');
-}
-
-function toggleForm() {
-  document.getElementById('formPanel').classList.toggle('open');
-}
-
-function cargarAutoridades() {
-  document.getElementById('loadingText').textContent = 'Cargando autoridades...';
-  jsonp(EXEC_URL_GI + '?action=listarAutoridades', function(res) {
-    document.getElementById('loadingText').textContent = '';
-    if (!res || !res.ok) return;
-    renderAutoridades(res.autoridades, res.vencenEsteAnio || []);
-  });
-}
-
-function renderAutoridades(autoridades, vencenEsteAnio) {
-  const cont = document.getElementById('listaOrganos');
-  cont.innerHTML = '';
-
-  const alerta = document.getElementById('resumenAlerta');
-  if (vencenEsteAnio.length > 0) {
-    alerta.style.display = 'block';
-    alerta.textContent = '⚠️ Renuevan este año: ' + vencenEsteAnio.join(', ');
-  } else {
-    alerta.style.display = 'none';
-  }
-
-  ['COMISION_DIRECTIVA','REVISORA_CUENTAS','ARQUITECTURA'].forEach(organo => {
-    const header = document.createElement('div');
-    header.className = 'organo-header';
-    header.textContent = NOMBRES_ORGANO[organo];
-    cont.appendChild(header);
-
-    const cargosDelOrgano = CARGOS_POR_ORGANO[organo];
-    cargosDelOrgano.forEach(cargo => {
-      const aut = autoridades.find(a => a.organo === organo && a.cargo === cargo && a.estado === 'VIGENTE');
-      if (aut) {
-        const div = document.createElement('div');
-        div.className = 'cargo-card';
-        const clase = aut.vence === 'este_anio' ? 'vence-este-anio' : (aut.vence === 'proximo_anio' ? 'vence-pronto' : 'vence-ok');
-        const texto = aut.vence === 'este_anio' ? 'Renueva este año' : ('Vence ' + aut.fechaFinMandato);
-        div.innerHTML = `<div class="cargo-info"><div class="cargo-nombre">${aut.nombre}</div><div class="cargo-tipo">${cargo}</div></div><span class="vence-badge ${clase}">${texto}</span>`;
-        cont.appendChild(div);
-      } else {
-        const div = document.createElement('div');
-        div.className = 'vacante-card';
-        div.textContent = `${cargo} — VACANTE`;
-        cont.appendChild(div);
-      }
-    });
-  });
-}
-
-function guardarAutoridad() {
-  const data = {
-    organo: document.getElementById('fOrgano').value,
-    cargo: document.getElementById('fCargo').value,
-    nombre: document.getElementById('fNombre').value,
-    dni: document.getElementById('fDni').value,
-    fechaInicio: document.getElementById('fFechaInicio').value,
-    pin: PIN_SESION
-  };
-  if (!data.nombre || !data.fechaInicio) { alert('Completá nombre y fecha de inicio'); return; }
-  document.getElementById('loadingText').textContent = 'Guardando...';
-  const params = Object.keys(data).map(k => k + '=' + encodeURIComponent(data[k])).join('&');
-  jsonp(EXEC_URL_GI + '?action=guardarAutoridad&' + params, function(res) {
-    document.getElementById('loadingText').textContent = '';
-    if (res && res.ok) {
-      toggleForm();
-      document.getElementById('fNombre').value = '';
-      document.getElementById('fDni').value = '';
-      document.getElementById('fFechaInicio').value = '';
-      cargarAutoridades();
-    } else {
-      alert('Error al guardar: ' + (res && res.error ? res.error : 'desconocido'));
-    }
-  });
 }
 </script>
 </body>
