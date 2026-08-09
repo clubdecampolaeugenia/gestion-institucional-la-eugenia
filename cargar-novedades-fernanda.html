@@ -13,12 +13,12 @@
 </style>
 </head>
 <body>
-<h1>Cargando 5 novedades (Subcomisión de Seguridad + reporte de Fernanda)...</h1>
+<h1>Cargando 6 novedades (juegos infantiles corregido + Subcomisión + reporte Fernanda)...</h1>
 <div id="log"></div>
 
 <script>
 const EXEC_URL_GI = 'https://script.google.com/macros/s/AKfycbyBxlDAteVncpf2hyQ-Nna6YZjMiZodntG9gZZ9aPXPei1As_yhqMUCnjnM9mHmJYYZJg/exec';
-const NOVEDADES = [{"fecha": "27/03/2026", "titulo": "Creación de la Subcomisión de Seguridad", "descripcion": "Se conformó la Subcomisión de Seguridad, un espacio de participación de socios para colaborar con la Comisión Directiva en el análisis de cuestiones de seguridad del barrio, sin sustituir sus atribuciones ni las del personal de seguridad. Entre sus primeras acciones se destacó la creación del Grupo de Alertas Vecinales, un canal específico para comunicar de forma inmediata situaciones relevantes de seguridad, diferenciándolas de la conversación general entre vecinos.", "categoria": "Seguridad", "montoSiCorresponde": ""}, {"fecha": "15/10/2025", "titulo": "[FECHA APROX.] Reparación de quinchos de paja", "descripcion": "Se realizaron tareas de reparación de los quinchos de paja del predio.", "categoria": "Mantenimiento", "montoSiCorresponde": ""}, {"fecha": "15/11/2025", "titulo": "[FECHA APROX.] Pintura general del sector club house y pileta", "descripcion": "Se realizaron trabajos de pintura general en el sector del club house y la pileta.", "categoria": "Mantenimiento", "montoSiCorresponde": ""}, {"fecha": "15/03/2026", "titulo": "[FECHA APROX.] Reparación de ventanas y puertas del salón", "descripcion": "Se realizaron trabajos de reparación de ventanas y puertas del salón de usos múltiples.", "categoria": "Mantenimiento", "montoSiCorresponde": ""}, {"fecha": "15/04/2026", "titulo": "[FECHA APROX.] Cambio de puerta del depósito de herramientas", "descripcion": "Se realizó el cambio de la puerta del depósito de herramientas.", "categoria": "Mantenimiento", "montoSiCorresponde": ""}];
+const NOVEDADES = [{"fecha": "15/02/2026", "titulo": "[FECHA APROX.] Reparación de juegos infantiles", "descripcion": "Se repararon y pintaron los juegos infantiles del predio, mejorando las condiciones de seguridad y recreación para los niños.", "categoria": "Infraestructura", "montoSiCorresponde": ""}, {"fecha": "27/03/2026", "titulo": "Creación de la Subcomisión de Seguridad", "descripcion": "Se conformó la Subcomisión de Seguridad, un espacio de participación de socios para colaborar con la Comisión Directiva en el análisis de cuestiones de seguridad del barrio, sin sustituir sus atribuciones ni las del personal de seguridad. Entre sus primeras acciones se destacó la creación del Grupo de Alertas Vecinales, un canal específico para comunicar de forma inmediata situaciones relevantes de seguridad, diferenciándolas de la conversación general entre vecinos.", "categoria": "Seguridad", "montoSiCorresponde": ""}, {"fecha": "15/10/2025", "titulo": "[FECHA APROX.] Reparación de quinchos de paja", "descripcion": "Se realizaron tareas de reparación de los quinchos de paja del predio.", "categoria": "Mantenimiento", "montoSiCorresponde": ""}, {"fecha": "15/11/2025", "titulo": "[FECHA APROX.] Pintura general del sector club house y pileta", "descripcion": "Se realizaron trabajos de pintura general en el sector del club house y la pileta.", "categoria": "Mantenimiento", "montoSiCorresponde": ""}, {"fecha": "15/03/2026", "titulo": "[FECHA APROX.] Reparación de ventanas y puertas del salón", "descripcion": "Se realizaron trabajos de reparación de ventanas y puertas del salón de usos múltiples.", "categoria": "Mantenimiento", "montoSiCorresponde": ""}, {"fecha": "15/04/2026", "titulo": "[FECHA APROX.] Cambio de puerta del depósito de herramientas", "descripcion": "Se realizó el cambio de la puerta del depósito de herramientas.", "categoria": "Mantenimiento", "montoSiCorresponde": ""}];
 
 function jsonp(url, cb) {
   const cbName = 'cb_' + Date.now() + Math.floor(Math.random()*100000);
@@ -30,7 +30,22 @@ function jsonp(url, cb) {
 
 const log = document.getElementById('log');
 
+async function eliminarViejo() {
+  const div = document.createElement('div');
+  div.className = 'item';
+  div.textContent = 'Borrando entrada vieja de juegos infantiles (fecha equivocada)...';
+  log.appendChild(div);
+  await new Promise(resolve => {
+    jsonp(EXEC_URL_GI + '?action=eliminarNovedad&idNovedad=NOV-20260809193532-0&pin=1923', function(res) {
+      div.className = res && res.ok ? 'item ok' : 'item error';
+      div.textContent = (res && res.ok ? '\u2705 Borrada' : '\u26a0\ufe0f No encontrada (puede que ya no exista)');
+      resolve();
+    });
+  });
+}
+
 async function cargarTodo() {
+  await eliminarViejo();
   for (const n of NOVEDADES) {
     const div = document.createElement('div');
     div.className = 'item';
