@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carga masiva — Autoridades</title>
+<style>
+  body { font-family: sans-serif; background: #135457; color: #f5f3ec; padding: 24px; }
+  .item { padding: 10px 14px; margin-bottom: 8px; border-radius: 10px; background: rgba(255,255,255,0.08); }
+  .ok { background: #2d6a4f; }
+  .error { background: #c0392b; }
+  h1 { font-size: 18px; }
+</style>
+</head>
+<body>
+<h1>Cargando 11 autoridades de Comisión Directiva...</h1>
+<div id="log"></div>
+
+<script>
+const EXEC_URL_GI = 'https://script.google.com/macros/s/AKfycbyBxlDAteVncpf2hyQ-Nna6YZjMiZodntG9gZZ9aPXPei1As_yhqMUCnjnM9mHmJYYZJg/exec';
+
+const personas = [
+  ['Presidente', 'Javier Stefañuk', '2025-10-25'],
+  ['Vicepresidente', 'Augusto Coutada', '2024-10-01'],
+  ['Secretario', 'German Becerro', '2025-10-25'],
+  ['Prosecretario', 'Juan Monferran', '2024-10-01'],
+  ['Tesorero', 'Alejandro Malvicino', '2025-10-25'],
+  ['Protesorero', 'Emiliano Garcia', '2024-10-01'],
+  ['Vocal Titular 1°', 'Jorge Luis Rodriguez', '2025-10-25'],
+  ['Vocal Titular 2°', 'Mauricio Classen', '2025-10-25'],
+  ['Vocal Titular 3°', 'Roxana La Barba', '2025-10-25'],
+  ['Vocal Suplente 1°', 'Mariana Sclepeck', '2024-10-01'],
+  ['Vocal Suplente 3°', 'Santiago De Muro', '2024-10-01'],
+];
+
+function jsonp(url, cb) {
+  const cbName = 'cb_' + Date.now() + Math.floor(Math.random()*100000);
+  window[cbName] = function(res) { delete window[cbName]; document.body.removeChild(script); cb(res); };
+  const script = document.createElement('script');
+  script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+  document.body.appendChild(script);
+}
+
+const log = document.getElementById('log');
+
+async function cargarTodo() {
+  for (const [cargo, nombre, fecha] of personas) {
+    const div = document.createElement('div');
+    div.className = 'item';
+    div.textContent = cargo + ' — ' + nombre + ' — cargando...';
+    log.appendChild(div);
+
+    const params = new URLSearchParams({
+      action: 'guardarAutoridad',
+      organo: 'COMISION_DIRECTIVA',
+      cargo, nombre, dni: '', fechaInicio: fecha, pin: '1923'
+    });
+
+    await new Promise(resolve => {
+      jsonp(EXEC_URL_GI + '?' + params.toString(), function(res) {
+        if (res && res.ok) {
+          div.className = 'item ok';
+          div.textContent = '✅ ' + cargo + ' — ' + nombre;
+        } else {
+          div.className = 'item error';
+          div.textContent = '❌ ' + cargo + ' — ' + nombre + ' — ' + (res && res.error ? res.error : 'error desconocido');
+        }
+        resolve();
+      });
+    });
+  }
+  const done = document.createElement('h1');
+  done.textContent = '✅ Listo. Podés cerrar esta página y volver a la app.';
+  log.appendChild(done);
+}
+
+cargarTodo();
+</script>
+</body>
+</html>
