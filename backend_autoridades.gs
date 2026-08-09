@@ -74,7 +74,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -114,7 +114,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v18-ejercicio-forzado-por-codigo-09ago-2230' };
+      resultado = { ok: true, version: 'v19-config-memoria-editable-09ago-2300' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'listarEjercicios') {
@@ -131,6 +131,10 @@ function doGet(e) {
       resultado = actualizarNovedad(e.parameter);
     } else if (action === 'generarBorradorMemoria') {
       resultado = generarBorradorMemoria(e.parameter);
+    } else if (action === 'obtenerConfigMemoria') {
+      resultado = obtenerConfigMemoria();
+    } else if (action === 'guardarConfigMemoria') {
+      resultado = guardarConfigMemoria(e.parameter);
     } else if (action === 'listarDocumentos') {
       resultado = listarDocumentos(e.parameter);
     } else if (action === 'actualizarDocumento') {
@@ -1034,6 +1038,26 @@ Te paso las Novedades del ejercicio (ya filtradas a las que corresponde incluir)
 
 Respondé ÚNICAMENTE con el texto completo de la Memoria, sin explicaciones adicionales, sin markdown.`;
 
+// ============ CONFIG MEMORIA (editable por el usuario, sin tocar código) ============
+const HOJA_CONFIG_MEMORIA = 'MEMORIA_CONFIG';
+
+function getHojaConfigMemoria() {
+  return SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_CONFIG_MEMORIA);
+}
+
+function obtenerConfigMemoria() {
+  const hoja = getHojaConfigMemoria();
+  const valor = hoja.getRange('B1').getValue();
+  return { ok: true, instrucciones: valor || '' };
+}
+
+function guardarConfigMemoria(params) {
+  const hoja = getHojaConfigMemoria();
+  hoja.getRange('A1').setValue('INSTRUCCIONES_ADICIONALES');
+  hoja.getRange('B1').setValue(params.instrucciones || '');
+  return { ok: true };
+}
+
 function generarBorradorMemoria(params) {
   const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
   if (!apiKey) return { ok: false, error: 'Falta configurar ANTHROPIC_API_KEY en Script Properties' };
@@ -1063,13 +1087,18 @@ function generarBorradorMemoria(params) {
   const inputTexto = 'EJERCICIO: N.° ' + ej.numero + ', del ' + ej.fechaInicio + ' al ' + ej.fechaCierre + '\n\n' +
     'DATOS DEL BALANCE: ' + datosBalanceTexto + '\n\n' +
     'SOCIOS: Activos ' + (params.sociosActivos || '[no informado]') + ', al día ' + (params.sociosAlDia || '[no informado]') + ', con atraso ' + (params.sociosAtraso || '[no informado]') + ', morosos ' + (params.sociosMorosos || '[no informado]') + '\n\n' +
-    'NOVEDADES DEL EJERCICIO:\n' + novedadesRelevantes.map(n => '- [' + n.categoria + '] ' + n.titulo + ': ' + n.descripcion + (n.monto ? ' (monto: $' + n.monto + ')' : '')).join('\n');
+    'NOVEDADES DEL EJERCICIO:\n' + novedadesRelevantes.map(n => '- [' + n.fecha + '] [' + n.categoria + '] ' + n.titulo + ': ' + n.descripcion + (n.monto ? ' (monto: $' + n.monto + ')' : '')).join('\n');
+
+  const configMemoria = obtenerConfigMemoria();
+  const promptCompleto = configMemoria.ok && configMemoria.instrucciones
+    ? PROMPT_MEMORIA + '\n\nINSTRUCCIONES ADICIONALES DEL ADMINISTRADOR (seguí estas al pie de la letra, tienen prioridad sobre el resto):\n' + configMemoria.instrucciones
+    : PROMPT_MEMORIA;
 
   const payload = {
     model: 'claude-sonnet-5',
     max_tokens: 8000,
     thinking: { type: 'disabled' },
-    system: PROMPT_MEMORIA,
+    system: promptCompleto,
     messages: [{ role: 'user', content: inputTexto }]
   };
 
