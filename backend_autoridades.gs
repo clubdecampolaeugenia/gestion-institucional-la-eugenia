@@ -1083,7 +1083,7 @@ function generarBorradorMemoria(params) {
   const nuevoId = 'DOC-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
   hoja.appendRow([nuevoId, ej.idEjercicio, 'MEMORIA', version, 'BORRADOR', bloqueTexto.text, 'IA', new Date()]);
 
-  return { ok: true, idDocumento: nuevoId, contenido: bloqueTexto.text, novedadesUsadas: novedadesRelevantes.length };
+  return { ok: true, idDocumento: nuevoId, contenido: bloqueTexto.text, novedadesUsadas: novedadesRelevantes.length, version: version };
 }
 
 function listarDocumentos(params) {

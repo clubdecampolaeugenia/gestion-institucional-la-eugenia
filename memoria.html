@@ -188,7 +188,7 @@ function generarMemoria() {
       alert('Error: ' + (res && res.error ? res.error : 'desconocido'));
       return;
     }
-    mostrarMemoria(res.idDocumento, res.contenido, 'BORRADOR', 1);
+    mostrarMemoria(res.idDocumento, res.contenido, 'BORRADOR', res.version);
     cargarVersiones();
   });
 }
