@@ -74,7 +74,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'actualizarDocumento'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -114,7 +114,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v12-memoria-09ago-1500' };
+      resultado = { ok: true, version: 'v13-importar-chat-09ago-1530' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'listarEjercicios') {
@@ -135,6 +135,10 @@ function doGet(e) {
       resultado = listarDocumentos(e.parameter);
     } else if (action === 'actualizarDocumento') {
       resultado = actualizarDocumento(e.parameter);
+    } else if (action === 'extraerNovedadesDeChat') {
+      resultado = extraerNovedadesDeChat(e.parameter);
+    } else if (action === 'guardarNovedadesSeleccionadas') {
+      resultado = guardarNovedadesSeleccionadas(e.parameter);
     } else {
       resultado = { ok: false, error: 'Acción no reconocida' };
     }
@@ -867,6 +871,83 @@ function actualizarNovedad(params) {
     }
   }
   return { ok: false, error: 'Novedad no encontrada' };
+}
+
+const PROMPT_EXTRAER_NOVEDADES = `Sos un asistente que ayuda a una asociación civil (Club de Campo "La Eugenia") a separar información institucional real de charla social/ruido dentro de exportaciones de chat de WhatsApp (grupo de Comisión Directiva o grupo de difusión a socios).
+
+Vas a recibir texto crudo de un chat exportado (con fechas, remitentes, mensajes, emojis, stickers, "<Multimedia omitido>", etc.).
+
+Tu tarea: identificar HECHOS o DECISIONES institucionales concretos que valga la pena registrar como "Novedad" del Club -- obras, gestiones ante organismos (Municipalidad, EMSA, SAMSA, Personas Jurídicas), eventos, gastos relevantes, incidentes de seguridad, decisiones de la Comisión Directiva, cambios de servicios (cantina, pileta, etc.). IGNORÁ: saludos, charla social, memes, stickers, mensajes ambiguos sin sustancia institucional, y cualquier chisme o comentario personal sobre empleados o socios.
+
+Para cada hecho identificado, respondé un objeto con:
+{
+  "fecha": "DD/MM/AAAA (la fecha real del mensaje en el chat, no la de hoy)",
+  "titulo": "resumen corto, 5-8 palabras",
+  "descripcion": "1-3 oraciones, en tono institucional, redactado por vos en base a lo que dice el chat -- no copies el mensaje textual, resumilo",
+  "categoria": "una de: Administración, Seguridad, Mantenimiento, Infraestructura, Alumbrado, Pileta, Deportes, Actividades sociales, Cantina, Personal, Municipalidad, EMSA, SAMSA, Personas Jurídicas, Tesorería, Incidentes, Otros",
+  "montoSiCorresponde": "número sin signos, o vacío si no aplica"
+}
+
+Respondé ÚNICAMENTE con un array JSON de estos objetos, sin texto adicional, sin markdown. Si no hay nada relevante, respondé un array vacío [].`;
+
+function extraerNovedadesDeChat(params) {
+  const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+  if (!apiKey) return { ok: false, error: 'Falta configurar ANTHROPIC_API_KEY en Script Properties' };
+
+  const payload = {
+    model: 'claude-sonnet-5',
+    max_tokens: 8000,
+    thinking: { type: 'disabled' },
+    system: PROMPT_EXTRAER_NOVEDADES,
+    messages: [{ role: 'user', content: params.textoChat }]
+  };
+
+  const response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+
+  if (response.getResponseCode() !== 200) {
+    return { ok: false, error: 'Error de la API (' + response.getResponseCode() + '): ' + response.getContentText() };
+  }
+
+  const data = JSON.parse(response.getContentText());
+  const bloqueTexto = (data.content || []).find(b => b.type === 'text');
+  if (!bloqueTexto) return { ok: false, error: 'La IA no devolvió texto' };
+
+  let texto = bloqueTexto.text.replace(/\`\`\`json|\`\`\`/g, '').trim();
+  let candidatos;
+  try {
+    candidatos = JSON.parse(texto);
+  } catch (e) {
+    return { ok: false, error: 'La IA no devolvió JSON válido: ' + texto.substring(0, 300) };
+  }
+
+  return { ok: true, candidatos: candidatos };
+}
+
+function guardarNovedadesSeleccionadas(params) {
+  const seleccionadas = JSON.parse(params.novedades);
+  const hoja = getHojaNovedades();
+  const ejercicioActivo = obtenerEjercicioActivo();
+  const idEjercicioActual = ejercicioActivo.ok ? ejercicioActivo.ejercicio.idEjercicio : '';
+
+  let guardadas = 0;
+  seleccionadas.forEach(n => {
+    const nuevoId = 'NOV-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss') + '-' + guardadas;
+    const considerarMemoria = CONSIDERAR_MEMORIA_DEFAULT[n.categoria] || 'EVALUAR';
+    hoja.appendRow([
+      nuevoId, idEjercicioActual, new Date(n.fecha.split('/').reverse().join('-')),
+      n.titulo, n.descripcion, n.categoria, n.montoSiCorresponde || '',
+      'CHAT_IMPORTADO', '', considerarMemoria, ''
+    ]);
+    guardadas++;
+  });
+
+  return { ok: true, guardadas: guardadas };
 }
 
 // ============ DOCUMENTOS (tabla única: Memoria, y a futuro Convocatoria/Edictos/Informe Revisor, etc.) ============

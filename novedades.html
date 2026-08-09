@@ -88,6 +88,16 @@
     </div>
 
     <button type="button" class="btn-outline" onclick="toggleForm()">➕ Cargar novedad</button>
+    <button type="button" class="btn-outline" onclick="toggleImportChat()">💬 Importar desde chat de WhatsApp</button>
+
+    <div class="form-panel" id="importChatPanel" style="display:none;">
+      <span class="field-label" style="margin-bottom:4px; opacity:.8; font-weight:400; text-transform:none; font-size:11px;">Pegá un fragmento del chat exportado (una semana o un mes, no el año completo — hay un límite de tamaño). La IA separa lo institucional del resto y te muestra sugerencias, vos elegís cuáles guardar.</span>
+      <textarea id="fTextoChat" style="min-height:140px; margin-top:8px;" placeholder="Pegá acá el texto exportado del chat..."></textarea>
+      <button type="button" class="btn-solid" style="margin-top:12px;" id="btnAnalizarChat" onclick="analizarChat()">Analizar chat</button>
+      <button type="button" class="btn-ghost" onclick="toggleImportChat()">Cancelar</button>
+    </div>
+
+    <div id="candidatosChatContainer"></div>
 
     <div class="form-panel" id="formPanel">
       <span class="field-label">Fecha</span>
@@ -288,6 +298,74 @@ function ciclarMemoria(idNovedad, actual) {
   const siguiente = actual === 'SI' ? 'NO' : actual === 'NO' ? 'EVALUAR' : 'SI';
   jsonp(EXEC_URL_GI + '?action=actualizarNovedad&idNovedad=' + encodeURIComponent(idNovedad) + '&considerarMemoria=' + siguiente + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
     if (res && res.ok) cargarNovedades();
+  });
+}
+
+function toggleImportChat() {
+  document.getElementById('importChatPanel').style.display = document.getElementById('importChatPanel').style.display === 'none' ? 'block' : 'none';
+}
+
+let CANDIDATOS_CHAT = [];
+
+function analizarChat() {
+  const texto = document.getElementById('fTextoChat').value.trim();
+  if (!texto) { alert('Pegá primero el texto del chat'); return; }
+  if (texto.length > 6000) {
+    if (!confirm('El texto es largo (' + texto.length + ' caracteres) y puede fallar por el límite de la URL. ¿Intentar igual?')) return;
+  }
+
+  const btn = document.getElementById('btnAnalizarChat');
+  btn.disabled = true;
+  document.getElementById('loadingText').innerHTML = '<span class="spinner"></span> Separando lo institucional del resto...';
+
+  jsonp(EXEC_URL_GI + '?action=extraerNovedadesDeChat&textoChat=' + encodeURIComponent(texto) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    btn.disabled = false;
+    document.getElementById('loadingText').textContent = '';
+    if (!res || !res.ok) { alert('Error: ' + (res && res.error ? res.error : 'desconocido')); return; }
+    CANDIDATOS_CHAT = res.candidatos.map(c => Object.assign({ seleccionado: true }, c));
+    renderCandidatosChat();
+  });
+}
+
+function renderCandidatosChat() {
+  const cont = document.getElementById('candidatosChatContainer');
+  if (CANDIDATOS_CHAT.length === 0) {
+    cont.innerHTML = '<div class="empty-msg">No se encontró nada institucional relevante en ese fragmento.</div>';
+    return;
+  }
+  let html = '<div class="field-label">Sugerencias encontradas (' + CANDIDATOS_CHAT.length + ') — desmarcá las que no quieras guardar</div>';
+  CANDIDATOS_CHAT.forEach((c, i) => {
+    html += '<div class="novedad-card" style="display:flex; gap:10px; align-items:flex-start;">';
+    html += '<input type="checkbox" ' + (c.seleccionado ? 'checked' : '') + ' onchange="toggleCandidato(' + i + ')" style="margin-top:4px;">';
+    html += '<div><div class="novedad-header"><span class="novedad-titulo">' + escapeHtml(c.titulo) + '</span><span class="novedad-fecha">' + c.fecha + '</span></div>';
+    html += '<div class="novedad-desc">' + escapeHtml(c.descripcion) + '</div>';
+    html += '<span class="chip-categoria">' + c.categoria + '</span></div></div>';
+  });
+  html += '<button type="button" class="btn-solid" onclick="guardarCandidatosSeleccionados()">Guardar seleccionadas</button>';
+  cont.innerHTML = html;
+}
+
+function toggleCandidato(i) {
+  CANDIDATOS_CHAT[i].seleccionado = !CANDIDATOS_CHAT[i].seleccionado;
+}
+
+function guardarCandidatosSeleccionados() {
+  const seleccionadas = CANDIDATOS_CHAT.filter(c => c.seleccionado);
+  if (seleccionadas.length === 0) { alert('No hay ninguna seleccionada'); return; }
+
+  document.getElementById('loadingText').textContent = 'Guardando...';
+  jsonp(EXEC_URL_GI + '?action=guardarNovedadesSeleccionadas&novedades=' + encodeURIComponent(JSON.stringify(seleccionadas)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    document.getElementById('loadingText').textContent = '';
+    if (res && res.ok) {
+      alert(res.guardadas + ' novedades guardadas.');
+      CANDIDATOS_CHAT = [];
+      document.getElementById('candidatosChatContainer').innerHTML = '';
+      document.getElementById('fTextoChat').value = '';
+      toggleImportChat();
+      cargarNovedades();
+    } else {
+      alert('Error: ' + (res && res.error ? res.error : 'desconocido'));
+    }
   });
 }
 </script>
