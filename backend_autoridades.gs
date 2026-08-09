@@ -74,7 +74,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'actualizarDocumento'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -114,7 +114,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v11-novedades-09ago-1400' };
+      resultado = { ok: true, version: 'v12-memoria-09ago-1500' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'listarEjercicios') {
@@ -129,6 +129,12 @@ function doGet(e) {
       resultado = listarNovedades(e.parameter);
     } else if (action === 'actualizarNovedad') {
       resultado = actualizarNovedad(e.parameter);
+    } else if (action === 'generarBorradorMemoria') {
+      resultado = generarBorradorMemoria(e.parameter);
+    } else if (action === 'listarDocumentos') {
+      resultado = listarDocumentos(e.parameter);
+    } else if (action === 'actualizarDocumento') {
+      resultado = actualizarDocumento(e.parameter);
     } else {
       resultado = { ok: false, error: 'Acción no reconocida' };
     }
@@ -861,4 +867,124 @@ function actualizarNovedad(params) {
     }
   }
   return { ok: false, error: 'Novedad no encontrada' };
+}
+
+// ============ DOCUMENTOS (tabla única: Memoria, y a futuro Convocatoria/Edictos/Informe Revisor, etc.) ============
+const HOJA_DOCUMENTOS = 'DOCUMENTOS';
+
+function getHojaDocumentos() {
+  return SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_DOCUMENTOS);
+}
+
+const PROMPT_MEMORIA = `Sos el redactor institucional del Club de Campo "La Eugenia", una asociación civil sin fines de lucro. Vas a escribir el borrador de la MEMORIA anual, el documento que el Presidente lee y la Comisión Directiva presenta a la Asamblea General Ordinaria, en cumplimiento del Estatuto Social.
+
+ESTILO OBLIGATORIO (aprendido de memorias reales anteriores del Club, no te apartes de esto):
+- Arranca siempre EXACTAMENTE así: "Señores Socios:\\n\\nEn cumplimiento de las disposiciones legales y estatutarias, ponemos a vuestra consideración la presente memoria, junto con los estados contables, el informe del auditor y el informe del revisor de cuentas correspondientes al ejercicio finalizado el [FECHA DE CIERRE]."
+- El cuerpo es PROSA CORRIDA, en párrafos, SIN subtítulos ni encabezados de sección. Nunca uses títulos tipo "Seguridad:" o "Mantenimiento:" — los temas se mezclan en párrafos fluidos, ordenados por relevancia.
+- Tono: primera persona plural ("hemos", "continuamos", "nos comprometemos"), formal pero cálido, nunca frío ni corporativo.
+- Los temas se agrupan naturalmente en el texto (infraestructura, seguridad, EMSA/alumbrado, mantenimiento de espacios verdes, temporada de pileta, cantina, actividades sociales/deportivas, gestiones ante organismos como Municipalidad/EMSA/SAMSA/Personas Jurídicas), pero SIN anunciarlos como secciones.
+- Los temas de "Personal" (altas, bajas, retribuciones, conflictos laborales) NUNCA se mencionan en la Memoria, aunque estén en las Novedades — no son parte de este documento.
+- Cierra siempre con el desglose de socios que te paso como dato, con esta fórmula: "A la fecha de la presente memoria el número de socios Activos asciende a [N], de los cuales [N] abonan al día, mientras que [N] abona con un atraso de entre uno y cinco meses. Los socios No Activos, Morosos, son [N]."
+- Después, SIEMPRE el agradecimiento: "La Comisión Directiva agradece profundamente a todos quienes colaboran con la gestión institucional y con el crecimiento sostenido del club, en especial al personal, cuyo compromiso y dedicación resultan fundamentales para el logro de los objetivos."
+- Cierra con: "Garupá, [FECHA].\\n\\nCOMISIÓN DIRECTIVA"
+
+Te paso las Novedades del ejercicio (ya filtradas a las que corresponde incluir) y los datos del Balance. Redactá el cuerpo integrando la información de forma natural y fluida, sin inventar nada que no esté en los datos que te doy. Si falta información importante para algún párrafo, simplemente no lo incluyas -- no inventes cifras ni hechos.
+
+Respondé ÚNICAMENTE con el texto completo de la Memoria, sin explicaciones adicionales, sin markdown.`;
+
+function generarBorradorMemoria(params) {
+  const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+  if (!apiKey) return { ok: false, error: 'Falta configurar ANTHROPIC_API_KEY en Script Properties' };
+
+  const ejercicioActivo = obtenerEjercicioActivo();
+  if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
+  const ej = ejercicioActivo.ejercicio;
+
+  // Junta las novedades SI/EVALUAR del ejercicio activo
+  const novedadesRes = listarNovedades({ idEjercicio: ej.idEjercicio });
+  const novedadesRelevantes = (novedadesRes.novedades || []).filter(n => n.considerarMemoria === 'SI' || n.considerarMemoria === 'EVALUAR');
+
+  // Trae el último balance del ejercicio activo, si existe
+  const balancesRes = listarBalances();
+  const balanceDelEjercicio = (balancesRes.balances || []).find(b => b.idEjercicio === ej.idEjercicio);
+  let datosBalanceTexto = 'No hay Balance procesado todavía para este Ejercicio.';
+  if (balanceDelEjercicio) {
+    const detalle = obtenerBalance(balanceDelEjercicio.idBalance);
+    if (detalle.ok) {
+      const d = detalle.balance.datosExtraidos;
+      datosBalanceTexto = 'Activo: $' + d.activoTotal + ', Pasivo: $' + d.pasivoTotal + ', Patrimonio Neto: $' + d.patrimonioNeto + ', Superávit del ejercicio: $' + d.superavitEjercicio;
+    }
+  }
+
+  const inputTexto = 'EJERCICIO: N.° ' + ej.numero + ', del ' + ej.fechaInicio + ' al ' + ej.fechaCierre + '\n\n' +
+    'DATOS DEL BALANCE: ' + datosBalanceTexto + '\n\n' +
+    'SOCIOS: Activos ' + (params.sociosActivos || '[no informado]') + ', al día ' + (params.sociosAlDia || '[no informado]') + ', con atraso ' + (params.sociosAtraso || '[no informado]') + ', morosos ' + (params.sociosMorosos || '[no informado]') + '\n\n' +
+    'NOVEDADES DEL EJERCICIO:\n' + novedadesRelevantes.map(n => '- [' + n.categoria + '] ' + n.titulo + ': ' + n.descripcion + (n.monto ? ' (monto: $' + n.monto + ')' : '')).join('\n');
+
+  const payload = {
+    model: 'claude-sonnet-5',
+    max_tokens: 8000,
+    thinking: { type: 'disabled' },
+    system: PROMPT_MEMORIA,
+    messages: [{ role: 'user', content: inputTexto }]
+  };
+
+  const response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+
+  if (response.getResponseCode() !== 200) {
+    return { ok: false, error: 'Error de la API (' + response.getResponseCode() + '): ' + response.getContentText() };
+  }
+
+  const data = JSON.parse(response.getContentText());
+  const bloqueTexto = (data.content || []).find(b => b.type === 'text');
+  if (!bloqueTexto) return { ok: false, error: 'La IA no devolvió texto' };
+
+  const hoja = getHojaDocumentos();
+  const datos = hoja.getDataRange().getValues();
+  let version = 1;
+  for (let i = 1; i < datos.length; i++) {
+    if (datos[i][0] && datos[i][2] === 'MEMORIA' && datos[i][1] === ej.idEjercicio) version++;
+  }
+
+  const nuevoId = 'DOC-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
+  hoja.appendRow([nuevoId, ej.idEjercicio, 'MEMORIA', version, 'BORRADOR', bloqueTexto.text, 'IA', new Date()]);
+
+  return { ok: true, idDocumento: nuevoId, contenido: bloqueTexto.text, novedadesUsadas: novedadesRelevantes.length };
+}
+
+function listarDocumentos(params) {
+  const hoja = getHojaDocumentos();
+  const datos = hoja.getDataRange().getValues();
+  const tipo = params && params.tipo ? params.tipo : null;
+  const idEjercicio = params && params.idEjercicio ? params.idEjercicio : null;
+
+  const documentos = [];
+  for (let i = 1; i < datos.length; i++) {
+    const fila = datos[i];
+    if (!fila[0]) continue;
+    if (tipo && fila[2] !== tipo) continue;
+    if (idEjercicio && fila[1] !== idEjercicio) continue;
+    documentos.push({ idDocumento: fila[0], idEjercicio: fila[1], tipo: fila[2], version: fila[3], estado: fila[4], contenido: fila[5], generadoPor: fila[6] });
+  }
+  documentos.sort((a, b) => b.version - a.version);
+  return { ok: true, documentos: documentos };
+}
+
+function actualizarDocumento(params) {
+  const hoja = getHojaDocumentos();
+  const datos = hoja.getDataRange().getValues();
+  for (let i = 1; i < datos.length; i++) {
+    if (String(datos[i][0]) === String(params.idDocumento)) {
+      if (params.contenido) hoja.getRange(i + 1, 6).setValue(params.contenido);
+      if (params.estado) hoja.getRange(i + 1, 5).setValue(params.estado);
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'Documento no encontrado' };
 }

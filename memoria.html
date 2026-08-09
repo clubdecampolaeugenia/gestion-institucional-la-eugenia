@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#135457">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="icon" type="image/png" href="logo.png">
+<title>Memoria – Gestión Institucional La Eugenia</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --petroleo: #135457; --lima: #c4df57; --naranja: #deaf4d; --verdecl: #b7d6b5;
+    --blanco: #ffffff; --hueso: #f5f3ec; --negro: #000000; --error: #c0392b;
+  }
+  body { margin: 0; min-height: 100vh; background: var(--petroleo); font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
+  @keyframes fadeInScreen { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes shakeError { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 40%{transform:translateX(6px);} 60%{transform:translateX(-4px);} 80%{transform:translateX(4px);} }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 600px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
+  .logo-wrap img { width: 140px; display: block; margin: 0 auto; filter: drop-shadow(0 4px 7px rgba(0,0,0,0.2)); }
+  h1 { margin: 2px 0 4px; color: var(--negro); font-family: Impact, sans-serif; font-size: 24px; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
+  .subtitle { text-align: center; color: var(--petroleo); font-size: 13px; margin-bottom: 18px; text-transform: uppercase; letter-spacing: .5px; }
+
+  #pinScreen { display: block; animation: fadeInScreen .3s ease-out; }
+  #mainScreen { display: none; }
+  #mainScreen.active { animation: fadeInScreen .3s ease-out; }
+  .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
+  .pin-input { display: block; width: 100%; text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; border: 2px solid var(--petroleo); border-radius: 16px; padding: 12px; background: var(--blanco); color: var(--petroleo); outline: none; margin-bottom: 12px; }
+  .pin-input.error { animation: shakeError .35s ease-in-out; border-color: var(--error); }
+  .pin-error { text-align: center; color: var(--error); font-size: 13px; font-weight: 700; min-height: 18px; margin-bottom: 8px; }
+
+  .instr-toggle {}
+  .instr-box { background: var(--petroleo); border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; font-size: 13px; color: var(--hueso); line-height: 1.5; }
+
+  .btn-solid { display: block; width: 100%; padding: 14px; border-radius: 24px; border: 2px solid var(--petroleo); background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
+  .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 2px solid var(--petroleo); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
+  .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; text-align: center; }
+  .btn-solid:disabled { opacity: .6; }
+
+  .field-label { color: var(--petroleo); font-size: 11px; font-weight: 900; text-transform: uppercase; margin: 10px 0 4px; display: block; }
+  .field-label:first-child { margin-top: 0; }
+  input[type=number] { width: 100%; border: 2px solid var(--petroleo); border-radius: 12px; padding: 10px 12px; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; }
+  .grid-socios { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .form-panel { background: var(--petroleo); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+  .form-panel .field-label { color: var(--lima); }
+
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--petroleo); border-top-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 6px; vertical-align: middle; }
+
+  .memoria-box { background: var(--blanco); border-radius: 16px; padding: 18px; margin-top: 14px; }
+  .memoria-meta { font-size: 11px; color: var(--petroleo); opacity: .6; margin-bottom: 10px; text-transform: uppercase; font-weight: 900; }
+  .memoria-texto { width: 100%; min-height: 400px; border: none; font-family: 'Roboto'; font-size: 13px; color: var(--petroleo); line-height: 1.7; resize: vertical; outline: none; }
+
+  .estado-badge { display: inline-block; font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; margin-left: 8px; }
+  .estado-BORRADOR { background: var(--naranja); color: var(--petroleo); }
+  .estado-REVISADA { background: var(--lima); color: var(--petroleo); }
+  .estado-APROBADA { background: var(--petroleo); color: var(--lima); }
+
+  .divider { border: none; border-top: 1.5px solid #9bb583; margin: 16px 0; }
+  .loading-text { text-align: center; color: var(--petroleo); font-size: 13px; font-weight: 700; min-height: 20px; }
+  .empty-msg { text-align: center; color: var(--petroleo); opacity: .6; font-size: 13px; padding: 20px 0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <a href="index.html" style="display:inline-block; text-align:left; color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:none; opacity:.75; margin-bottom:10px;">&larr; Volver al panel</a>
+  <a href="index.html" class="logo-wrap" style="cursor:pointer;"><img src="logo.png" alt="Logo La Eugenia"></a>
+  <h1>Gestión Institucional</h1>
+  <div class="subtitle"><strong style="color:var(--negro); text-transform:uppercase;">Memoria</strong></div>
+
+  <div id="pinScreen">
+    <div class="pin-label">Ingresá el PIN</div>
+    <input class="pin-input" type="password" inputmode="numeric" maxlength="4" id="pinInput" placeholder="····">
+    <div class="pin-error" id="pinError"></div>
+    <button type="button" class="btn-solid" onclick="verificarPin()">Ingresar</button>
+  </div>
+
+  <div id="mainScreen">
+    <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px; opacity:.7;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
+    <div id="instrBox" class="instr-box" style="display:none;">
+      La Memoria se arma con lo que cargaste en <strong>Novedades</strong> (las marcadas SI o EVALUAR) y el último <strong>Balance</strong> procesado del Ejercicio activo. Completá el dato de socios (todavía no viene del Padrón, hay que cargarlo a mano) y tocá "Generar borrador". Después podés editar el texto libremente antes de aprobarlo — nunca se pierde, cada generación queda como una versión nueva.
+    </div>
+
+    <div class="form-panel">
+      <span class="field-label">Socios al cierre del Ejercicio</span>
+      <div class="grid-socios">
+        <div><span class="field-label" style="margin-top:6px;">Activos</span><input type="number" id="sActivos"></div>
+        <div><span class="field-label" style="margin-top:6px;">Al día</span><input type="number" id="sAlDia"></div>
+        <div><span class="field-label" style="margin-top:6px;">Con atraso</span><input type="number" id="sAtraso"></div>
+        <div><span class="field-label" style="margin-top:6px;">Morosos</span><input type="number" id="sMorosos"></div>
+      </div>
+      <button type="button" class="btn-solid" style="margin-top:14px; margin-bottom:0;" id="btnGenerar" onclick="generarMemoria()">Generar borrador de Memoria</button>
+    </div>
+
+    <div class="loading-text" id="loadingText"></div>
+
+    <div id="memoriaContainer"></div>
+
+    <hr class="divider">
+    <div class="field-label">Versiones anteriores</div>
+    <div id="listaVersiones"></div>
+
+    <hr class="divider">
+    <button type="button" class="btn-ghost" onclick="cerrarSesion()">Cerrar sesión</button>
+  </div>
+</div>
+
+<script>
+const EXEC_URL_PINES_CGV_CHECK = 'https://script.google.com/macros/s/AKfycbyt4PoL_IWHaXRlMNDy2cPtWmvj7f0-DLpSe5IHir54yPDNg8osPtX_0ezoopC4aGR_7A/exec';
+const EXEC_URL_GI = 'https://script.google.com/macros/s/AKfycbyBxlDAteVncpf2hyQ-Nna6YZjMiZodntG9gZZ9aPXPei1As_yhqMUCnjnM9mHmJYYZJg/exec';
+
+let PIN_SESION = '';
+let DOCUMENTO_ACTUAL_ID = null;
+
+function toggleInstrucciones() {
+  const box = document.getElementById('instrBox');
+  const flecha = document.getElementById('instrFlecha');
+  const abrir = box.style.display === 'none';
+  box.style.display = abrir ? 'block' : 'none';
+  flecha.textContent = abrir ? '▴' : '▾';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const savedPin = localStorage.getItem('cgv_pin');
+  if (!savedPin) return;
+  PIN_SESION = savedPin;
+  entrarApp();
+});
+
+function jsonp(url, cb) {
+  const cbName = 'cb_' + Date.now() + Math.floor(Math.random()*100000);
+  window[cbName] = function(res) { delete window[cbName]; document.body.removeChild(script); cb(res); };
+  const script = document.createElement('script');
+  script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+  document.body.appendChild(script);
+}
+
+function verificarPin() {
+  const pin = document.getElementById('pinInput').value;
+  jsonp(EXEC_URL_PINES_CGV_CHECK + '?action=validarPin&pin=' + encodeURIComponent(pin) + '&modulo=gestion-institucional', function(res) {
+    if (res && res.ok && res.valido) {
+      PIN_SESION = pin;
+      localStorage.setItem('cgv_pin', pin);
+      entrarApp();
+    } else {
+      const input = document.getElementById('pinInput');
+      input.classList.add('error');
+      document.getElementById('pinError').textContent = 'PIN incorrecto';
+      setTimeout(() => input.classList.remove('error'), 400);
+    }
+  });
+}
+
+function entrarApp() {
+  document.getElementById('pinScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'block';
+  document.getElementById('mainScreen').classList.add('active');
+  cargarVersiones();
+}
+
+function cerrarSesion() {
+  localStorage.removeItem('cgv_pin');
+  location.reload();
+}
+
+function generarMemoria() {
+  const btn = document.getElementById('btnGenerar');
+  btn.disabled = true;
+  document.getElementById('loadingText').innerHTML = '<span class="spinner"></span> Redactando el borrador... puede tardar un minuto.';
+  document.getElementById('memoriaContainer').innerHTML = '';
+
+  const params = new URLSearchParams({
+    action: 'generarBorradorMemoria',
+    sociosActivos: document.getElementById('sActivos').value,
+    sociosAlDia: document.getElementById('sAlDia').value,
+    sociosAtraso: document.getElementById('sAtraso').value,
+    sociosMorosos: document.getElementById('sMorosos').value,
+    pin: PIN_SESION
+  });
+
+  jsonp(EXEC_URL_GI + '?' + params.toString(), function(res) {
+    btn.disabled = false;
+    document.getElementById('loadingText').textContent = '';
+    if (!res || !res.ok) {
+      alert('Error: ' + (res && res.error ? res.error : 'desconocido'));
+      return;
+    }
+    mostrarMemoria(res.idDocumento, res.contenido, 'BORRADOR', 1);
+    cargarVersiones();
+  });
+}
+
+function mostrarMemoria(idDocumento, contenido, estado, version) {
+  DOCUMENTO_ACTUAL_ID = idDocumento;
+  const cont = document.getElementById('memoriaContainer');
+  cont.innerHTML =
+    '<div class="memoria-box">' +
+    '<div class="memoria-meta">Versión ' + version + '<span class="estado-badge estado-' + estado + '">' + estado + '</span></div>' +
+    '<textarea class="memoria-texto" id="memoriaTextarea">' + contenido + '</textarea>' +
+    '<button type="button" class="btn-outline" style="margin-top:12px;" onclick="guardarEdicion()">Guardar cambios</button>' +
+    '<button type="button" class="btn-solid" onclick="cambiarEstado(\'REVISADA\')">Marcar como revisada</button>' +
+    '<button type="button" class="btn-solid" style="background:var(--petroleo); color:var(--lima);" onclick="cambiarEstado(\'APROBADA\')">Aprobar (por CD)</button>' +
+    '</div>';
+}
+
+function guardarEdicion() {
+  const texto = document.getElementById('memoriaTextarea').value;
+  jsonp(EXEC_URL_GI + '?action=actualizarDocumento&idDocumento=' + encodeURIComponent(DOCUMENTO_ACTUAL_ID) + '&contenido=' + encodeURIComponent(texto) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    if (res && res.ok) { alert('Guardado.'); cargarVersiones(); }
+  });
+}
+
+function cambiarEstado(nuevoEstado) {
+  jsonp(EXEC_URL_GI + '?action=actualizarDocumento&idDocumento=' + encodeURIComponent(DOCUMENTO_ACTUAL_ID) + '&estado=' + nuevoEstado + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    if (res && res.ok) { cargarVersiones(); }
+  });
+}
+
+function cargarVersiones() {
+  jsonp(EXEC_URL_GI + '?action=listarDocumentos&tipo=MEMORIA', function(res) {
+    const cont = document.getElementById('listaVersiones');
+    if (!res || !res.ok || res.documentos.length === 0) {
+      cont.innerHTML = '<div class="empty-msg">Todavía no se generó ninguna Memoria.</div>';
+      return;
+    }
+    cont.innerHTML = '';
+    res.documentos.forEach(d => {
+      const div = document.createElement('div');
+      div.style.cssText = 'background:var(--blanco); border-radius:10px; padding:8px 12px; margin-bottom:6px; cursor:pointer; font-size:13px; color:var(--petroleo);';
+      div.innerHTML = 'Versión ' + d.version + '<span class="estado-badge estado-' + d.estado + '">' + d.estado + '</span>';
+      div.onclick = () => mostrarMemoria(d.idDocumento, d.contenido, d.estado, d.version);
+      cont.appendChild(div);
+    });
+  });
+}
+</script>
+</body>
+</html>
