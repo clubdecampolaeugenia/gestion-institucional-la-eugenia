@@ -287,6 +287,7 @@ function listarActas() {
     if (!fila[idx.ID_ACTA]) continue;
     actas.push({
       idActa: fila[idx.ID_ACTA],
+      idEjercicio: fila[idx.ID_EJERCICIO] || '(sin asignar)',
       fechaReunion: fila[idx.FECHA_REUNION] ? Utilities.formatDate(new Date(fila[idx.FECHA_REUNION]), Session.getScriptTimeZone(), 'dd/MM/yyyy') : '',
       estado: fila[idx.ESTADO]
     });
@@ -367,7 +368,7 @@ function generarBorradorActa(params) {
 
   hojaActas.appendRow([
     nuevoNumero,
-    params.idEjercicio || '',
+    (function() { const e = obtenerEjercicioActivo(); return e.ok ? e.ejercicio.idEjercicio : (params.idEjercicio || ''); })(),
     new Date(params.fechaReunion),
     params.horaInicio || '',
     '',
@@ -538,9 +539,12 @@ function procesarBalance() {
   const estadoInicial = hayCriticos ? 'OBSERVADO' : 'EN_REVISION';
   const urls = archivos.map(f => f.getUrl()).join(' | ');
 
+  const ejercicioActivo = obtenerEjercicioActivo();
+  const idEjercicioActual = ejercicioActivo.ok ? ejercicioActivo.ejercicio.idEjercicio : '';
+
   hoja.appendRow([
     nuevoId,
-    '',
+    idEjercicioActual,
     urls,
     version,
     estadoInicial,
@@ -570,7 +574,7 @@ function listarBalances() {
   for (let i = 1; i < datos.length; i++) {
     const fila = datos[i];
     if (!fila[idx.ID_BALANCE]) continue;
-    balances.push({ idBalance: fila[idx.ID_BALANCE], version: fila[idx.VERSION], estado: fila[idx.ESTADO] });
+    balances.push({ idBalance: fila[idx.ID_BALANCE], version: fila[idx.VERSION], estado: fila[idx.ESTADO], idEjercicio: fila[idx.ID_EJERCICIO] || '(sin asignar)' });
   }
   balances.sort((a, b) => b.version - a.version);
   return { ok: true, balances: balances };

@@ -282,7 +282,7 @@ function cargarActas() {
       const div = document.createElement('div');
       div.className = 'acta-card';
       div.onclick = () => abrirEditor(a.idActa);
-      div.innerHTML = '<span class="acta-num">Acta N.º ' + a.idActa + ' — ' + a.fechaReunion + '</span><span class="estado-badge estado-' + a.estado + '">' + a.estado + '</span>';
+      div.innerHTML = '<span class="acta-num">Acta N.º ' + a.idActa + ' — ' + a.fechaReunion + ' <small style="opacity:.6; font-weight:400;">(' + a.idEjercicio + ')</small></span><span class="estado-badge estado-' + a.estado + '">' + a.estado + '</span>';
       cont.appendChild(div);
     });
   });
