@@ -17,6 +17,34 @@ const HOJA_AUTORIDADES = 'AUTORIDADES';
 
 const PINES_CGV_SHEET_ID = '1altioUeYlQW8NXWYVjHf5v_4ocJuQ-K9N0EfdYQSoBc';
 
+function debugPin(pin) {
+  const info = { pinRecibido: pin };
+  try {
+    const ss = SpreadsheetApp.openById(PINES_CGV_SHEET_ID);
+    info.nombresDeHojas = ss.getSheets().map(s => s.getName());
+
+    const hoja = ss.getSheetByName('PINES_CGV');
+    info.encontroHojaPorNombre = !!hoja;
+
+    const hojaUsada = hoja || ss.getSheets()[0];
+    const datos = hojaUsada.getDataRange().getValues();
+    info.totalFilas = datos.length;
+    info.primeras3Filas = datos.slice(0, 3);
+
+    let filaHeaders = -1;
+    for (let i = 0; i < datos.length; i++) {
+      if (datos[i].indexOf('PIN') !== -1) { filaHeaders = i; break; }
+    }
+    info.filaHeadersDetectada = filaHeaders;
+    if (filaHeaders !== -1) info.headersEncontrados = datos[filaHeaders];
+
+    info.resultadoValidacion = validarPinInterno(pin, 'gestion-institucional');
+  } catch (err) {
+    info.excepcion = err.message;
+  }
+  return { ok: true, debug: info };
+}
+
 function validarPinInterno(pin, moduloRequerido) {
   if (!pin) return false;
   const hoja = SpreadsheetApp.openById(PINES_CGV_SHEET_ID).getSheetByName('PINES_CGV');
@@ -83,6 +111,8 @@ function doGet(e) {
       resultado = obtenerBalance(e.parameter.idBalance);
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(e.parameter);
+    } else if (action === 'debugPin') {
+      resultado = debugPin(e.parameter.pin);
     } else {
       resultado = { ok: false, error: 'Acción no reconocida' };
     }
