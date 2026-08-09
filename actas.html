@@ -72,7 +72,7 @@
 </head>
 <body>
 <div class="card">
-  <div class="logo-wrap"><img src="logo.png" alt="Logo La Eugenia"></div>
+  <a href="index.html" class="logo-wrap" style="cursor:pointer;"><img src="logo.png" alt="Logo La Eugenia"></a>
   <h1>Gestión Institucional</h1>
   <div class="subtitle"><strong style="color:var(--negro);">Bitácora y Actas</strong></div>
 
@@ -85,6 +85,12 @@
 
   <div id="mainScreen">
     <a href="index.html" style="display:block; text-align:center; color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:none; margin-bottom:14px; opacity:.75;">&larr; Volver al panel</a>
+
+    <div style="background:var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:16px; font-size:13px; color:var(--hueso); line-height:1.5;">
+      <strong>Bitácora</strong>: vas anotando cosas sueltas todo el mes (una decisión de WhatsApp, un llamado, lo que sea) — texto pegado o dictado con el micrófono del celular.<br><br>
+      <strong>Actas</strong>: cuando querés cerrar una reunión formal, tocás "Generar borrador" — la app arma sola el punto 1 (numerado, encadenado a la última acta) y convierte cada nota pendiente en un punto más, listo para que edites el texto antes de aprobarlo.
+    </div>
+
     <div class="tabs">
       <button type="button" class="tab-btn active" id="tabBitacoraBtn" onclick="cambiarTab('bitacora')">Bitácora</button>
       <button type="button" class="tab-btn" id="tabActasBtn" onclick="cambiarTab('actas')">Actas</button>

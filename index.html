@@ -46,7 +46,11 @@
   /* Lista de hitos */
   .seccion-titulo { color: var(--petroleo); font-family: Impact, sans-serif; font-size: 15px; letter-spacing: .5px; text-transform: uppercase; margin: 18px 0 10px; }
   .hito-card { background: var(--blanco); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; text-decoration: none; transition: transform .08s; }
+  .hito-card.clickable { border: 2px solid var(--petroleo); }
   .hito-card.clickable:active { transform: scale(.98); }
+  .hito-card.no-disponible { opacity: .55; border: 2px dashed #bbb; }
+  .hito-flecha { display: block; font-size: 11px; font-weight: 900; color: var(--petroleo); margin-top: 3px; }
+  .hito-candado { display: block; font-size: 10px; font-weight: 700; color: #888; margin-top: 3px; }
   .hito-num { width: 24px; height: 24px; border-radius: 50%; background: var(--hueso); color: var(--petroleo); font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .hito-info { flex: 1; min-width: 0; }
   .hito-nombre { color: var(--petroleo); font-weight: 900; font-size: 14px; }
@@ -176,11 +180,14 @@ function renderHitos() {
   cont.innerHTML = '';
   HITOS.forEach((h, i) => {
     const el = document.createElement(h.link ? 'a' : 'div');
-    el.className = 'hito-card' + (h.link ? ' clickable' : '');
+    el.className = 'hito-card' + (h.link ? ' clickable' : ' no-disponible');
     if (h.link) el.href = h.link;
+    const indicador = h.link
+      ? '<span class="hito-flecha">Abrir &rarr;</span>'
+      : '<span class="hito-candado">🔒 Aún no construido</span>';
     el.innerHTML =
       '<div class="hito-num">' + (i + 1) + '</div>' +
-      '<div class="hito-info"><div class="hito-nombre">' + h.nombre + '</div><div class="hito-detalle" id="detalle-' + i + '">' + h.detalle + '</div></div>' +
+      '<div class="hito-info"><div class="hito-nombre">' + h.nombre + '</div><div class="hito-detalle" id="detalle-' + i + '">' + h.detalle + '</div>' + indicador + '</div>' +
       '<span class="hito-estado estado-' + h.estado.toLowerCase().replace('í','i') + '" id="estado-' + i + '">' + ESTADO_LABEL[h.estado] + '</span>';
     cont.appendChild(el);
   });
