@@ -292,7 +292,7 @@ function renderNovedades() {
       '<div class="novedad-header"><span class="novedad-titulo">' + escapeHtml(n.titulo) + '</span><span class="novedad-fecha">' + n.fecha + '</span></div>' +
       (n.descripcion ? '<div class="novedad-desc">' + escapeHtml(n.descripcion) + '</div>' : '') +
       '<span class="chip-categoria">' + n.categoria + montoTxt + '</span>' +
-      '<span class="chip-memoria chip-' + n.considerarMemoria + '" onclick="ciclarMemoria(\'' + n.idNovedad + '\', \'' + n.considerarMemoria + '\')">¿Memoria? ' + n.considerarMemoria + '</span>' +
+      '<span class="chip-memoria chip-' + n.considerarMemoria + '" onclick="ciclarMemoria(\'' + n.idNovedad + '\', \'' + n.considerarMemoria + '\')">' + textoChipMemoria(n.considerarMemoria) + '</span>' +
       '<div style="margin-top:8px;"><button type="button" class="btn-ghost" style="display:inline; padding:4px 10px; font-size:11px;" onclick="toggleEditar(\'' + n.idNovedad + '\')">✏️ Editar</button>' +
       '<button type="button" class="btn-ghost" style="display:inline; padding:4px 10px; font-size:11px; opacity:.6;" onclick="borrarNovedad(\'' + n.idNovedad + '\')">🗑️ Borrar</button></div>' +
       '<div id="editForm-' + n.idNovedad + '" style="display:none; background:var(--petroleo); border-radius:12px; padding:12px; margin-top:8px;">' +
@@ -306,6 +306,12 @@ function renderNovedades() {
       '</div>' +
       '</div>';
   }).join('');
+}
+
+function textoChipMemoria(estado) {
+  if (estado === 'SI') return '✅ Aprobado para Memoria';
+  if (estado === 'NO') return '🚫 No va en Memoria';
+  return '¿Memoria? Evaluar';
 }
 
 function toggleEditar(idNovedad) {

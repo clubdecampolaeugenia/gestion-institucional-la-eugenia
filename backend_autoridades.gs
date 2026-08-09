@@ -114,7 +114,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v16-editar-novedades-09ago-2130' };
+      resultado = { ok: true, version: 'v17-chip-memoria-y-ejercicio-09ago-2200' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'listarEjercicios') {
@@ -1021,7 +1021,7 @@ function getHojaDocumentos() {
 const PROMPT_MEMORIA = `Sos el redactor institucional del Club de Campo "La Eugenia", una asociación civil sin fines de lucro. Vas a escribir el borrador de la MEMORIA anual, el documento que el Presidente lee y la Comisión Directiva presenta a la Asamblea General Ordinaria, en cumplimiento del Estatuto Social.
 
 ESTILO OBLIGATORIO (aprendido de memorias reales anteriores del Club, no te apartes de esto):
-- Arranca siempre EXACTAMENTE así: "Señores Socios:\\n\\nEn cumplimiento de las disposiciones legales y estatutarias, ponemos a vuestra consideración la presente memoria, junto con los estados contables, el informe del auditor y el informe del revisor de cuentas correspondientes al ejercicio finalizado el [FECHA DE CIERRE]."
+- Arranca siempre EXACTAMENTE así: "Señores Socios:\\n\\nEn cumplimiento de las disposiciones legales y estatutarias, ponemos a vuestra consideración la presente memoria, junto con los estados contables, el informe del auditor y el informe del revisor de cuentas correspondientes al Ejercicio Económico N.° [NUMERO DE EJERCICIO], finalizado el [FECHA DE CIERRE]." IMPORTANTE: siempre incluí el número de Ejercicio explícitamente en esta primera frase (ej. "Ejercicio Económico N.° 37") -- es necesario para diferenciar esta Memoria de las de otros años, aunque las memorias anteriores no siempre lo hayan incluido.
 - El cuerpo es PROSA CORRIDA, en párrafos, SIN subtítulos ni encabezados de sección. Nunca uses títulos tipo "Seguridad:" o "Mantenimiento:" — los temas se mezclan en párrafos fluidos, ordenados por relevancia.
 - Tono: primera persona plural ("hemos", "continuamos", "nos comprometemos"), formal pero cálido, nunca frío ni corporativo.
 - Los temas se agrupan naturalmente en el texto (infraestructura, seguridad, EMSA/alumbrado, mantenimiento de espacios verdes, temporada de pileta, cantina, actividades sociales/deportivas, gestiones ante organismos como Municipalidad/EMSA/SAMSA/Personas Jurídicas), pero SIN anunciarlos como secciones.
