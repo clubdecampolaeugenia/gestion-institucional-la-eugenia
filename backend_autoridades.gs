@@ -113,6 +113,8 @@ function doGet(e) {
       resultado = actualizarEstadoBalance(e.parameter);
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
+    } else if (action === 'version') {
+      resultado = { ok: true, version: 'v6-bloqueTexto-fix-09ago-1120' };
     } else {
       resultado = { ok: false, error: 'Acción no reconocida' };
     }
