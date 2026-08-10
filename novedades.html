@@ -73,6 +73,10 @@
   .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 12px 32px rgba(0,0,0,0.35); text-align: center; }
   .aviso-texto { color: var(--petroleo); font-size: 14px; line-height: 1.5; margin-bottom: 18px; white-space: pre-wrap; }
   .aviso-btn { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+
+  .confirm-btns { display: flex; gap: 10px; justify-content: center; }
+  .confirm-btn-aceptar { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .confirm-btn-cancelar { background: transparent; color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -153,6 +157,16 @@
 </div>
 
 <script>
+
+function mostrarConfirmacion(mensaje, callbackAceptar) {
+  const overlay = document.createElement('div');
+  overlay.className = 'aviso-overlay';
+  overlay.innerHTML = '<div class="aviso-card"><div class="aviso-texto">' + mensaje.replace(/</g,'&lt;') + '</div><div class="confirm-btns"><button type="button" class="confirm-btn-cancelar">Cancelar</button><button type="button" class="confirm-btn-aceptar">Aceptar</button></div></div>';
+  document.body.appendChild(overlay);
+  overlay.querySelector('.confirm-btn-cancelar').onclick = function() { document.body.removeChild(overlay); };
+  overlay.querySelector('.confirm-btn-aceptar').onclick = function() { document.body.removeChild(overlay); callbackAceptar(); };
+}
+
 
 function mostrarAviso(mensaje, callback) {
   const overlay = document.createElement('div');
@@ -373,13 +387,14 @@ function guardarEdicionNovedad(idNovedad) {
 }
 
 function borrarNovedad(idNovedad) {
-  if (!confirm('¿Borrar esta novedad? No se puede deshacer.')) return;
-  jsonp(EXEC_URL_GI + '?action=eliminarNovedad&idNovedad=' + encodeURIComponent(idNovedad) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
-    if (res && res.ok) {
-      cargarNovedades();
-    } else {
-      mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
-    }
+  mostrarConfirmacion('¿Borrar esta novedad? No se puede deshacer.', function() {
+    jsonp(EXEC_URL_GI + '?action=eliminarNovedad&idNovedad=' + encodeURIComponent(idNovedad) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      if (res && res.ok) {
+        cargarNovedades();
+      } else {
+        mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+      }
+    });
   });
 }
 
@@ -399,10 +414,17 @@ let CANDIDATOS_CHAT = [];
 function analizarChat() {
   const texto = document.getElementById('fTextoChat').value.trim();
   if (!texto) { mostrarAviso('Pegá primero el texto del chat'); return; }
-  if (texto.length > 6000) {
-    if (!confirm('El texto es largo (' + texto.length + ' caracteres) y puede fallar por el límite de la URL. ¿Intentar igual?')) return;
-  }
 
+  if (texto.length > 6000) {
+    mostrarConfirmacion('El texto es largo (' + texto.length + ' caracteres) y puede fallar por el límite de la URL. ¿Intentar igual?', function() {
+      ejecutarAnalisisChat(texto);
+    });
+  } else {
+    ejecutarAnalisisChat(texto);
+  }
+}
+
+function ejecutarAnalisisChat(texto) {
   const btn = document.getElementById('btnAnalizarChat');
   btn.disabled = true;
   document.getElementById('loadingText').innerHTML = '<span class="spinner"></span> Separando lo institucional del resto...';
