@@ -106,6 +106,7 @@
     <div class="tabs">
       <button type="button" class="tab-btn active" id="tabBitacoraBtn" onclick="cambiarTab('bitacora')">Bitácora</button>
       <button type="button" class="tab-btn" id="tabActasBtn" onclick="cambiarTab('actas')">Actas</button>
+      <button type="button" class="tab-btn" id="tabConsolidadoBtn" onclick="cambiarTab('consolidado')">Consolidado</button>
     </div>
 
     <!-- BITÁCORA -->
@@ -138,15 +139,26 @@
       <div id="editorActa" style="display:none;">
         <hr class="divider">
         <div class="field-label" id="editorActaTitulo"></div>
+        <button type="button" class="btn-outline" style="background:var(--verdecl);" onclick="generarTextoFinal()">👁️ Ver texto final del Acta (no editable)</button>
+        <div class="texto-final-box" id="textoFinalBox"></div>
+        <hr class="divider">
+        <div class="field-label">Edición punto por punto</div>
         <div id="puntosContainer"></div>
         <button type="button" class="btn-outline" onclick="agregarPuntoVacio()">➕ Agregar punto</button>
         <span class="field-label">Hora de cierre</span>
         <input type="time" id="eHoraFin" value="21:15">
         <button type="button" class="btn-solid" style="margin-top:10px;" onclick="guardarCambiosActa()">Guardar cambios</button>
-        <button type="button" class="btn-outline" onclick="generarTextoFinal()">Ver texto final del Acta</button>
-        <div class="texto-final-box" id="textoFinalBox"></div>
         <button type="button" class="btn-ghost" onclick="cerrarEditor()">Cerrar</button>
       </div>
+    </div>
+
+    <!-- CONSOLIDADO -->
+    <div class="tab-panel" id="panelConsolidado">
+      <div style="background:var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:16px; font-size:13px; color:var(--hueso); line-height:1.5;">
+        Todas las actas del Ejercicio activo, una atrás de la otra, en modo lectura — como el libro de actas completo, sin entrar acta por acta. Nada de esto es editable acá.
+      </div>
+      <button type="button" class="btn-outline" onclick="cargarConsolidado()">🔄 Actualizar</button>
+      <div id="consolidadoContainer"></div>
     </div>
 
     <div class="loading-text" id="loadingText"></div>
@@ -229,8 +241,13 @@ function cerrarSesion() {
 function cambiarTab(tab) {
   document.getElementById('tabBitacoraBtn').classList.toggle('active', tab === 'bitacora');
   document.getElementById('tabActasBtn').classList.toggle('active', tab === 'actas');
+  document.getElementById('tabConsolidadoBtn').classList.toggle('active', tab === 'consolidado');
   document.getElementById('panelBitacora').classList.toggle('active', tab === 'bitacora');
   document.getElementById('panelActas').classList.toggle('active', tab === 'actas');
+  document.getElementById('panelConsolidado').classList.toggle('active', tab === 'consolidado');
+  if (tab === 'consolidado' && !document.getElementById('consolidadoContainer').dataset.cargado) {
+    cargarConsolidado();
+  }
 }
 
 // ===== BITÁCORA =====
@@ -366,15 +383,12 @@ function guardarCambiosActa() {
   });
 }
 
-function generarTextoFinal() {
+function construirTextoFinalActa(acta, horaFin) {
   const ordinales = ['primer','segundo','tercer','cuarto','quinto','sexto','séptimo','octavo','noveno','décimo'];
-  const fechaTxt = ACTA_ACTUAL.fechaReunion;
-  const horaFin = document.getElementById('eHoraFin').value || '21:15';
+  let texto = 'ACTA N.º ' + acta.idActa + ':\n\n';
+  texto += 'En la sede social del Club de Campo La Eugenia, siendo las ' + acta.horaInicio + ' hs. del día ' + acta.fechaReunion + ', se reúnen los siguientes miembros de Comisión Directiva: ' + acta.presentes + '.\n\n';
 
-  let texto = 'ACTA N.º ' + ACTA_ACTUAL.idActa + ':\n\n';
-  texto += 'En la sede social del Club de Campo La Eugenia, siendo las ' + ACTA_ACTUAL.horaInicio + ' hs. del día ' + fechaTxt + ', se reúnen los siguientes miembros de Comisión Directiva: ' + ACTA_ACTUAL.presentes + '.\n\n';
-
-  ACTA_ACTUAL.puntos.forEach((p, i) => {
+  acta.puntos.forEach((p, i) => {
     const ord = ordinales[i] || (i + 1) + 'º';
     if (i === 0) {
       texto += 'Como ' + ord + ' punto del orden del día, ' + p.texto.charAt(0).toLowerCase() + p.texto.slice(1) + '\n\n';
@@ -383,10 +397,55 @@ function generarTextoFinal() {
     }
   });
 
-  texto += 'Siendo las ' + horaFin + ' horas se levanta la sesión.-';
+  texto += 'Siendo las ' + (horaFin || acta.horaFin || '21:15') + ' horas se levanta la sesión.-';
+  return texto;
+}
 
+function generarTextoFinal() {
+  const horaFin = document.getElementById('eHoraFin').value || '21:15';
+  const texto = construirTextoFinalActa(ACTA_ACTUAL, horaFin);
   document.getElementById('textoFinalBox').textContent = texto;
   document.getElementById('textoFinalBox').style.display = 'block';
+}
+
+function cargarConsolidado() {
+  const cont = document.getElementById('consolidadoContainer');
+  cont.dataset.cargado = '1';
+  cont.innerHTML = '<div class="empty-msg">Cargando...</div>';
+
+  jsonp(EXEC_URL_GI + '?action=listarActas', function(res) {
+    if (!res || !res.ok || res.actas.length === 0) {
+      cont.innerHTML = '<div class="empty-msg">Todavía no hay actas para mostrar.</div>';
+      return;
+    }
+    // Orden cronológico (más vieja primero, como un libro)
+    const ordenadas = res.actas.slice().sort((a, b) => Number(a.idActa) - Number(b.idActa));
+    cont.innerHTML = '';
+    let pendientes = ordenadas.length;
+
+    ordenadas.forEach(a => {
+      jsonp(EXEC_URL_GI + '?action=obtenerActa&idActa=' + a.idActa, function(detalle) {
+        pendientes--;
+        if (!detalle || !detalle.ok) return;
+        const div = document.createElement('div');
+        div.className = 'texto-final-box';
+        div.style.display = 'block';
+        div.style.marginBottom = '14px';
+        div.innerHTML = '<div style="font-weight:900; color:var(--petroleo); margin-bottom:8px; text-transform:uppercase; font-size:12px;">Acta N.º ' + a.idActa + ' — ' + a.estado + '</div>' +
+          escapeHtml(construirTextoFinalActa(detalle.acta));
+        // Inserta en orden aunque las respuestas lleguen desordenadas
+        div.dataset.orden = a.idActa;
+        insertarEnOrden(cont, div);
+      });
+    });
+  });
+}
+
+function insertarEnOrden(cont, nuevoDiv) {
+  const existentes = Array.from(cont.children);
+  const idx = existentes.findIndex(el => Number(el.dataset.orden) > Number(nuevoDiv.dataset.orden));
+  if (idx === -1) cont.appendChild(nuevoDiv);
+  else cont.insertBefore(nuevoDiv, existentes[idx]);
 }
 
 function cerrarEditor() {
