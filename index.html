@@ -352,12 +352,19 @@ function cargarEstadoBalance() {
       return;
     }
     const ultimo = res.balances[0];
+    const textos = {
+      OBSERVADO: 'Versión ' + ultimo.version + ' — con observaciones críticas de la IA sin resolver',
+      EN_REVISION: 'Versión ' + ultimo.version + ' — sin observaciones críticas, en revisión',
+      APROBADO_CD: 'Versión ' + ultimo.version + ' — aprobado por CD, falta legalizar y Asamblea',
+      LEGALIZADO: 'Versión ' + ultimo.version + ' — legalizado, falta aprobación de Asamblea',
+      APROBADO_ASAMBLEA: 'Versión ' + ultimo.version + ' — aprobado por Asamblea'
+    };
     if (ultimo.estado === 'OBSERVADO') {
-      actualizarHito('Balance', 'OBSERVADO', 'Versión ' + ultimo.version + ' — con observaciones de la IA');
+      actualizarHito('Balance', 'OBSERVADO', textos.OBSERVADO);
     } else if (ultimo.estado === 'APROBADO_ASAMBLEA') {
-      actualizarHito('Balance', 'COMPLETO', 'Versión ' + ultimo.version + ' — aprobado por Asamblea');
+      actualizarHito('Balance', 'COMPLETO', textos.APROBADO_ASAMBLEA);
     } else {
-      actualizarHito('Balance', 'PROGRESO', 'Versión ' + ultimo.version + ' — ' + ultimo.estado);
+      actualizarHito('Balance', 'PROGRESO', textos[ultimo.estado] || ('Versión ' + ultimo.version + ' — ' + ultimo.estado));
     }
   });
 }
