@@ -80,7 +80,7 @@
 
     <div class="form-panel">
       <span class="field-label">Fecha, hora y lugar de la Asamblea</span>
-      <input type="date" id="fFechaAsamblea">
+      <input type="date" id="fFechaAsamblea" value="2026-10-24">
       <span class="field-label">Hora</span>
       <input type="time" id="fHoraAsamblea" value="16:00">
       <span class="field-label">Lugar</span>
@@ -174,6 +174,18 @@ function entrarApp() {
   document.getElementById('pinScreen').style.display = 'none';
   document.getElementById('mainScreen').style.display = 'block';
   document.getElementById('mainScreen').classList.add('active');
+  precargarPresentesCD();
+}
+
+function precargarPresentesCD() {
+  jsonp(EXEC_URL_GI + '?action=listarAutoridades', function(res) {
+    if (!res || !res.ok) return;
+    const orden = ['Presidente','Vicepresidente','Secretario','Prosecretario','Tesorero','Protesorero','Vocal Titular 1°','Vocal Titular 2°','Vocal Titular 3°','Vocal Suplente 1°','Vocal Suplente 2°','Vocal Suplente 3°'];
+    const porCargo = {};
+    res.autoridades.forEach(a => { porCargo[a.cargo] = a.nombre; });
+    const texto = orden.filter(c => porCargo[c]).map(c => porCargo[c] + ', ' + c).join('; ');
+    if (texto) document.getElementById('fPresentesCD').value = texto;
+  });
 }
 
 function cerrarSesion() {
