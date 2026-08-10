@@ -219,7 +219,7 @@ function construirBotonesEstado(estado) {
   const siguiente = { 'EN_REVISION': 'APROBADO_CD', 'APROBADO_CD': 'LEGALIZADO', 'LEGALIZADO': 'APROBADO_ASAMBLEA' };
   const etiqueta = { 'APROBADO_CD': 'Marcar como Aprobado por CD', 'LEGALIZADO': 'Marcar como Legalizado', 'APROBADO_ASAMBLEA': 'Marcar como Aprobado por Asamblea' };
   if (!siguiente[estado]) return '';
-  return '<button type="button" style="display:block; width:100%; padding:14px; border-radius:24px; border:2px solid var(--naranja); background:var(--petroleo); color:var(--naranja); font-family:\'Roboto\'; font-size:15px; font-weight:900; text-transform:uppercase; cursor:pointer; margin-top:10px;" onclick="avanzarEstadoBalance(\'' + siguiente[estado] + '\')">' + etiqueta[siguiente[estado]] + '</button>';
+  return '<button type="button" style="display:block; width:100%; padding:14px; border-radius:24px; border:2px solid var(--naranja); background:var(--petroleo); color:var(--naranja); font-family:\'Roboto\'; font-size:15px; font-weight:900; text-transform:uppercase; cursor:pointer; margin-top:10px; margin-bottom:18px;" onclick="avanzarEstadoBalance(\'' + siguiente[estado] + '\')">' + etiqueta[siguiente[estado]] + '</button>';
 }
 
 function avanzarEstadoBalance(nuevoEstado) {
@@ -325,6 +325,9 @@ function cargarBalances() {
       cont.innerHTML += '<div class="empty-msg">No hay balances registrados para ese Ejercicio.</div>';
       return;
     }
+
+    // Muestra la última versión automáticamente, no hace falta ir a buscarla a la lista
+    if (!BALANCE_ACTUAL_ID) verDetalle(lista[0].idBalance);
 
     lista.forEach(b => {
       const div = document.createElement('div');
