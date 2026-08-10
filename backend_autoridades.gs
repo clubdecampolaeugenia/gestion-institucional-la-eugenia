@@ -74,7 +74,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'generarBorradorInformeRevisor', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -116,7 +116,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v24-recordar-socios-10ago-1100' };
+      resultado = { ok: true, version: 'v25-informe-revisor-10ago-1200' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -135,6 +135,8 @@ function doGet(e) {
       resultado = actualizarNovedad(e.parameter);
     } else if (action === 'generarBorradorMemoria') {
       resultado = generarBorradorMemoria(e.parameter);
+    } else if (action === 'generarBorradorInformeRevisor') {
+      resultado = generarBorradorInformeRevisor(e.parameter);
     } else if (action === 'obtenerConfigMemoria') {
       resultado = obtenerConfigMemoria();
     } else if (action === 'guardarConfigMemoria') {
@@ -1201,6 +1203,80 @@ function obtenerUltimosSocios(params) {
   } catch (e) {
     return { ok: true, socios: null };
   }
+}
+
+const PROMPT_INFORME_REVISOR = `Sos el redactor legal-institucional del Club de Campo "La Eugenia", una asociación civil sin fines de lucro. Vas a escribir el borrador del "INFORME DE LA COMISIÓN REVISORA DE CUENTAS", el documento que el Revisor de Cuentas Titular presenta a la Asamblea, en cumplimiento del Estatuto Social (arts. 35 y 36).
+
+ESTILO OBLIGATORIO:
+- Es un documento LEGAL, formal, breve -- no es narrativo como la Memoria. Máximo 1 página.
+- Arranca así: "INFORME DE LA COMISIÓN REVISORA DE CUENTAS\\n\\nSeñores Asociados:\\n\\nEn mi carácter de Revisor de Cuentas Titular del Club de Campo \"La Eugenia\", y en cumplimiento de lo dispuesto por el artículo 36 del Estatuto Social, he examinado la documentación contable y los Estados Contables correspondientes al Ejercicio Económico N.° [NUMERO], finalizado el [FECHA DE CIERRE]."
+- Si NO hay observaciones críticas pendientes: informa que la documentación fue hallada correcta y aconseja su aprobación.
+- Si HAY observaciones críticas pendientes en el Balance: el informe NO puede recomendar aprobación sin salvedades -- debe mencionar expresamente cada observación crítica pendiente como salvedad, y aconsejar que se subsanen antes de su tratamiento por la Asamblea.
+- Las observaciones ya marcadas como RESUELTA u OMITIDA no se mencionan como pendientes -- ya fueron atendidas o descartadas conscientemente.
+- Nunca inventes hallazgos que no estén en los datos que te paso. Si algo no se puede verificar con los datos disponibles, decilo explícitamente ("no obran en mi poder elementos suficientes para...").
+- Cierra con: "Garupá, [FECHA].\\n\\n_______________________\\nRevisor de Cuentas Titular"
+
+Respondé ÚNICAMENTE con el texto completo del informe, sin explicaciones adicionales, sin markdown.`;
+
+function generarBorradorInformeRevisor(params) {
+  const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+  if (!apiKey) return { ok: false, error: 'Falta configurar ANTHROPIC_API_KEY en Script Properties' };
+
+  const ejercicioActivo = obtenerEjercicioActivo();
+  if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
+  const ej = ejercicioActivo.ejercicio;
+
+  const balancesRes = listarBalances();
+  const balanceDelEjercicio = balancesRes.ok ? balancesRes.balances.find(b => b.idEjercicio === ej.idEjercicio) : null;
+  if (!balanceDelEjercicio) return { ok: false, error: 'No hay ningún Balance procesado para este Ejercicio todavía' };
+
+  const detalleBalance = obtenerBalance(balanceDelEjercicio.idBalance);
+  const d = detalleBalance.balance.datosExtraidos;
+  const observaciones = detalleBalance.balance.observaciones || [];
+
+  const criticasPendientes = observaciones.filter(o => o.tipo === 'CRITICO' && o.estadoObs === 'PENDIENTE');
+  const criticasResueltas = observaciones.filter(o => o.tipo === 'CRITICO' && (o.estadoObs === 'RESUELTA' || o.estadoObs === 'OMITIDA'));
+
+  const inputTexto = 'EJERCICIO: N.° ' + ej.numero + ', del ' + ej.fechaInicio + ' al ' + ej.fechaCierre + '\n\n' +
+    'DATOS DEL BALANCE: Activo $' + d.activoTotal + ', Pasivo $' + d.pasivoTotal + ', Patrimonio Neto $' + d.patrimonioNeto + ', Superávit $' + d.superavitEjercicio + '\n\n' +
+    'OBSERVACIONES CRÍTICAS PENDIENTES (' + criticasPendientes.length + '):\n' + criticasPendientes.map(o => '- ' + o.texto).join('\n') + '\n\n' +
+    'OBSERVACIONES CRÍTICAS YA RESUELTAS U OMITIDAS (' + criticasResueltas.length + ', no mencionar como pendientes):\n' + criticasResueltas.map(o => '- ' + o.texto + ' [' + o.estadoObs + ']').join('\n');
+
+  const payload = {
+    model: 'claude-sonnet-5',
+    max_tokens: 4000,
+    thinking: { type: 'disabled' },
+    system: PROMPT_INFORME_REVISOR,
+    messages: [{ role: 'user', content: inputTexto }]
+  };
+
+  const response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+
+  if (response.getResponseCode() !== 200) {
+    return { ok: false, error: 'Error de la API (' + response.getResponseCode() + '): ' + response.getContentText() };
+  }
+
+  const data = JSON.parse(response.getContentText());
+  const bloqueTexto = (data.content || []).find(b => b.type === 'text');
+  if (!bloqueTexto) return { ok: false, error: 'La IA no devolvió texto' };
+
+  const hoja = getHojaDocumentos();
+  const datos = hoja.getDataRange().getValues();
+  let version = 1;
+  for (let i = 1; i < datos.length; i++) {
+    if (datos[i][0] && datos[i][2] === 'INFORME_REVISOR' && datos[i][1] === ej.idEjercicio) version++;
+  }
+
+  const nuevoId = 'DOC-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
+  hoja.appendRow([nuevoId, ej.idEjercicio, 'INFORME_REVISOR', version, 'BORRADOR', bloqueTexto.text, 'IA', new Date()]);
+
+  return { ok: true, idDocumento: nuevoId, contenido: bloqueTexto.text, version: version, criticasPendientes: criticasPendientes.length };
 }
 
 function generarBorradorMemoria(params) {
