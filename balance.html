@@ -197,6 +197,25 @@ function procesarBalance() {
   });
 }
 
+function construirBotonesEstado(estado) {
+  const siguiente = { 'EN_REVISION': 'APROBADO_CD', 'APROBADO_CD': 'LEGALIZADO', 'LEGALIZADO': 'APROBADO_ASAMBLEA' };
+  const etiqueta = { 'APROBADO_CD': 'Marcar como Aprobado por CD', 'LEGALIZADO': 'Marcar como Legalizado', 'APROBADO_ASAMBLEA': 'Marcar como Aprobado por Asamblea' };
+  if (!siguiente[estado]) return '';
+  return '<button type="button" class="btn-outline" onclick="avanzarEstadoBalance(\'' + siguiente[estado] + '\')">' + etiqueta[siguiente[estado]] + '</button>';
+}
+
+function avanzarEstadoBalance(nuevoEstado) {
+  jsonp(EXEC_URL_GI + '?action=actualizarEstadoBalance&idBalance=' + encodeURIComponent(BALANCE_ACTUAL_ID) + '&estado=' + nuevoEstado + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    if (res && res.ok) {
+      document.getElementById('estadoGeneralTexto').textContent = nuevoEstado;
+      cargarBalances();
+      mostrarAviso('Actualizado a ' + nuevoEstado + '.');
+    } else {
+      mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+    }
+  });
+}
+
 function escapeHtml(s) {
   const d = document.createElement('div');
   d.textContent = s;
@@ -228,6 +247,8 @@ function mostrarResultado(analisis, estado, idBalance) {
   html += '<div class="dato-linea"><strong>Cuadra Activo = Pasivo + PN:</strong> ' + (analisis.cuadraActivoPasivoPN ? '✅ Sí' : '❌ No') + '</div>';
   html += '<div class="dato-linea" style="margin-top:8px;"><strong>Estado general:</strong> <span id="estadoGeneralTexto">' + estado + '</span></div>';
   html += '</div>';
+
+  html += construirBotonesEstado(estado);
 
   (analisis.observaciones || []).forEach((o, i) => {
     const estadoObs = o.estadoObs || 'PENDIENTE';
