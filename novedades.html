@@ -58,9 +58,12 @@
   .chip-memoria { cursor: pointer; border: 2px solid transparent; }
   .chip-memoria:active { transform: scale(.95); }
 
-  .filtro-cat { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
-  .filtro-chip { padding: 6px 12px; border-radius: 14px; border: 2px solid var(--petroleo); background: transparent; color: var(--petroleo); font-size: 11px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
-  .filtro-chip.active { background: var(--petroleo); color: var(--lima); }
+  .filtro-cat { position: relative; margin-bottom: 14px; }
+  .filtro-dropdown-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 18px; border: 2px solid var(--petroleo); background: var(--petroleo); color: var(--lima); font-size: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .filtro-lista { display: none; position: absolute; top: 100%; left: 0; margin-top: 6px; background: var(--blanco); border: 2px solid var(--petroleo); border-radius: 14px; padding: 8px; z-index: 50; min-width: 220px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+  .filtro-lista.open { display: block; }
+  .filtro-opcion { display: block; width: 100%; text-align: left; padding: 8px 10px; border-radius: 10px; border: none; background: transparent; color: var(--petroleo); font-size: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .filtro-opcion.active { background: var(--verdecl); }
 
   .divider { border: none; border-top: 1.5px solid #9bb583; margin: 16px 0; }
   .loading-text { text-align: center; color: var(--petroleo); font-size: 13px; font-weight: 700; min-height: 20px; }
@@ -69,7 +72,7 @@
   .aviso-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
   .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 12px 32px rgba(0,0,0,0.35); text-align: center; }
   .aviso-texto { color: var(--petroleo); font-size: 14px; line-height: 1.5; margin-bottom: 18px; white-space: pre-wrap; }
-  .aviso-btn { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.25); }
+  .aviso-btn { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -87,7 +90,7 @@
   </div>
 
   <div id="mainScreen">
-    <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px; opacity:.7;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
+    <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
     <div id="instrBox" style="display:none; background:var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:16px; font-size:13px; color:var(--hueso); line-height:1.5;">
       Vas cargando acá los hechos relevantes del año — obras, gestiones, eventos, gastos puntuales. Esto es lo que va a alimentar el borrador de la Memoria. Marcá "¿Va a Memoria?" en cada una: <strong>Sí</strong> / <strong>No</strong> / <strong>Evaluar</strong> — las de categoría Personal arrancan en "No" por defecto, tocá el chip para cambiarlo.
     </div>
@@ -272,11 +275,24 @@ function renderFiltros() {
   const categorias = [...new Set(NOVEDADES_TODAS.map(n => n.categoria))];
   const cont = document.getElementById('filtroCat');
   if (categorias.length === 0) { cont.innerHTML = ''; return; }
-  let html = '<button type="button" class="filtro-chip' + (FILTRO_ACTUAL === null ? ' active' : '') + '" onclick="aplicarFiltro(null)">Todas</button>';
+
+  const etiquetaActual = FILTRO_ACTUAL === null ? 'Todas' : FILTRO_ACTUAL;
+  let opciones = '<button type="button" class="filtro-opcion' + (FILTRO_ACTUAL === null ? ' active' : '') + '" onclick="aplicarFiltro(null)">Todas</button>';
   categorias.forEach(c => {
-    html += '<button type="button" class="filtro-chip' + (FILTRO_ACTUAL === c ? ' active' : '') + '" onclick="aplicarFiltro(\'' + c + '\')">' + c + '</button>';
+    opciones += '<button type="button" class="filtro-opcion' + (FILTRO_ACTUAL === c ? ' active' : '') + '" onclick="aplicarFiltro(\'' + c + '\')">' + c + '</button>';
   });
-  cont.innerHTML = html;
+
+  cont.innerHTML =
+    '<button type="button" class="filtro-dropdown-btn" onclick="toggleFiltroLista()">Categoría: ' + etiquetaActual + ' <span id="filtroFlecha">▾</span></button>' +
+    '<div class="filtro-lista" id="filtroLista">' + opciones + '</div>';
+}
+
+function toggleFiltroLista() {
+  const lista = document.getElementById('filtroLista');
+  const flecha = document.getElementById('filtroFlecha');
+  const abrir = !lista.classList.contains('open');
+  lista.classList.toggle('open', abrir);
+  flecha.textContent = abrir ? '▴' : '▾';
 }
 
 function aplicarFiltro(cat) {
