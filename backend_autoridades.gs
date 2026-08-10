@@ -114,7 +114,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v19-config-memoria-editable-09ago-2300' };
+      resultado = { ok: true, version: 'v20-autocrea-hoja-config-memoria-09ago-2330' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'listarEjercicios') {
@@ -1042,7 +1042,12 @@ Respondé ÚNICAMENTE con el texto completo de la Memoria, sin explicaciones adi
 const HOJA_CONFIG_MEMORIA = 'MEMORIA_CONFIG';
 
 function getHojaConfigMemoria() {
-  return SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_CONFIG_MEMORIA);
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let hoja = ss.getSheetByName(HOJA_CONFIG_MEMORIA);
+  if (!hoja) {
+    hoja = ss.insertSheet(HOJA_CONFIG_MEMORIA);
+  }
+  return hoja;
 }
 
 function obtenerConfigMemoria() {
