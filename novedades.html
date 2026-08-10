@@ -65,6 +65,11 @@
   .divider { border: none; border-top: 1.5px solid #9bb583; margin: 16px 0; }
   .loading-text { text-align: center; color: var(--petroleo); font-size: 13px; font-weight: 700; min-height: 20px; }
   .empty-msg { text-align: center; color: var(--petroleo); opacity: .6; font-size: 13px; padding: 20px 0; }
+
+  .aviso-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
+  .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 12px 32px rgba(0,0,0,0.35); text-align: center; }
+  .aviso-texto { color: var(--petroleo); font-size: 14px; line-height: 1.5; margin-bottom: 18px; white-space: pre-wrap; }
+  .aviso-btn { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.25); }
 </style>
 </head>
 <body>
@@ -145,6 +150,18 @@
 </div>
 
 <script>
+
+function mostrarAviso(mensaje, callback) {
+  const overlay = document.createElement('div');
+  overlay.className = 'aviso-overlay';
+  overlay.innerHTML = '<div class="aviso-card"><div class="aviso-texto">' + mensaje.replace(/</g,'&lt;') + '</div><button type="button" class="aviso-btn">Aceptar</button></div>';
+  document.body.appendChild(overlay);
+  overlay.querySelector('.aviso-btn').onclick = function() {
+    document.body.removeChild(overlay);
+    if (callback) callback();
+  };
+}
+
 const EXEC_URL_PINES_CGV_CHECK = 'https://script.google.com/macros/s/AKfycbyt4PoL_IWHaXRlMNDy2cPtWmvj7f0-DLpSe5IHir54yPDNg8osPtX_0ezoopC4aGR_7A/exec';
 const EXEC_URL_GI = 'https://script.google.com/macros/s/AKfycbyBxlDAteVncpf2hyQ-Nna6YZjMiZodntG9gZZ9aPXPei1As_yhqMUCnjnM9mHmJYYZJg/exec';
 
@@ -214,7 +231,7 @@ function toggleForm() {
 function guardarNovedad() {
   const fecha = document.getElementById('fFecha').value;
   const titulo = document.getElementById('fTitulo').value;
-  if (!fecha || !titulo) { alert('Completá al menos fecha y título'); return; }
+  if (!fecha || !titulo) { mostrarAviso('Completá al menos fecha y título'); return; }
 
   const params = new URLSearchParams({
     action: 'guardarNovedad',
@@ -235,7 +252,7 @@ function guardarNovedad() {
       ['fTitulo','fDescripcion','fMonto','fResponsable'].forEach(id => document.getElementById(id).value = '');
       cargarNovedades();
     } else {
-      alert('Error: ' + (res && res.error ? res.error : 'desconocido'));
+      mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
     }
   });
 }
@@ -334,7 +351,7 @@ function guardarEdicionNovedad(idNovedad) {
     if (res && res.ok) {
       cargarNovedades();
     } else {
-      alert('Error: ' + (res && res.error ? res.error : 'desconocido'));
+      mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
     }
   });
 }
@@ -345,7 +362,7 @@ function borrarNovedad(idNovedad) {
     if (res && res.ok) {
       cargarNovedades();
     } else {
-      alert('Error: ' + (res && res.error ? res.error : 'desconocido'));
+      mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
     }
   });
 }
@@ -365,7 +382,7 @@ let CANDIDATOS_CHAT = [];
 
 function analizarChat() {
   const texto = document.getElementById('fTextoChat').value.trim();
-  if (!texto) { alert('Pegá primero el texto del chat'); return; }
+  if (!texto) { mostrarAviso('Pegá primero el texto del chat'); return; }
   if (texto.length > 6000) {
     if (!confirm('El texto es largo (' + texto.length + ' caracteres) y puede fallar por el límite de la URL. ¿Intentar igual?')) return;
   }
@@ -377,7 +394,7 @@ function analizarChat() {
   jsonp(EXEC_URL_GI + '?action=extraerNovedadesDeChat&textoChat=' + encodeURIComponent(texto) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
     btn.disabled = false;
     document.getElementById('loadingText').textContent = '';
-    if (!res || !res.ok) { alert('Error: ' + (res && res.error ? res.error : 'desconocido')); return; }
+    if (!res || !res.ok) { mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido')); return; }
     CANDIDATOS_CHAT = res.candidatos.map(c => Object.assign({ seleccionado: true }, c));
     renderCandidatosChat();
   });
@@ -407,20 +424,20 @@ function toggleCandidato(i) {
 
 function guardarCandidatosSeleccionados() {
   const seleccionadas = CANDIDATOS_CHAT.filter(c => c.seleccionado);
-  if (seleccionadas.length === 0) { alert('No hay ninguna seleccionada'); return; }
+  if (seleccionadas.length === 0) { mostrarAviso('No hay ninguna seleccionada'); return; }
 
   document.getElementById('loadingText').textContent = 'Guardando...';
   jsonp(EXEC_URL_GI + '?action=guardarNovedadesSeleccionadas&novedades=' + encodeURIComponent(JSON.stringify(seleccionadas)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
     document.getElementById('loadingText').textContent = '';
     if (res && res.ok) {
-      alert(res.guardadas + ' novedades guardadas.');
+      mostrarAviso(res.guardadas + ' novedades guardadas.');
       CANDIDATOS_CHAT = [];
       document.getElementById('candidatosChatContainer').innerHTML = '';
       document.getElementById('fTextoChat').value = '';
       toggleImportChat();
       cargarNovedades();
     } else {
-      alert('Error: ' + (res && res.error ? res.error : 'desconocido'));
+      mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
     }
   });
 }

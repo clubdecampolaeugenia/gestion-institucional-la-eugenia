@@ -57,6 +57,11 @@
   .resumen-alerta { background: var(--naranja); border: 2px solid var(--petroleo); border-radius: 16px; padding: 12px 14px; margin-bottom: 16px; color: var(--petroleo); font-size: 13px; font-weight: 700; display: none; }
   .loading-text { text-align: center; color: var(--hueso); font-size: 13px; font-weight: 700; min-height: 20px; }
   .divider { border: none; border-top: 1.5px solid #9bb583; margin: 16px 0; }
+
+  .aviso-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
+  .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 12px 32px rgba(0,0,0,0.35); text-align: center; }
+  .aviso-texto { color: var(--petroleo); font-size: 14px; line-height: 1.5; margin-bottom: 18px; white-space: pre-wrap; }
+  .aviso-btn { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.25); }
 </style>
 </head>
 <body>
@@ -111,6 +116,18 @@
 </div>
 
 <script>
+
+function mostrarAviso(mensaje, callback) {
+  const overlay = document.createElement('div');
+  overlay.className = 'aviso-overlay';
+  overlay.innerHTML = '<div class="aviso-card"><div class="aviso-texto">' + mensaje.replace(/</g,'&lt;') + '</div><button type="button" class="aviso-btn">Aceptar</button></div>';
+  document.body.appendChild(overlay);
+  overlay.querySelector('.aviso-btn').onclick = function() {
+    document.body.removeChild(overlay);
+    if (callback) callback();
+  };
+}
+
 // ⚠️ Completar con la URL /exec del backend de Gestión Institucional una vez desplegado
 const EXEC_URL_GI = 'https://script.google.com/macros/s/AKfycbyBxlDAteVncpf2hyQ-Nna6YZjMiZodntG9gZZ9aPXPei1As_yhqMUCnjnM9mHmJYYZJg/exec';
 const EXEC_URL_PINES_CGV_CHECK = 'https://script.google.com/macros/s/AKfycbyt4PoL_IWHaXRlMNDy2cPtWmvj7f0-DLpSe5IHir54yPDNg8osPtX_0ezoopC4aGR_7A/exec';
@@ -241,7 +258,7 @@ function guardarAutoridad() {
     fechaInicio: document.getElementById('fFechaInicio').value,
     pin: PIN_SESION
   };
-  if (!data.nombre || !data.fechaInicio) { alert('Completá nombre y fecha de inicio'); return; }
+  if (!data.nombre || !data.fechaInicio) { mostrarAviso('Completá nombre y fecha de inicio'); return; }
   document.getElementById('loadingText').textContent = 'Guardando...';
   const params = Object.keys(data).map(k => k + '=' + encodeURIComponent(data[k])).join('&');
   jsonp(EXEC_URL_GI + '?action=guardarAutoridad&' + params, function(res) {
@@ -253,7 +270,7 @@ function guardarAutoridad() {
       document.getElementById('fFechaInicio').value = '';
       cargarAutoridades();
     } else {
-      alert('Error al guardar: ' + (res && res.error ? res.error : 'desconocido'));
+      mostrarAviso('Error al guardar: ' + (res && res.error ? res.error : 'desconocido'));
     }
   });
 }
