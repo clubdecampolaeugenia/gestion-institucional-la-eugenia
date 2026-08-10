@@ -100,8 +100,14 @@
         <div id="listaEjerciciosDropdown" style="margin-bottom:8px;"></div>
         <button type="button" class="btn-ghost" style="color:var(--hueso); opacity:.65; font-size:10px; padding:6px 0;" onclick="cerrarEjercicio()">Cerrar Ejercicio actual y abrir el siguiente</button>
       </div>
-      <div class="progreso-barra-fondo" style="margin-top:10px;"><div class="progreso-barra-fill" id="progresoFill" style="width:0%;"></div></div>
+
+      <div style="margin-top:14px; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--lima);">Preparación para la Asamblea</div>
+      <div class="progreso-barra-fondo" style="margin-top:6px;"><div class="progreso-barra-fill" id="progresoFill" style="width:0%;"></div></div>
       <div class="progreso-pct" id="progresoPct">calculando...</div>
+
+      <div style="margin-top:14px; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--naranja);">Cierre del Ejercicio (se completa con la Asamblea)</div>
+      <div class="progreso-barra-fondo" style="margin-top:6px;"><div class="progreso-barra-fill" id="progresoCierreFill" style="width:0%; background:var(--naranja);"></div></div>
+      <div class="progreso-pct" id="progresoCierrePct">calculando...</div>
     </div>
 
     <div class="proxima-accion">
@@ -115,8 +121,11 @@
       <div class="hito-info"><div class="hito-nombre">Novedades</div><div class="hito-detalle">Registro de hechos del año — revisar y aprobar antes de generar la Memoria</div><span class="hito-flecha">Abrir &rarr;</span></div>
     </a>
 
-    <div class="seccion-titulo">Camino a la Asamblea</div>
+    <div class="seccion-titulo">Preparación para la Asamblea</div>
     <div id="listaHitos"></div>
+
+    <div class="seccion-titulo">Cierre del Ejercicio</div>
+    <div id="listaHitosCierre"></div>
 
     <hr class="divider">
     <button type="button" class="btn-ghost" onclick="cerrarSesion()">Cerrar sesión</button>
@@ -164,7 +173,15 @@ const HITOS = [
   { nombre: 'Convocatoria y edictos', detalle: 'Borradores generados (diario + Boletín Oficial)', estado: 'PROGRESO', link: 'convocatoria.html', manual: false },
   { nombre: 'Padrón de socios', detalle: 'No iniciado — se arma leyendo Base Madre', estado: 'NOINICIADO', link: null, manual: true },
   { nombre: 'Bitácora y Actas', detalle: 'cargando...', estado: 'PROGRESO', link: 'actas.html', manual: false },
-  { nombre: 'Asamblea General Ordinaria', detalle: 'Convocada para 24/10/2026, 16 hs', estado: 'PROGRESO', link: null, manual: true },
+];
+
+// Estos NO pueden estar completos antes del día de la Asamblea — se cierran con/después de ella.
+// Por eso van en una barra separada: mezclarlos con la de arriba hacía que el 100% fuera imposible aunque todo estuviera bien.
+const HITOS_CIERRE = [
+  { nombre: 'Asamblea General Ordinaria celebrada', detalle: 'Convocada para 24/10/2026, 16 hs', estado: 'PENDIENTE', link: null, manual: true },
+  { nombre: 'Balance — aprobado por Asamblea', detalle: 'Recién se completa el día del evento', estado: 'PENDIENTE', link: 'balance.html', manual: false },
+  { nombre: 'Autoridades renovadas', detalle: 'Se define en la Asamblea', estado: 'PENDIENTE', link: null, manual: true },
+  { nombre: 'Acta de Asamblea firmada', detalle: 'Se redacta durante el evento', estado: 'PENDIENTE', link: null, manual: true },
 ];
 
 const ESTADO_LABEL = { COMPLETO: 'Completo', PROGRESO: 'En progreso', OBSERVADO: 'Observado', PENDIENTE: 'Pendiente', NOINICIADO: 'No iniciado' };
@@ -272,10 +289,10 @@ function cerrarSesion() {
   location.reload();
 }
 
-function renderHitos() {
-  const cont = document.getElementById('listaHitos');
+function renderHitosGenerico(lista, contenedorId, prefijo) {
+  const cont = document.getElementById(contenedorId);
   cont.innerHTML = '';
-  HITOS.forEach((h, i) => {
+  lista.forEach((h, i) => {
     const el = document.createElement(h.link ? 'a' : 'div');
     el.className = 'hito-card' + (h.link ? ' clickable' : ' no-disponible');
     if (h.link) el.href = h.link;
@@ -284,10 +301,15 @@ function renderHitos() {
       : '<span class="hito-candado">🔒 Aún no construido</span>';
     el.innerHTML =
       '<div class="hito-num">' + (i + 1) + '</div>' +
-      '<div class="hito-info"><div class="hito-nombre">' + h.nombre + '</div><div class="hito-detalle" id="detalle-' + i + '">' + h.detalle + '</div>' + indicador + '</div>' +
-      '<span class="hito-estado estado-' + h.estado.toLowerCase().replace('í','i') + '" id="estado-' + i + '">' + ESTADO_LABEL[h.estado] + '</span>';
+      '<div class="hito-info"><div class="hito-nombre">' + h.nombre + '</div><div class="hito-detalle" id="' + prefijo + 'detalle-' + i + '">' + h.detalle + '</div>' + indicador + '</div>' +
+      '<span class="hito-estado estado-' + h.estado.toLowerCase().replace('í','i') + '" id="' + prefijo + 'estado-' + i + '">' + ESTADO_LABEL[h.estado] + '</span>';
     cont.appendChild(el);
   });
+}
+
+function renderHitos() {
+  renderHitosGenerico(HITOS, 'listaHitos', '');
+  renderHitosGenerico(HITOS_CIERRE, 'listaHitosCierre', 'cierre-');
   actualizarProgreso();
 }
 
@@ -297,18 +319,36 @@ function actualizarProgreso() {
   const pct = Math.round((suma / total) * 100);
   document.getElementById('progresoFill').style.width = pct + '%';
   document.getElementById('progresoPct').textContent = pct + '%';
+
+  const totalC = HITOS_CIERRE.length;
+  const sumaC = HITOS_CIERRE.reduce((acc, h) => acc + ESTADO_PESO[h.estado], 0);
+  const pctC = Math.round((sumaC / totalC) * 100);
+  document.getElementById('progresoCierreFill').style.width = pctC + '%';
+  document.getElementById('progresoCierrePct').textContent = pctC + '%';
 }
 
 function actualizarHito(nombre, estado, detalle) {
-  const idx = HITOS.findIndex(h => h.nombre === nombre);
-  if (idx === -1) return;
-  HITOS[idx].estado = estado;
-  HITOS[idx].detalle = detalle;
-  document.getElementById('detalle-' + idx).textContent = detalle;
-  const badge = document.getElementById('estado-' + idx);
-  badge.className = 'hito-estado estado-' + estado.toLowerCase().replace('í','i');
-  badge.textContent = ESTADO_LABEL[estado];
-  actualizarProgreso();
+  let idx = HITOS.findIndex(h => h.nombre === nombre);
+  if (idx !== -1) {
+    HITOS[idx].estado = estado;
+    HITOS[idx].detalle = detalle;
+    const detEl = document.getElementById('detalle-' + idx);
+    if (detEl) detEl.textContent = detalle;
+    const badge = document.getElementById('estado-' + idx);
+    if (badge) { badge.className = 'hito-estado estado-' + estado.toLowerCase().replace('í','i'); badge.textContent = ESTADO_LABEL[estado]; }
+    actualizarProgreso();
+    return;
+  }
+  idx = HITOS_CIERRE.findIndex(h => h.nombre === nombre);
+  if (idx !== -1) {
+    HITOS_CIERRE[idx].estado = estado;
+    HITOS_CIERRE[idx].detalle = detalle;
+    const detEl = document.getElementById('cierre-detalle-' + idx);
+    if (detEl) detEl.textContent = detalle;
+    const badge = document.getElementById('cierre-estado-' + idx);
+    if (badge) { badge.className = 'hito-estado estado-' + estado.toLowerCase().replace('í','i'); badge.textContent = ESTADO_LABEL[estado]; }
+    actualizarProgreso();
+  }
 }
 
 function cargarEstadoAutoridades() {
@@ -349,22 +389,30 @@ function cargarEstadoBalance() {
   jsonp(EXEC_URL_GI + '?action=listarBalances', function(res) {
     if (!res || !res.ok || res.balances.length === 0) {
       actualizarHito('Balance', 'NOINICIADO', 'Todavía no se procesó ningún balance');
+      actualizarHito('Balance — aprobado por Asamblea', 'PENDIENTE', 'Recién se completa el día del evento');
       return;
     }
     const ultimo = res.balances[0];
     const textos = {
       OBSERVADO: 'Versión ' + ultimo.version + ' — con observaciones críticas de la IA sin resolver',
       EN_REVISION: 'Versión ' + ultimo.version + ' — sin observaciones críticas, en revisión',
-      APROBADO_CD: 'Versión ' + ultimo.version + ' — aprobado por CD, falta legalizar y Asamblea',
-      LEGALIZADO: 'Versión ' + ultimo.version + ' — legalizado, falta aprobación de Asamblea',
+      APROBADO_CD: 'Versión ' + ultimo.version + ' — aprobado por CD, falta legalizar',
+      LEGALIZADO: 'Versión ' + ultimo.version + ' — legalizado, listo para la Asamblea',
       APROBADO_ASAMBLEA: 'Versión ' + ultimo.version + ' — aprobado por Asamblea'
     };
+    // Para "Preparación": alcanza con estar Legalizado (o más) -- no hace falta esperar la Asamblea acá.
     if (ultimo.estado === 'OBSERVADO') {
       actualizarHito('Balance', 'OBSERVADO', textos.OBSERVADO);
-    } else if (ultimo.estado === 'APROBADO_ASAMBLEA') {
-      actualizarHito('Balance', 'COMPLETO', textos.APROBADO_ASAMBLEA);
+    } else if (ultimo.estado === 'LEGALIZADO' || ultimo.estado === 'APROBADO_ASAMBLEA') {
+      actualizarHito('Balance', 'COMPLETO', textos[ultimo.estado]);
     } else {
       actualizarHito('Balance', 'PROGRESO', textos[ultimo.estado] || ('Versión ' + ultimo.version + ' — ' + ultimo.estado));
+    }
+    // Para "Cierre del Ejercicio": solo cuenta si ya lo aprobó la Asamblea.
+    if (ultimo.estado === 'APROBADO_ASAMBLEA') {
+      actualizarHito('Balance — aprobado por Asamblea', 'COMPLETO', textos.APROBADO_ASAMBLEA);
+    } else {
+      actualizarHito('Balance — aprobado por Asamblea', 'PENDIENTE', 'Recién se completa el día del evento');
     }
   });
 }
