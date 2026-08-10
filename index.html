@@ -177,7 +177,7 @@ const HITOS = [
 // Estos NO pueden estar completos antes del día de la Asamblea — se cierran con/después de ella.
 // Por eso van en una barra separada: mezclarlos con la de arriba hacía que el 100% fuera imposible aunque todo estuviera bien.
 const HITOS_CIERRE = [
-  { nombre: 'Asamblea General Ordinaria celebrada', detalle: 'Convocada para 24/10/2026, 16 hs', estado: 'PENDIENTE', link: null, manual: true },
+  { nombre: 'Asamblea General Ordinaria celebrada', detalle: 'cargando fecha real...', estado: 'PENDIENTE', link: null, manual: true },
   { nombre: 'Balance — aprobado por Asamblea', detalle: 'Recién se completa el día del evento — no hay botón para esto todavía en ningún módulo', estado: 'PENDIENTE', link: null, manual: true },
   { nombre: 'Autoridades renovadas', detalle: 'Se define en la Asamblea', estado: 'PENDIENTE', link: null, manual: true },
   { nombre: 'Acta de Asamblea firmada', detalle: 'Se redacta durante el evento', estado: 'PENDIENTE', link: null, manual: true },
@@ -228,6 +228,7 @@ function entrarApp() {
   cargarEstadoActas();
   cargarEstadoBalance();
   cargarEjercicioActivo();
+  cargarFechaAsamblea();
 }
 
 let EJERCICIO_ACTIVO = null;
@@ -323,7 +324,21 @@ function renderHitosGenerico(lista, contenedorId, prefijo) {
   });
 }
 
-const FECHA_ASAMBLEA = new Date('2026-10-24');
+let FECHA_ASAMBLEA = null; // se carga desde la hoja ASAMBLEAS, nunca fija en el código
+let LUGAR_ASAMBLEA_REAL = '';
+
+function cargarFechaAsamblea(callback) {
+  jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(res) {
+    if (res && res.ok) {
+      FECHA_ASAMBLEA = new Date(res.fecha);
+      LUGAR_ASAMBLEA_REAL = res.lugar;
+      actualizarHito('Asamblea General Ordinaria celebrada', 'PENDIENTE', 'Convocada para ' + FECHA_ASAMBLEA.toLocaleDateString('es-AR') + ', ' + res.hora + ' hs');
+    } else {
+      actualizarHito('Asamblea General Ordinaria celebrada', 'PENDIENTE', 'Todavía sin fecha registrada — se carga desde Convocatoria');
+    }
+    if (callback) callback();
+  });
+}
 let ID_BALANCE_ACTIVO_DASHBOARD = null;
 
 function togglePanelBalanceAsamblea(idSufijo) {
@@ -332,9 +347,13 @@ function togglePanelBalanceAsamblea(idSufijo) {
   panel.style.display = abrir ? 'block' : 'none';
   if (!abrir) return;
 
+  if (!FECHA_ASAMBLEA) {
+    panel.innerHTML = '<div style="color:var(--hueso); font-size:13px;">Todavía no hay fecha de Asamblea registrada en el sistema — se carga desde el módulo Convocatoria cuando se genere.</div>';
+    return;
+  }
   const hoy = new Date();
   if (hoy < FECHA_ASAMBLEA) {
-    panel.innerHTML = '<div style="color:var(--hueso); font-size:13px;">🔒 Disponible recién el <strong>24/10/2026</strong>, fecha de la Asamblea. No se puede marcar antes, aunque el Balance ya esté Legalizado.</div>';
+    panel.innerHTML = '<div style="color:var(--hueso); font-size:13px;">🔒 Disponible recién el <strong>' + FECHA_ASAMBLEA.toLocaleDateString('es-AR') + '</strong>, fecha real de la Asamblea (tomada de la Convocatoria). No se puede marcar antes, aunque el Balance ya esté Legalizado.</div>';
     return;
   }
   if (!ID_BALANCE_ACTIVO_DASHBOARD) {

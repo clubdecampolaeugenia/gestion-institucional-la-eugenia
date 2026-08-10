@@ -74,7 +74,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -116,7 +116,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v27-convocatoria-documentos-10ago-1400' };
+      resultado = { ok: true, version: 'v28-fecha-asamblea-dinamica-10ago-1500' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -139,6 +139,10 @@ function doGet(e) {
       resultado = registrarInformeRevisor(e.parameter);
     } else if (action === 'generarConvocatoriaYDocumentos') {
       resultado = generarConvocatoriaYDocumentos(e.parameter);
+    } else if (action === 'obtenerAsambleaEjercicio') {
+      resultado = obtenerAsambleaEjercicio();
+    } else if (action === 'sembrarAsambleaReal') {
+      resultado = sembrarAsambleaReal();
     } else if (action === 'obtenerConfigMemoria') {
       resultado = obtenerConfigMemoria();
     } else if (action === 'guardarConfigMemoria') {
@@ -1226,6 +1230,40 @@ function getHojaAsambleas() {
   let hoja = ss.getSheetByName(HOJA_ASAMBLEAS);
   if (!hoja) hoja = ss.insertSheet(HOJA_ASAMBLEAS);
   return hoja;
+}
+
+// La app SIEMPRE debe leer la fecha de acá, nunca tenerla escrita fija en el código del front-end.
+function obtenerAsambleaEjercicio() {
+  const ejercicioActivo = obtenerEjercicioActivo();
+  if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
+
+  const hoja = getHojaAsambleas();
+  const datos = hoja.getDataRange().getValues();
+  for (let i = 1; i < datos.length; i++) {
+    if (datos[i][1] === ejercicioActivo.ejercicio.idEjercicio) {
+      return {
+        ok: true,
+        idAsamblea: datos[i][0],
+        fecha: Utilities.formatDate(new Date(datos[i][2]), Session.getScriptTimeZone(), 'yyyy-MM-dd'),
+        hora: datos[i][3],
+        lugar: datos[i][4],
+        estado: datos[i][6]
+      };
+    }
+  }
+  return { ok: false, error: 'Todavía no hay fecha de Asamblea registrada para este Ejercicio' };
+}
+
+// Carga puntual del dato real ya decidido en el Acta 562 -- una sola vez, para no dejar la hoja vacía
+function sembrarAsambleaReal() {
+  const ejercicioActivo = obtenerEjercicioActivo();
+  const hoja = getHojaAsambleas();
+  const datos = hoja.getDataRange().getValues();
+  for (let i = 1; i < datos.length; i++) {
+    if (datos[i][1] === ejercicioActivo.ejercicio.idEjercicio) return { ok: true, mensaje: 'Ya existía, no se duplica' };
+  }
+  hoja.appendRow(['ASM-' + ejercicioActivo.ejercicio.numero, ejercicioActivo.ejercicio.idEjercicio, new Date('2026-10-24'), '16:00', 'el salón de usos múltiples del Club, Ruta Nacional N.° 105, Km 5, Garupá, Misiones', JSON.stringify([]), 'CONVOCADA', '', '', '']);
+  return { ok: true };
 }
 
 function calcularFechaLimiteAsamblea(fechaCierreStr) {
