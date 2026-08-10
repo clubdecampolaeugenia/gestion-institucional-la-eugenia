@@ -74,7 +74,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -116,7 +116,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v26-informe-revisor-como-upload-10ago-1300' };
+      resultado = { ok: true, version: 'v27-convocatoria-documentos-10ago-1400' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -137,6 +137,8 @@ function doGet(e) {
       resultado = generarBorradorMemoria(e.parameter);
     } else if (action === 'registrarInformeRevisor') {
       resultado = registrarInformeRevisor(e.parameter);
+    } else if (action === 'generarConvocatoriaYDocumentos') {
+      resultado = generarConvocatoriaYDocumentos(e.parameter);
     } else if (action === 'obtenerConfigMemoria') {
       resultado = obtenerConfigMemoria();
     } else if (action === 'guardarConfigMemoria') {
@@ -1215,6 +1217,106 @@ Respondé ÚNICAMENTE con un JSON:
   "conclusion": "APRUEBA_SIN_SALVEDADES o APRUEBA_CON_SALVEDADES o NO_APRUEBA o INDETERMINADO",
   "resumen": "1-2 oraciones resumiendo qué dice el informe, en tono neutral"
 }`;
+
+// ============ CONVOCATORIA Y DOCUMENTOS DE ASAMBLEA ============
+const HOJA_ASAMBLEAS = 'ASAMBLEAS';
+
+function getHojaAsambleas() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let hoja = ss.getSheetByName(HOJA_ASAMBLEAS);
+  if (!hoja) hoja = ss.insertSheet(HOJA_ASAMBLEAS);
+  return hoja;
+}
+
+function calcularFechaLimiteAsamblea(fechaCierreStr) {
+  const cierre = new Date(fechaCierreStr.split('/').reverse().join('-'));
+  const limite = new Date(cierre);
+  limite.setMonth(limite.getMonth() + 3);
+  return limite;
+}
+
+function generarConvocatoriaYDocumentos(params) {
+  const ejercicioActivo = obtenerEjercicioActivo();
+  if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
+  const ej = ejercicioActivo.ejercicio;
+
+  const fechaLimite = calcularFechaLimiteAsamblea(ej.fechaCierre);
+  const fechaAsamblea = new Date(params.fechaAsamblea);
+  const fueraDeTermino = fechaAsamblea > fechaLimite;
+
+  const autRes = listarAutoridades();
+  const vencenEsteAnio = autRes.ok ? autRes.vencenEsteAnio : [];
+
+  const ultimoNumero = obtenerUltimoNumeroActa();
+  const nuevoNumeroActa = ultimoNumero + 1;
+
+  // Orden del Día -- objeto único, todos los documentos lo citan literal, nunca se retipea
+  const puntos = [];
+  puntos.push('1º Elección del asociado que presidirá la Asamblea y del Secretario de Asamblea, y de dos socios para firmar el Acta, conforme al artículo 66 del Estatuto Social.');
+  puntos.push('2º Lectura y aprobación del Acta de la Asamblea anterior.');
+  let n = 3;
+  if (fueraDeTermino) {
+    puntos.push(n + 'º Consideración de las razones por las cuales la Asamblea General Ordinaria correspondiente al Ejercicio Económico N.° ' + ej.numero + ' se celebra fuera del plazo previsto por el artículo 39 del Estatuto Social.');
+    n++;
+  }
+  puntos.push(n + 'º Lectura y aprobación de la Memoria, Balance General, Inventario, Cuenta de Gastos y Recursos e Informe del Revisor de Cuentas correspondientes al Ejercicio Económico N.° ' + ej.numero + ', finalizado el ' + ej.fechaCierre + '.');
+  n++;
+  puntos.push(n + 'º Aprobación del monto establecido por la Comisión Directiva para la cuota social, de conformidad con lo establecido en el artículo 16 del Estatuto Social.');
+  n++;
+  if (vencenEsteAnio.length > 0) {
+    puntos.push(n + 'º Renovación parcial de la Comisión Directiva y/o Comisión Revisora de Cuentas por finalización de mandato: ' + vencenEsteAnio.join(', ') + ', conforme a los artículos 22, 35 y 63 del Estatuto Social.');
+    n++;
+  }
+  puntos.push(n + 'º Cualquier otro asunto incluido regularmente en la convocatoria.');
+
+  const ordenDelDiaTexto = puntos.join('\n');
+
+  const nuevoIdAsamblea = 'ASM-' + ej.numero;
+  const hojaAsam = getHojaAsambleas();
+  hojaAsam.appendRow([nuevoIdAsamblea, ej.idEjercicio, new Date(params.fechaAsamblea), params.horaAsamblea, params.lugarAsamblea, JSON.stringify(puntos), 'CONVOCADA', '', '', '']);
+
+  const fechaAsambleaFmt = Utilities.formatDate(fechaAsamblea, Session.getScriptTimeZone(), "dd 'de' MMMM 'de' yyyy");
+
+  // ---- 1. Acta de Comisión Directiva ----
+  let actaCD = 'ACTA N.º ' + nuevoNumeroActa + '\n\n';
+  actaCD += 'En la sede social del Club de Campo La Eugenia, siendo las ' + params.horaReunionCD + ' hs. del día ' + params.fechaReunionCD + ', se reúnen los siguientes miembros de Comisión Directiva: ' + params.presentesCD + '.\n\n';
+  actaCD += 'Como primer punto del orden del día se da lectura al acta N.º ' + ultimoNumero + '. Se aprueba por unanimidad.\n\n';
+  actaCD += 'Como segundo punto del orden del día, la Comisión Directiva resuelve convocar a Asamblea General Ordinaria para el día ' + fechaAsambleaFmt + ', a las ' + params.horaAsamblea + ' horas, en ' + params.lugarAsamblea + '.\n\n';
+  if (fueraDeTermino) {
+    actaCD += 'Se deja constancia de que, conforme al artículo 39 del Estatuto Social, el plazo estatutario para la Asamblea Ordinaria vencía el ' + Utilities.formatDate(fechaLimite, Session.getScriptTimeZone(), 'dd/MM/yyyy') + '. En razón de ' + (params.motivoFueraDeTermino || '[COMPLETAR MOTIVO]') + ', se incluye en el Orden del Día el tratamiento de esta circunstancia.\n\n';
+  }
+  actaCD += 'Como tercer punto del orden del día, se aprueba el siguiente Orden del Día para la Asamblea:\n\n' + ordenDelDiaTexto + '\n\n';
+  actaCD += 'Siendo las ' + (params.horaFinReunionCD || '21:15') + ' horas se levanta la sesión.-';
+
+  // ---- 2. Edicto diario local ----
+  let edictoDiario = 'CLUB DE CAMPO "LA EUGENIA"\nConvocatoria a Asamblea General Ordinaria\n\n';
+  edictoDiario += 'La Comisión Directiva convoca a los señores asociados a la Asamblea General Ordinaria, que se celebrará el día ' + fechaAsambleaFmt + ', a las ' + params.horaAsamblea + ' horas, en ' + params.lugarAsamblea + ', para tratar el siguiente:\n\nORDEN DEL DÍA\n\n' + ordenDelDiaTexto;
+  edictoDiario += '\n\nConforme al artículo 44 del Estatuto Social, si a la hora fijada no se reuniera la mayoría absoluta de los asociados con derecho a voto, la Asamblea se celebrará válidamente una hora después.\n\nGarupá, Misiones.';
+
+  // ---- 3. Edicto Boletín Oficial ----
+  let edictoBoletin = edictoDiario + '\n\n[Publíquese 2 (dos) días en el Boletín Oficial de la Provincia de Misiones. El plazo de 15 días corridos se cuenta desde la última publicación hasta la Asamblea.]';
+
+  // ---- 4. Circular a socios ----
+  let circular = 'Señores Socios:\n\nPor medio de la presente, la Comisión Directiva convoca a la Asamblea General Ordinaria, que se celebrará el día ' + fechaAsambleaFmt + ', a las ' + params.horaAsamblea + ' horas, en ' + params.lugarAsamblea + ', para tratar el siguiente:\n\nORDEN DEL DÍA\n\n' + ordenDelDiaTexto;
+  circular += '\n\nRecordamos que, conforme a los artículos 13 y 47 del Estatuto Social, solo podrán participar y votar los socios activos que se encuentren al día con el pago de sus cuotas sociales.\n\nCOMISIÓN DIRECTIVA';
+
+  // Guarda los 4 documentos en la tabla única
+  const hoja = getHojaDocumentos();
+  const docs = [
+    { tipo: 'ACTA_CD_CONVOCATORIA', contenido: actaCD },
+    { tipo: 'EDICTO_DIARIO', contenido: edictoDiario },
+    { tipo: 'EDICTO_BOLETIN', contenido: edictoBoletin },
+    { tipo: 'CIRCULAR', contenido: circular }
+  ];
+  const resultado = [];
+  docs.forEach(doc => {
+    const nuevoId = 'DOC-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss') + '-' + doc.tipo;
+    hoja.appendRow([nuevoId, ej.idEjercicio, doc.tipo, 1, 'BORRADOR', doc.contenido, 'IA', new Date()]);
+    resultado.push({ tipo: doc.tipo, idDocumento: nuevoId, contenido: doc.contenido });
+  });
+
+  return { ok: true, documentos: resultado, fueraDeTermino: fueraDeTermino, fechaLimite: Utilities.formatDate(fechaLimite, Session.getScriptTimeZone(), 'dd/MM/yyyy'), numeroActa: nuevoNumeroActa };
+}
 
 function registrarInformeRevisor(params) {
   const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
