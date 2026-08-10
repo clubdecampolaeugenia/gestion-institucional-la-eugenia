@@ -74,7 +74,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -103,6 +103,8 @@ function doGet(e) {
       resultado = generarBorradorActa(e.parameter);
     } else if (action === 'actualizarActa') {
       resultado = actualizarActa(e.parameter);
+    } else if (action === 'guardarActaHistorica') {
+      resultado = guardarActaHistorica(e.parameter);
     } else if (action === 'procesarBalance') {
       resultado = procesarBalance();
     } else if (action === 'listarBalances') {
@@ -114,7 +116,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v21-deteccion-duplicados-10ago-0100' };
+      resultado = { ok: true, version: 'v22-actas-historicas-10ago-0200' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'listarEjercicios') {
@@ -412,6 +414,22 @@ function generarBorradorActa(params) {
   });
 
   return { ok: true, idActa: nuevoNumero, puntos: puntos };
+}
+
+function guardarActaHistorica(params) {
+  const hoja = getHojaActas();
+  hoja.appendRow([
+    params.idActa,
+    params.idEjercicio,
+    new Date(params.fechaReunion),
+    params.horaInicio,
+    params.horaFin,
+    params.presentes,
+    params.puntos,
+    params.estado || 'FIRMADA',
+    params.idActaAnterior || ''
+  ]);
+  return { ok: true };
 }
 
 function actualizarActa(params) {
