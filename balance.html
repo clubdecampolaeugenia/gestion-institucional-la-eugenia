@@ -221,22 +221,21 @@ function construirBotonesEstado(estado) {
   const idxActual = pasos.indexOf(estado);
   if (idxActual === -1) return ''; // OBSERVADO u otro estado fuera de esta cadena
 
-  let html = '<div style="display:flex; flex-direction:column; gap:6px; margin:10px 0 18px;">';
+  const estiloBotonBase = 'display:block; width:100%; padding:14px; border-radius:24px; font-family:\'Roboto\'; font-size:15px; font-weight:900; text-transform:uppercase; margin-bottom:8px; box-sizing:border-box;';
+
+  let html = '<div style="margin:10px 0 18px;">';
   pasos.forEach((paso, i) => {
-    if (i < idxActual) {
-      // Ya cumplido: gris, con check, no clickeable
-      html += '<div style="padding:10px 14px; border-radius:16px; background:#e8e8e8; color:#888; font-size:12px; font-weight:900; text-transform:uppercase;">✓ ' + etiquetaPaso[paso] + '</div>';
-    } else if (i === idxActual) {
-      // Estado actual: se muestra, no es un botón (ya estamos ahí)
-      html += '<div style="padding:10px 14px; border-radius:16px; background:var(--petroleo); color:var(--hueso); font-size:12px; font-weight:900; text-transform:uppercase;">● ' + etiquetaPaso[paso] + ' (actual)</div>';
+    if (i <= idxActual) {
+      // Ya cumplido (incluye el actual): mismo tamaño de botón, pero gris, inactivo, con el texto en pasado
+      html += '<button type="button" disabled style="' + estiloBotonBase + ' border:2px solid #bbb; background:#e8e8e8; color:#888; cursor:not-allowed;">✓ Ya aprobado — ' + etiquetaPaso[paso] + '</button>';
     } else if (i === idxActual + 1) {
-      // Siguiente paso: el único accionable
+      // Siguiente paso: el único accionable, mismo tamaño, colorido
       const esAsamblea = paso === 'APROBADO_ASAMBLEA';
       const accion = esAsamblea ? 'confirmarAprobacionAsamblea()' : ('avanzarEstadoBalance(\'' + paso + '\')');
-      html += '<button type="button" style="display:block; width:100%; padding:14px; border-radius:24px; border:2px solid var(--naranja); background:var(--petroleo); color:var(--naranja); font-family:\'Roboto\'; font-size:15px; font-weight:900; text-transform:uppercase; cursor:pointer;" onclick="' + accion + '">Marcar como ' + etiquetaPaso[paso] + '</button>';
+      html += '<button type="button" style="' + estiloBotonBase + ' border:2px solid var(--naranja); background:var(--petroleo); color:var(--naranja); cursor:pointer;" onclick="' + accion + '">Marcar como ' + etiquetaPaso[paso] + '</button>';
     } else {
-      // Futuro, todavía no alcanzable
-      html += '<div style="padding:10px 14px; border-radius:16px; background:#f5f5f5; color:#ccc; font-size:12px; font-weight:900; text-transform:uppercase;">○ ' + etiquetaPaso[paso] + '</div>';
+      // Futuro, todavía no alcanzable: mismo tamaño, muy apagado
+      html += '<button type="button" disabled style="' + estiloBotonBase + ' border:2px dashed #ddd; background:#fafafa; color:#ccc; cursor:not-allowed;">' + etiquetaPaso[paso] + '</button>';
     }
   });
   html += '</div>';
