@@ -292,6 +292,23 @@ function renderHitosGenerico(lista, contenedorId, prefijo) {
   const cont = document.getElementById(contenedorId);
   cont.innerHTML = '';
   lista.forEach((h, i) => {
+    // Caso especial: este hito tiene su propia acción con fecha, no un link a otro módulo
+    if (h.nombre === 'Balance — aprobado por Asamblea') {
+      const div = document.createElement('div');
+      div.className = 'hito-card no-disponible';
+      div.style.cursor = 'pointer';
+      div.onclick = () => togglePanelBalanceAsamblea(prefijo + i);
+      div.innerHTML =
+        '<div class="hito-num">' + (i + 1) + '</div>' +
+        '<div class="hito-info"><div class="hito-nombre">' + h.nombre + '</div><div class="hito-detalle" id="' + prefijo + 'detalle-' + i + '">' + h.detalle + '</div><span class="hito-flecha">Ver &rarr;</span></div>' +
+        '<span class="hito-estado estado-' + h.estado.toLowerCase().replace('í','i') + '" id="' + prefijo + 'estado-' + i + '">' + ESTADO_LABEL[h.estado] + '</span>';
+      cont.appendChild(div);
+      const panel = document.createElement('div');
+      panel.id = 'panelBalanceAsamblea-' + prefijo + i;
+      panel.style.cssText = 'display:none; background:var(--petroleo); border-radius:16px; padding:14px 16px; margin:-4px 0 10px;';
+      cont.appendChild(panel);
+      return;
+    }
     const el = document.createElement(h.link ? 'a' : 'div');
     el.className = 'hito-card' + (h.link ? ' clickable' : ' no-disponible');
     if (h.link) el.href = h.link;
@@ -303,6 +320,39 @@ function renderHitosGenerico(lista, contenedorId, prefijo) {
       '<div class="hito-info"><div class="hito-nombre">' + h.nombre + '</div><div class="hito-detalle" id="' + prefijo + 'detalle-' + i + '">' + h.detalle + '</div>' + indicador + '</div>' +
       '<span class="hito-estado estado-' + h.estado.toLowerCase().replace('í','i') + '" id="' + prefijo + 'estado-' + i + '">' + ESTADO_LABEL[h.estado] + '</span>';
     cont.appendChild(el);
+  });
+}
+
+const FECHA_ASAMBLEA = new Date('2026-10-24');
+let ID_BALANCE_ACTIVO_DASHBOARD = null;
+
+function togglePanelBalanceAsamblea(idSufijo) {
+  const panel = document.getElementById('panelBalanceAsamblea-' + idSufijo);
+  const abrir = panel.style.display === 'none';
+  panel.style.display = abrir ? 'block' : 'none';
+  if (!abrir) return;
+
+  const hoy = new Date();
+  if (hoy < FECHA_ASAMBLEA) {
+    panel.innerHTML = '<div style="color:var(--hueso); font-size:13px;">🔒 Disponible recién el <strong>24/10/2026</strong>, fecha de la Asamblea. No se puede marcar antes, aunque el Balance ya esté Legalizado.</div>';
+    return;
+  }
+  if (!ID_BALANCE_ACTIVO_DASHBOARD) {
+    panel.innerHTML = '<div style="color:var(--hueso); font-size:13px;">No hay Balance procesado para marcar.</div>';
+    return;
+  }
+  panel.innerHTML = '<div style="color:var(--hueso); font-size:13px; margin-bottom:10px;">Ya es el día de la Asamblea o después. Si el Balance fue aprobado en el evento:</div>' +
+    '<button type="button" style="display:block; width:100%; padding:12px; border-radius:20px; border:2px solid var(--naranja); background:var(--hueso); color:var(--petroleo); font-family:\'Roboto\'; font-size:13px; font-weight:900; text-transform:uppercase; cursor:pointer;" onclick="marcarBalanceAprobadoAsamblea()">Marcar como Aprobado por Asamblea</button>';
+}
+
+function marcarBalanceAprobadoAsamblea() {
+  jsonp(EXEC_URL_GI + '?action=actualizarEstadoBalance&idBalance=' + encodeURIComponent(ID_BALANCE_ACTIVO_DASHBOARD) + '&estado=APROBADO_ASAMBLEA&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    if (res && res.ok) {
+      cargarEstadoBalance();
+      mostrarAviso('Balance marcado como Aprobado por Asamblea.');
+    } else {
+      mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+    }
   });
 }
 
@@ -410,6 +460,7 @@ function cargarEstadoBalance() {
       return;
     }
     const ultimo = res.balances[0];
+    ID_BALANCE_ACTIVO_DASHBOARD = ultimo.idBalance;
     const textos = {
       OBSERVADO: 'Versión ' + ultimo.version + ' — con observaciones críticas de la IA sin resolver',
       EN_REVISION: 'Versión ' + ultimo.version + ' — sin observaciones críticas, en revisión',
