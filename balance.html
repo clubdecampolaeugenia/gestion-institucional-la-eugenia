@@ -68,6 +68,9 @@
   .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 12px 32px rgba(0,0,0,0.35); text-align: center; }
   .aviso-texto { color: var(--petroleo); font-size: 14px; line-height: 1.5; margin-bottom: 18px; white-space: pre-wrap; }
   .aviso-btn { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .confirm-btns { display: flex; gap: 10px; justify-content: center; }
+  .confirm-btn-aceptar { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .confirm-btn-cancelar { background: transparent; color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -179,7 +182,22 @@ function cerrarSesion() {
   location.reload();
 }
 
+function mostrarConfirmacion(mensaje, callbackAceptar) {
+  const overlay = document.createElement('div');
+  overlay.className = 'aviso-overlay';
+  overlay.innerHTML = '<div class="aviso-card"><div class="aviso-texto">' + mensaje.replace(/</g,'&lt;') + '</div><div class="confirm-btns"><button type="button" class="confirm-btn-cancelar">Cancelar</button><button type="button" class="confirm-btn-aceptar">Aceptar</button></div></div>';
+  document.body.appendChild(overlay);
+  overlay.querySelector('.confirm-btn-cancelar').onclick = function() { document.body.removeChild(overlay); };
+  overlay.querySelector('.confirm-btn-aceptar').onclick = function() { document.body.removeChild(overlay); callbackAceptar(); };
+}
+
 function procesarBalance() {
+  mostrarConfirmacion('Esto va a leer el/los PDF que estén ahora mismo en la carpeta de Drive, consultar a la IA (tiene un costo real) y crear una VERSIÓN NUEVA del Balance con todas las observaciones en estado pendiente otra vez — no continúa el trabajo de la versión anterior. Usalo solo si subiste un PDF nuevo o corregido. ¿Confirmás?', function() {
+    ejecutarProcesarBalance();
+  });
+}
+
+function ejecutarProcesarBalance() {
   const btn = document.getElementById('btnProcesar');
   btn.disabled = true;
   document.getElementById('loadingText').innerHTML = '<span class="spinner"></span> Leyendo el PDF y consultando a la IA... puede tardar hasta un minuto.';
