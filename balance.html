@@ -252,9 +252,10 @@ function confirmarAprobacionAsamblea() {
 function avanzarEstadoBalance(nuevoEstado) {
   jsonp(EXEC_URL_GI + '?action=actualizarEstadoBalance&idBalance=' + encodeURIComponent(BALANCE_ACTUAL_ID) + '&estado=' + nuevoEstado + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
     if (res && res.ok) {
-      document.getElementById('estadoGeneralTexto').textContent = nuevoEstado;
+      mostrarAviso('Actualizado a ' + nuevoEstado + '.', function() {
+        verDetalle(BALANCE_ACTUAL_ID);
+      });
       cargarBalances();
-      mostrarAviso('Actualizado a ' + nuevoEstado + '.');
     } else {
       mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
     }
