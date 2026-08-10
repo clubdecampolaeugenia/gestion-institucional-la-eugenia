@@ -136,6 +136,14 @@
 
       <div id="listaActas"></div>
 
+      <div id="previewActa" style="display:none;">
+        <hr class="divider">
+        <div class="field-label" id="previewActaTitulo"></div>
+        <div class="texto-final-box" id="previewTextoBox" style="display:block;"></div>
+        <button type="button" class="btn-outline" onclick="pasarAEditar()">✏️ Editar</button>
+        <button type="button" class="btn-ghost" onclick="cerrarPreview()">Cerrar</button>
+      </div>
+
       <div id="editorActa" style="display:none;">
         <hr class="divider">
         <div class="field-label" id="editorActaTitulo"></div>
@@ -330,11 +338,37 @@ function cargarActas() {
     res.actas.forEach(a => {
       const div = document.createElement('div');
       div.className = 'acta-card';
-      div.onclick = () => abrirEditor(a.idActa);
+      div.onclick = () => abrirPreview(a.idActa);
       div.innerHTML = '<span class="acta-num">Acta N.º ' + a.idActa + ' — ' + a.fechaReunion + ' <small style="opacity:.6; font-weight:400;">(' + a.idEjercicio + ')</small></span><span class="estado-badge estado-' + a.estado + '">' + a.estado + '</span>';
       cont.appendChild(div);
     });
   });
+}
+
+function abrirPreview(idActa) {
+  jsonp(EXEC_URL_GI + '?action=obtenerActa&idActa=' + idActa, function(res) {
+    if (!res || !res.ok) { mostrarAviso('No se pudo abrir el acta'); return; }
+    ACTA_ACTUAL = res.acta;
+    document.getElementById('previewActa').style.display = 'block';
+    document.getElementById('previewActaTitulo').textContent = 'Acta N.º ' + ACTA_ACTUAL.idActa + ' — ' + ACTA_ACTUAL.estado;
+    document.getElementById('previewTextoBox').textContent = construirTextoFinalActa(ACTA_ACTUAL);
+    document.getElementById('editorActa').style.display = 'none';
+    document.getElementById('previewActa').scrollIntoView({ behavior: 'smooth' });
+  });
+}
+
+function cerrarPreview() {
+  document.getElementById('previewActa').style.display = 'none';
+  ACTA_ACTUAL = null;
+}
+
+function pasarAEditar() {
+  document.getElementById('previewActa').style.display = 'none';
+  document.getElementById('editorActa').style.display = 'block';
+  document.getElementById('editorActaTitulo').textContent = 'Editando Acta N.º ' + ACTA_ACTUAL.idActa + ' (' + ACTA_ACTUAL.estado + ')';
+  renderPuntos();
+  document.getElementById('textoFinalBox').style.display = 'none';
+  document.getElementById('editorActa').scrollIntoView({ behavior: 'smooth' });
 }
 
 function abrirEditor(idActa) {
