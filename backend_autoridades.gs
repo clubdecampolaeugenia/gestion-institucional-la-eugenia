@@ -116,9 +116,11 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v22-actas-historicas-10ago-0200' };
+      resultado = { ok: true, version: 'v23-resumen-dashboard-10ago-1000' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
+    } else if (action === 'obtenerResumenDashboard') {
+      resultado = obtenerResumenDashboard();
     } else if (action === 'listarEjercicios') {
       resultado = listarEjercicios();
     } else if (action === 'cerrarYAbrirNuevoEjercicio') {
@@ -743,6 +745,61 @@ function listarEjercicios() {
   }
   ejercicios.sort((a, b) => Number(b.numero) - Number(a.numero));
   return { ok: true, ejercicios: ejercicios };
+}
+
+// Resumen agregado para mostrar en la tile del Centro de Control -- una sola llamada, no cinco
+function obtenerResumenDashboard() {
+  const ejercicioActivo = obtenerEjercicioActivo();
+  if (!ejercicioActivo.ok) return { ok: false, error: 'Sin Ejercicio activo' };
+  const ej = ejercicioActivo.ejercicio;
+
+  // Autoridades: vacantes sobre 12 cargos de Comisión Directiva
+  const autRes = listarAutoridades();
+  const vacantesAutoridades = autRes.ok ? Math.max(0, 12 - autRes.autoridades.length) : null;
+  const vencenEsteAnio = autRes.ok ? autRes.vencenEsteAnio.length : 0;
+
+  // Actas: cuántas en borrador
+  const actasRes = listarActas();
+  const actasBorrador = actasRes.ok ? actasRes.actas.filter(a => a.estado === 'BORRADOR').length : 0;
+  const actasTotal = actasRes.ok ? actasRes.actas.length : 0;
+
+  // Balance: estado del último del ejercicio activo
+  const balancesRes = listarBalances();
+  const balanceDelEjercicio = balancesRes.ok ? balancesRes.balances.find(b => b.idEjercicio === ej.idEjercicio) : null;
+
+  // Novedades: cuántas sin revisar (EVALUAR)
+  const novedadesRes = listarNovedades({ idEjercicio: ej.idEjercicio });
+  const novedadesPendientes = novedadesRes.ok ? novedadesRes.novedades.filter(n => n.considerarMemoria === 'EVALUAR').length : 0;
+  const novedadesAprobadas = novedadesRes.ok ? novedadesRes.novedades.filter(n => n.considerarMemoria === 'SI').length : 0;
+
+  // Memoria: última versión generada
+  const memoriaRes = listarDocumentos({ tipo: 'MEMORIA', idEjercicio: ej.idEjercicio });
+  const ultimaMemoria = memoriaRes.ok && memoriaRes.documentos.length ? memoriaRes.documentos[0] : null;
+
+  // Progreso: mismos 10 hitos y pesos que usa el Dashboard de la app (3 calculados en vivo, 7 con el estado real conocido hoy)
+  const pesoEstado = { COMPLETO: 1, PROGRESO: 0.5, OBSERVADO: 0.25, PENDIENTE: 0, NOINICIADO: 0 };
+  const estadoBalance = !balanceDelEjercicio ? 'NOINICIADO' : (balanceDelEjercicio.estado === 'APROBADO_ASAMBLEA' ? 'COMPLETO' : (balanceDelEjercicio.estado === 'OBSERVADO' ? 'OBSERVADO' : 'PROGRESO'));
+  const estadoAutoridades = vacantesAutoridades === 0 ? 'COMPLETO' : 'PROGRESO';
+  const estadoActas = actasTotal === 0 ? 'NOINICIADO' : (actasBorrador > 0 ? 'PROGRESO' : 'COMPLETO');
+  const hitosFijos = ['COMPLETO', 'PENDIENTE', ultimaMemoria ? 'PROGRESO' : 'PENDIENTE', 'PROGRESO', 'PROGRESO', 'NOINICIADO', 'PROGRESO'];
+  const todosLosPesos = [estadoBalance, estadoAutoridades, estadoActas].concat(hitosFijos).map(e => pesoEstado[e]);
+  const progresoPct = Math.round((todosLosPesos.reduce((a, b) => a + b, 0) / todosLosPesos.length) * 100);
+
+  return {
+    ok: true,
+    ejercicioNumero: ej.numero,
+    ejercicioFechas: ej.fechaInicio + ' a ' + ej.fechaCierre,
+    progresoPct: progresoPct,
+    balanceEstado: balanceDelEjercicio ? balanceDelEjercicio.estado : 'SIN_PROCESAR',
+    autoridadesVacantes: vacantesAutoridades,
+    autoridadesVencenEsteAnio: vencenEsteAnio,
+    actasBorrador: actasBorrador,
+    actasTotal: actasTotal,
+    novedadesPendientes: novedadesPendientes,
+    novedadesAprobadas: novedadesAprobadas,
+    memoriaVersion: ultimaMemoria ? ultimaMemoria.version : 0,
+    memoriaEstado: ultimaMemoria ? ultimaMemoria.estado : 'SIN_GENERAR'
+  };
 }
 
 function obtenerEjercicioActivo() {
