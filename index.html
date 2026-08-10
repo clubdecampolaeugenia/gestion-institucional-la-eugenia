@@ -102,12 +102,12 @@
       </div>
 
       <div style="margin-top:14px; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--lima);">Preparación para la Asamblea</div>
-      <div class="progreso-barra-fondo" style="margin-top:6px;"><div class="progreso-barra-fill" id="progresoFill" style="width:0%;"></div></div>
-      <div class="progreso-pct" id="progresoPct">calculando...</div>
+      <div class="progreso-barra-fondo" style="margin-top:6px;"><div class="progreso-barra-fill" id="progresoFill" style="width:0%; background:var(--lima);"></div></div>
+      <div class="progreso-pct" id="progresoPct" style="color:var(--lima);">calculando...</div>
 
-      <div style="margin-top:14px; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--naranja);">Cierre del Ejercicio (se completa con la Asamblea)</div>
+      <div style="margin-top:14px; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--naranja);">Resultado de la Asamblea</div>
       <div class="progreso-barra-fondo" style="margin-top:6px;"><div class="progreso-barra-fill" id="progresoCierreFill" style="width:0%; background:var(--naranja);"></div></div>
-      <div class="progreso-pct" id="progresoCierrePct">calculando...</div>
+      <div class="progreso-pct" id="progresoCierrePct" style="color:var(--naranja);">calculando...</div>
     </div>
 
     <div class="proxima-accion">
@@ -124,7 +124,7 @@
     <div class="seccion-titulo">Preparación para la Asamblea</div>
     <div id="listaHitos"></div>
 
-    <div class="seccion-titulo">Cierre del Ejercicio</div>
+    <div class="seccion-titulo">Resultado de la Asamblea</div>
     <div id="listaHitosCierre"></div>
 
     <hr class="divider">
@@ -164,7 +164,7 @@ let PIN_SESION = '';
 // Los marcados "manual: true" reflejan el estado real conocido hoy; pasarán a calcularse solos
 // cuando esos módulos (Balance, Memoria, Asamblea, Padrón) tengan su propio backend.
 const HITOS = [
-  { nombre: 'Ejercicio cerrado', detalle: '30/04/2026 — Ejercicio N.º 37', estado: 'COMPLETO', link: null, manual: true },
+  { nombre: 'Ejercicio cerrado', detalle: 'Cierre del período contable (30/04/2026) — distinto del cierre institucional que se hace con la Asamblea', estado: 'COMPLETO', link: null, manual: true },
   { nombre: 'Balance', detalle: 'Recibido, con errores detectados (entidad y fechas)', estado: 'OBSERVADO', link: 'balance.html', manual: false },
   { nombre: 'Informe Comisión Revisora', detalle: 'Falta informe formal firmado (Art. 36)', estado: 'PENDIENTE', link: 'informe-revisor.html', manual: false },
   { nombre: 'Memoria', detalle: 'Borrador redactado, falta aprobación de CD', estado: 'PROGRESO', link: 'memoria.html', manual: false },
