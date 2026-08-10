@@ -116,7 +116,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v23-resumen-dashboard-10ago-1000' };
+      resultado = { ok: true, version: 'v24-recordar-socios-10ago-1100' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -139,6 +139,8 @@ function doGet(e) {
       resultado = obtenerConfigMemoria();
     } else if (action === 'guardarConfigMemoria') {
       resultado = guardarConfigMemoria(e.parameter);
+    } else if (action === 'obtenerUltimosSocios') {
+      resultado = obtenerUltimosSocios(e.parameter);
     } else if (action === 'listarDocumentos') {
       resultado = listarDocumentos(e.parameter);
     } else if (action === 'actualizarDocumento') {
@@ -1159,16 +1161,46 @@ function getHojaConfigMemoria() {
 }
 
 function obtenerConfigMemoria() {
-  const hoja = getHojaConfigMemoria();
-  const valor = hoja.getRange('B1').getValue();
+  const valor = obtenerValorPorClave('INSTRUCCIONES_ADICIONALES');
   return { ok: true, instrucciones: valor || '' };
 }
 
 function guardarConfigMemoria(params) {
-  const hoja = getHojaConfigMemoria();
-  hoja.getRange('A1').setValue('INSTRUCCIONES_ADICIONALES');
-  hoja.getRange('B1').setValue(params.instrucciones || '');
+  guardarValorPorClave('INSTRUCCIONES_ADICIONALES', params.instrucciones || '');
   return { ok: true };
+}
+
+// Clave/valor genérico en MEMORIA_CONFIG -- se reutiliza para instrucciones de estilo,
+// últimos números de socios cargados por Ejercicio, y lo que haga falta a futuro.
+function obtenerValorPorClave(clave) {
+  const hoja = getHojaConfigMemoria();
+  const datos = hoja.getDataRange().getValues();
+  for (let i = 0; i < datos.length; i++) {
+    if (datos[i][0] === clave) return datos[i][1];
+  }
+  return null;
+}
+
+function guardarValorPorClave(clave, valor) {
+  const hoja = getHojaConfigMemoria();
+  const datos = hoja.getDataRange().getValues();
+  for (let i = 0; i < datos.length; i++) {
+    if (datos[i][0] === clave) {
+      hoja.getRange(i + 1, 2).setValue(valor);
+      return;
+    }
+  }
+  hoja.appendRow([clave, valor]);
+}
+
+function obtenerUltimosSocios(params) {
+  const valor = obtenerValorPorClave('SOCIOS_' + params.idEjercicio);
+  if (!valor) return { ok: true, socios: null };
+  try {
+    return { ok: true, socios: JSON.parse(valor) };
+  } catch (e) {
+    return { ok: true, socios: null };
+  }
 }
 
 function generarBorradorMemoria(params) {
@@ -1178,6 +1210,14 @@ function generarBorradorMemoria(params) {
   const ejercicioActivo = obtenerEjercicioActivo();
   if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
   const ej = ejercicioActivo.ejercicio;
+
+  // Guarda los números de socios de esta generación, para sugerirlos la próxima vez
+  if (params.sociosActivos || params.sociosAlDia || params.sociosAtraso || params.sociosMorosos) {
+    guardarValorPorClave('SOCIOS_' + ej.idEjercicio, JSON.stringify({
+      activos: params.sociosActivos || '', alDia: params.sociosAlDia || '',
+      atraso: params.sociosAtraso || '', morosos: params.sociosMorosos || ''
+    }));
+  }
 
   // Junta las novedades SI/EVALUAR del ejercicio activo
   const novedadesRes = listarNovedades({ idEjercicio: ej.idEjercicio });

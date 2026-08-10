@@ -119,6 +119,7 @@
     <div id="listaVersiones"></div>
 
     <hr class="divider">
+    <button type="button" class="btn-outline" onclick="window.location.href='index.html'">← Volver al panel</button>
     <button type="button" class="btn-ghost" onclick="cerrarSesion()">Cerrar sesión</button>
   </div>
 </div>
@@ -187,6 +188,20 @@ function entrarApp() {
   document.getElementById('mainScreen').classList.add('active');
   cargarVersiones();
   chequearNovedadesPendientes();
+  precargarUltimosSocios();
+}
+
+function precargarUltimosSocios() {
+  jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(resEj) {
+    if (!resEj || !resEj.ok) return;
+    jsonp(EXEC_URL_GI + '?action=obtenerUltimosSocios&idEjercicio=' + encodeURIComponent(resEj.ejercicio.idEjercicio), function(res) {
+      if (!res || !res.ok || !res.socios) return;
+      document.getElementById('sActivos').placeholder = res.socios.activos;
+      document.getElementById('sAlDia').placeholder = res.socios.alDia;
+      document.getElementById('sAtraso').placeholder = res.socios.atraso;
+      document.getElementById('sMorosos').placeholder = res.socios.morosos;
+    });
+  });
 }
 
 function toggleConfigMemoria() {
@@ -234,6 +249,11 @@ function cerrarSesion() {
   location.reload();
 }
 
+function valorOPlaceholder(id) {
+  const el = document.getElementById(id);
+  return el.value || el.placeholder || '';
+}
+
 function generarMemoria() {
   const btn = document.getElementById('btnGenerar');
   btn.disabled = true;
@@ -242,10 +262,10 @@ function generarMemoria() {
 
   const params = new URLSearchParams({
     action: 'generarBorradorMemoria',
-    sociosActivos: document.getElementById('sActivos').value,
-    sociosAlDia: document.getElementById('sAlDia').value,
-    sociosAtraso: document.getElementById('sAtraso').value,
-    sociosMorosos: document.getElementById('sMorosos').value,
+    sociosActivos: valorOPlaceholder('sActivos'),
+    sociosAlDia: valorOPlaceholder('sAlDia'),
+    sociosAtraso: valorOPlaceholder('sAtraso'),
+    sociosMorosos: valorOPlaceholder('sMorosos'),
     pin: PIN_SESION
   });
 
