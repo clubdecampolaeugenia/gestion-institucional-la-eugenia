@@ -112,7 +112,7 @@
 
     <div class="proxima-accion">
       <div class="proxima-label">Próxima acción</div>
-      <div class="proxima-texto" id="proximaAccion">Corregir observaciones del Balance con la contadora</div>
+      <div class="proxima-texto" id="proximaAccion">calculando...</div>
     </div>
 
     <div class="seccion-titulo">Durante el año</div>
@@ -325,6 +325,24 @@ function actualizarProgreso() {
   const pctC = Math.round((sumaC / totalC) * 100);
   document.getElementById('progresoCierreFill').style.width = pctC + '%';
   document.getElementById('progresoCierrePct').textContent = pctC + '%';
+
+  actualizarProximaAccion();
+}
+
+function actualizarProximaAccion() {
+  const el = document.getElementById('proximaAccion');
+  // Prioridad: lo observado (rojo) primero, después lo que sigue en progreso, en el orden real de la lista
+  const observado = HITOS.find(h => h.estado === 'OBSERVADO');
+  if (observado) {
+    el.textContent = 'Resolver: ' + observado.nombre + ' — ' + observado.detalle;
+    return;
+  }
+  const pendiente = HITOS.find(h => h.estado !== 'COMPLETO');
+  if (pendiente) {
+    el.textContent = 'Avanzar: ' + pendiente.nombre;
+    return;
+  }
+  el.textContent = '✅ Todo listo para la Asamblea.';
 }
 
 function actualizarHito(nombre, estado, detalle) {
