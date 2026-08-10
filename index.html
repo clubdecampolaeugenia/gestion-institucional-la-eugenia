@@ -101,6 +101,20 @@
         <button type="button" class="btn-ghost" style="color:var(--hueso); opacity:.65; font-size:10px; padding:6px 0;" onclick="cerrarEjercicio()">Cerrar Ejercicio actual y abrir el siguiente</button>
       </div>
 
+      <div id="asambleaPildora" onclick="toggleEditorAsamblea()" style="cursor:pointer; margin-top:8px; display:flex; justify-content:space-between; align-items:center; gap:10px; background:rgba(255,255,255,0.12); border:2px solid var(--naranja); border-radius:20px; padding:8px 16px;">
+        <span style="color:var(--naranja); font-family:Impact,sans-serif; font-size:13px; text-transform:uppercase;" id="asambleaPildoraTexto">Asamblea — cargando...</span>
+        <span style="font-size:12px; color:var(--naranja);">✏️</span>
+      </div>
+      <div id="editorAsamblea" style="display:none; background:rgba(255,255,255,0.08); border-radius:10px; padding:10px; margin-top:8px;">
+        <span class="progreso-titulo" style="color:var(--naranja); font-size:11px; margin-bottom:4px;">Fecha</span>
+        <input type="date" id="eAsambleaFecha" style="width:100%; border-radius:10px; padding:8px; border:none; margin-bottom:8px;">
+        <span class="progreso-titulo" style="color:var(--naranja); font-size:11px; margin-bottom:4px;">Hora</span>
+        <input type="time" id="eAsambleaHora" style="width:100%; border-radius:10px; padding:8px; border:none; margin-bottom:8px;">
+        <span class="progreso-titulo" style="color:var(--naranja); font-size:11px; margin-bottom:4px;">Lugar</span>
+        <input type="text" id="eAsambleaLugar" style="width:100%; border-radius:10px; padding:8px; border:none; margin-bottom:10px;">
+        <button type="button" style="width:100%; padding:10px; border-radius:18px; border:2px solid var(--naranja); background:var(--naranja); color:var(--petroleo); font-weight:900; text-transform:uppercase; font-size:12px; cursor:pointer;" onclick="guardarAsamblea()">Guardar</button>
+      </div>
+
       <div style="margin-top:14px; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--lima);">Preparación para la Asamblea</div>
       <div class="progreso-barra-fondo" style="margin-top:6px;"><div class="progreso-barra-fill" id="progresoFill" style="width:0%; background:var(--lima);"></div></div>
       <div class="progreso-pct" id="progresoPct" style="color:var(--lima);">calculando...</div>
@@ -329,14 +343,43 @@ let LUGAR_ASAMBLEA_REAL = '';
 
 function cargarFechaAsamblea(callback) {
   jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(res) {
+    const textoPildora = document.getElementById('asambleaPildoraTexto');
     if (res && res.ok) {
       FECHA_ASAMBLEA = new Date(res.fecha);
       LUGAR_ASAMBLEA_REAL = res.lugar;
-      actualizarHito('Asamblea General Ordinaria celebrada', 'PENDIENTE', 'Convocada para ' + FECHA_ASAMBLEA.toLocaleDateString('es-AR') + ', ' + res.hora + ' hs');
+      const fechaLegible = FECHA_ASAMBLEA.toLocaleDateString('es-AR', { timeZone: 'UTC' });
+      textoPildora.textContent = 'Asamblea: ' + fechaLegible + ', ' + res.hora + ' hs';
+      document.getElementById('eAsambleaFecha').value = res.fecha;
+      document.getElementById('eAsambleaHora').value = res.hora;
+      document.getElementById('eAsambleaLugar').value = res.lugar;
+      actualizarHito('Asamblea General Ordinaria celebrada', 'PENDIENTE', 'Convocada para ' + fechaLegible + ', ' + res.hora + ' hs');
     } else {
-      actualizarHito('Asamblea General Ordinaria celebrada', 'PENDIENTE', 'Todavía sin fecha registrada — se carga desde Convocatoria');
+      textoPildora.textContent = 'Asamblea: sin fecha — tocá para cargarla';
+      actualizarHito('Asamblea General Ordinaria celebrada', 'PENDIENTE', 'Todavía sin fecha registrada');
     }
     if (callback) callback();
+  });
+}
+
+function toggleEditorAsamblea() {
+  const el = document.getElementById('editorAsamblea');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function guardarAsamblea() {
+  const fecha = document.getElementById('eAsambleaFecha').value;
+  const hora = document.getElementById('eAsambleaHora').value;
+  const lugar = document.getElementById('eAsambleaLugar').value;
+  if (!fecha || !hora) { mostrarAviso('Completá al menos fecha y hora.'); return; }
+
+  jsonp(EXEC_URL_GI + '?action=guardarAsambleaEjercicio&fecha=' + encodeURIComponent(fecha) + '&hora=' + encodeURIComponent(hora) + '&lugar=' + encodeURIComponent(lugar) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    if (res && res.ok) {
+      toggleEditorAsamblea();
+      cargarFechaAsamblea();
+      mostrarAviso('Fecha de la Asamblea guardada.');
+    } else {
+      mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+    }
   });
 }
 let ID_BALANCE_ACTIVO_DASHBOARD = null;

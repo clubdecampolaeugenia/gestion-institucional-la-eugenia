@@ -74,7 +74,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -116,7 +116,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v28-fecha-asamblea-dinamica-10ago-1500' };
+      resultado = { ok: true, version: 'v29-asamblea-pildora-editable-10ago-1600' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -141,6 +141,8 @@ function doGet(e) {
       resultado = generarConvocatoriaYDocumentos(e.parameter);
     } else if (action === 'obtenerAsambleaEjercicio') {
       resultado = obtenerAsambleaEjercicio();
+    } else if (action === 'guardarAsambleaEjercicio') {
+      resultado = guardarAsambleaEjercicio(e.parameter);
     } else if (action === 'sembrarAsambleaReal') {
       resultado = sembrarAsambleaReal();
     } else if (action === 'obtenerConfigMemoria') {
@@ -1252,6 +1254,25 @@ function obtenerAsambleaEjercicio() {
     }
   }
   return { ok: false, error: 'Todavía no hay fecha de Asamblea registrada para este Ejercicio' };
+}
+
+// Guarda o actualiza fecha/hora/lugar de la Asamblea del Ejercicio activo -- editable desde el Dashboard, dato de primera clase
+function guardarAsambleaEjercicio(params) {
+  const ejercicioActivo = obtenerEjercicioActivo();
+  if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
+
+  const hoja = getHojaAsambleas();
+  const datos = hoja.getDataRange().getValues();
+  for (let i = 1; i < datos.length; i++) {
+    if (datos[i][1] === ejercicioActivo.ejercicio.idEjercicio) {
+      hoja.getRange(i + 1, 3).setValue(new Date(params.fecha));
+      hoja.getRange(i + 1, 4).setValue(params.hora);
+      hoja.getRange(i + 1, 5).setValue(params.lugar || '');
+      return { ok: true };
+    }
+  }
+  hoja.appendRow(['ASM-' + ejercicioActivo.ejercicio.numero, ejercicioActivo.ejercicio.idEjercicio, new Date(params.fecha), params.hora, params.lugar || '', JSON.stringify([]), 'CONVOCADA', '', '', '']);
+  return { ok: true };
 }
 
 // Carga puntual del dato real ya decidido en el Acta 562 -- una sola vez, para no dejar la hoja vacía
