@@ -228,7 +228,7 @@ function construirBotonesEstado(estado) {
       html += '<div style="padding:10px 14px; border-radius:16px; background:#e8e8e8; color:#888; font-size:12px; font-weight:900; text-transform:uppercase;">✓ ' + etiquetaPaso[paso] + '</div>';
     } else if (i === idxActual) {
       // Estado actual: se muestra, no es un botón (ya estamos ahí)
-      html += '<div style="padding:10px 14px; border-radius:16px; background:var(--verdecl); color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase;">● ' + etiquetaPaso[paso] + ' (actual)</div>';
+      html += '<div style="padding:10px 14px; border-radius:16px; background:var(--petroleo); color:var(--hueso); font-size:12px; font-weight:900; text-transform:uppercase;">● ' + etiquetaPaso[paso] + ' (actual)</div>';
     } else if (i === idxActual + 1) {
       // Siguiente paso: el único accionable
       const esAsamblea = paso === 'APROBADO_ASAMBLEA';
@@ -249,10 +249,16 @@ function confirmarAprobacionAsamblea() {
   });
 }
 
+const DESCRIPCION_ESTADO_BALANCE = {
+  'APROBADO_CD': 'El Balance quedó Aprobado por CD. Falta legalizarlo ante el CPCE y, después, la aprobación de la Asamblea.',
+  'LEGALIZADO': 'El Balance quedó Legalizado, ya aprobado por CD. Queda pendiente únicamente su aprobación en la Asamblea.',
+  'APROBADO_ASAMBLEA': 'El Balance quedó Aprobado por Asamblea. Ya cumplió con la aprobación de CD, la legalización y la Asamblea — es el cierre final.'
+};
+
 function avanzarEstadoBalance(nuevoEstado) {
   jsonp(EXEC_URL_GI + '?action=actualizarEstadoBalance&idBalance=' + encodeURIComponent(BALANCE_ACTUAL_ID) + '&estado=' + nuevoEstado + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
     if (res && res.ok) {
-      mostrarAviso('Actualizado a ' + nuevoEstado + '.', function() {
+      mostrarAviso(DESCRIPCION_ESTADO_BALANCE[nuevoEstado] || ('Actualizado a ' + nuevoEstado + '.'), function() {
         verDetalle(BALANCE_ACTUAL_ID);
       });
       cargarBalances();
