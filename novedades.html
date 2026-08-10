@@ -411,7 +411,7 @@ function analizarChat() {
     btn.disabled = false;
     document.getElementById('loadingText').textContent = '';
     if (!res || !res.ok) { mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido')); return; }
-    CANDIDATOS_CHAT = res.candidatos.map(c => Object.assign({ seleccionado: true }, c));
+    CANDIDATOS_CHAT = res.candidatos.map(c => Object.assign({ seleccionado: !c.posibleDuplicadoDe }, c));
     renderCandidatosChat();
   });
 }
@@ -424,10 +424,14 @@ function renderCandidatosChat() {
   }
   let html = '<div class="field-label">Sugerencias encontradas (' + CANDIDATOS_CHAT.length + ') — desmarcá las que no quieras guardar</div>';
   CANDIDATOS_CHAT.forEach((c, i) => {
-    html += '<div class="novedad-card" style="display:flex; gap:10px; align-items:flex-start;">';
+    const estiloDuplicado = c.posibleDuplicadoDe ? 'border:2px solid var(--naranja);' : '';
+    html += '<div class="novedad-card" style="display:flex; gap:10px; align-items:flex-start; ' + estiloDuplicado + '">';
     html += '<input type="checkbox" ' + (c.seleccionado ? 'checked' : '') + ' onchange="toggleCandidato(' + i + ')" style="margin-top:4px;">';
     html += '<div><div class="novedad-header"><span class="novedad-titulo">' + escapeHtml(c.titulo) + '</span><span class="novedad-fecha">' + c.fecha + '</span></div>';
     html += '<div class="novedad-desc">' + escapeHtml(c.descripcion) + '</div>';
+    if (c.posibleDuplicadoDe) {
+      html += '<div style="background:var(--naranja); border-radius:8px; padding:5px 8px; font-size:11px; font-weight:700; color:var(--petroleo); margin-bottom:6px;">⚠️ Posible duplicado de: ' + escapeHtml(c.posibleDuplicadoDe) + '</div>';
+    }
     html += '<span class="chip-categoria">' + c.categoria + '</span></div></div>';
   });
   html += '<button type="button" class="btn-solid" onclick="guardarCandidatosSeleccionados()">Guardar seleccionadas</button>';

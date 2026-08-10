@@ -114,7 +114,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v20-autocrea-hoja-config-memoria-09ago-2330' };
+      resultado = { ok: true, version: 'v21-deteccion-duplicados-10ago-0100' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'listarEjercicios') {
@@ -986,7 +986,40 @@ function extraerNovedadesDeChat(params) {
     return { ok: false, error: 'La IA no devolvió JSON válido: ' + texto.substring(0, 300) };
   }
 
+  // Marca posibles duplicados comparando contra lo ya cargado (mismo período aproximado + título parecido)
+  const ejercicioActivo = obtenerEjercicioActivo();
+  const existentes = ejercicioActivo.ok ? (listarNovedades({ idEjercicio: ejercicioActivo.ejercicio.idEjercicio }).novedades || []) : [];
+
+  candidatos.forEach(c => {
+    const posible = existentes.find(e => sonProbablesDuplicados(c, e));
+    if (posible) {
+      c.posibleDuplicadoDe = posible.titulo + ' (' + posible.fecha + ')';
+    }
+  });
+
   return { ok: true, candidatos: candidatos };
+}
+
+function normalizarTexto(s) {
+  return (s || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // saca acentos
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/).filter(w => w.length > 3); // palabras significativas
+}
+
+function sonProbablesDuplicados(candidato, existente) {
+  // Fecha cercana (7 días) + al menos 3 palabras significativas del título en común
+  const fechaCand = new Date(candidato.fecha.split('/').reverse().join('-'));
+  const fechaExist = new Date(existente.fecha.split('/').reverse().join('-'));
+  const diffDias = Math.abs((fechaCand - fechaExist) / (1000 * 60 * 60 * 24));
+  if (diffDias > 7) return false;
+
+  const palabrasCand = new Set(normalizarTexto(candidato.titulo));
+  const palabrasExist = new Set(normalizarTexto(existente.titulo));
+  let comunes = 0;
+  palabrasCand.forEach(w => { if (palabrasExist.has(w)) comunes++; });
+
+  return comunes >= 3;
 }
 
 function guardarNovedadesSeleccionadas(params) {
