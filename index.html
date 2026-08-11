@@ -331,9 +331,14 @@ function renderHitosGenerico(lista, contenedorId, prefijo) {
     const el = document.createElement(h.link ? 'a' : 'div');
     el.className = 'hito-card' + (h.link ? ' clickable' : ' no-disponible');
     if (h.link) el.href = h.link;
-    const indicador = h.link
-      ? '<span class="hito-flecha">Abrir &rarr;</span>'
-      : '<span class="hito-candado">🔒 Aún no construido</span>';
+    let indicador;
+    if (h.link) {
+      indicador = '<span class="hito-flecha">Abrir &rarr;</span>';
+    } else if (h.estado === 'COMPLETO') {
+      indicador = '<span class="hito-candado">✓ Dato informativo, no necesita módulo</span>';
+    } else {
+      indicador = '<span class="hito-candado">🔒 Aún no construido</span>';
+    }
     el.innerHTML =
       '<div class="hito-num">' + (i + 1) + '</div>' +
       '<div class="hito-info"><div class="hito-nombre">' + h.nombre + '</div><div class="hito-detalle" id="' + prefijo + 'detalle-' + i + '">' + h.detalle + '</div>' + indicador + '</div>' +
