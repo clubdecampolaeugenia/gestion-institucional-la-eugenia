@@ -75,7 +75,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -94,6 +94,8 @@ function doGet(e) {
       resultado = guardarAutoridad(e.parameter);
     } else if (action === 'guardarNota') {
       resultado = guardarNota(e.parameter);
+    } else if (action === 'guardarNotasSeleccionadas') {
+      resultado = guardarNotasSeleccionadas(e.parameter);
     } else if (action === 'eliminarNota') {
       resultado = eliminarNota(e.parameter);
     } else if (action === 'listarNotasPendientes') {
@@ -119,7 +121,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v43-fix-fecha-en-rango-ejercicio-11ago-1430' };
+      resultado = { ok: true, version: 'v44-doble-destino-bitacora-novedades-11ago-1500' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -299,6 +301,18 @@ function guardarNota(params) {
   const id = 'NOTA-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
   hoja.appendRow([id, new Date(), params.cargadoPor || '', params.texto, false, '']);
   return { ok: true, idNota: id };
+}
+
+function guardarNotasSeleccionadas(params) {
+  const notas = JSON.parse(params.notas); // [{texto, cargadoPor}]
+  const hoja = getHojaBitacora();
+  let guardadas = 0;
+  notas.forEach(n => {
+    const id = 'NOTA-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss') + '-' + guardadas;
+    hoja.appendRow([id, new Date(), n.cargadoPor || '', n.texto, false, '']);
+    guardadas++;
+  });
+  return { ok: true, guardadas: guardadas };
 }
 
 function eliminarNota(params) {

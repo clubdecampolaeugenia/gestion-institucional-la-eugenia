@@ -436,7 +436,7 @@ function ejecutarAnalisisChat(texto) {
     btn.disabled = false;
     document.getElementById('loadingText').textContent = '';
     if (!res || !res.ok) { mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido')); return; }
-    CANDIDATOS_CHAT = res.candidatos.map(c => Object.assign({ seleccionado: !c.posibleDuplicadoDe }, c));
+    CANDIDATOS_CHAT = res.candidatos.map(c => Object.assign({ destinoNovedades: !c.posibleDuplicadoDe, destinoBitacora: false }, c));
     renderCandidatosChat();
   });
 }
@@ -447,25 +447,62 @@ function renderCandidatosChat() {
     cont.innerHTML = '<div class="empty-msg">No se encontró nada institucional relevante en ese fragmento.</div>';
     return;
   }
-  let html = '<div class="field-label">Sugerencias encontradas (' + CANDIDATOS_CHAT.length + ') — desmarcá las que no quieras guardar</div>';
+  let html = '<div class="field-label">Sugerencias encontradas (' + CANDIDATOS_CHAT.length + ') — elegí a dónde va cada una (Novedades, Bitácora, las dos, o ninguna)</div>';
   CANDIDATOS_CHAT.forEach((c, i) => {
     const estiloDuplicado = c.posibleDuplicadoDe ? 'border:2px solid var(--naranja);' : '';
-    html += '<div class="novedad-card" style="display:flex; gap:10px; align-items:flex-start; ' + estiloDuplicado + '">';
-    html += '<input type="checkbox" ' + (c.seleccionado ? 'checked' : '') + ' onchange="toggleCandidato(' + i + ')" style="margin-top:4px;">';
-    html += '<div><div class="novedad-header"><span class="novedad-titulo">' + escapeHtml(c.titulo) + '</span><span class="novedad-fecha">' + c.fecha + '</span></div>';
+    html += '<div class="novedad-card" style="' + estiloDuplicado + '">';
+    html += '<div class="novedad-header"><span class="novedad-titulo">' + escapeHtml(c.titulo) + '</span><span class="novedad-fecha">' + c.fecha + '</span></div>';
     html += '<div class="novedad-desc">' + escapeHtml(c.descripcion) + '</div>';
     if (c.posibleDuplicadoDe) {
       html += '<div style="background:var(--naranja); border-radius:8px; padding:5px 8px; font-size:11px; font-weight:700; color:var(--petroleo); margin-bottom:6px;">⚠️ Posible duplicado de: ' + escapeHtml(c.posibleDuplicadoDe) + '</div>';
     }
-    html += '<span class="chip-categoria">' + c.categoria + '</span></div></div>';
+    html += '<span class="chip-categoria">' + c.categoria + '</span>';
+    html += '<div style="display:flex; gap:16px; margin-top:8px;">';
+    html += '<label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--petroleo); font-weight:700;"><input type="checkbox" ' + (c.destinoNovedades ? 'checked' : '') + ' onchange="CANDIDATOS_CHAT[' + i + '].destinoNovedades=this.checked"> → Novedades</label>';
+    html += '<label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--petroleo); font-weight:700;"><input type="checkbox" ' + (c.destinoBitacora ? 'checked' : '') + ' onchange="CANDIDATOS_CHAT[' + i + '].destinoBitacora=this.checked"> → Bitácora</label>';
+    html += '</div></div>';
   });
-  html += '<button type="button" class="btn-solid" onclick="guardarCandidatosSeleccionados()">Guardar seleccionadas</button>';
+  html += '<button type="button" class="btn-solid" onclick="guardarCandidatosSeleccionados()">Guardar</button>';
   cont.innerHTML = html;
 }
 
-function toggleCandidato(i) {
-  CANDIDATOS_CHAT[i].seleccionado = !CANDIDATOS_CHAT[i].seleccionado;
+function guardarCandidatosSeleccionados() {
+  const paraNovedades = CANDIDATOS_CHAT.filter(c => c.destinoNovedades);
+  const paraBitacora = CANDIDATOS_CHAT.filter(c => c.destinoBitacora);
+  if (paraNovedades.length === 0 && paraBitacora.length === 0) { mostrarAviso('No marcaste ningún destino'); return; }
+
+  document.getElementById('loadingText').textContent = 'Guardando...';
+  let pendientes = (paraNovedades.length > 0 ? 1 : 0) + (paraBitacora.length > 0 ? 1 : 0);
+  let mensajes = [];
+
+  function terminar() {
+    pendientes--;
+    if (pendientes <= 0) {
+      document.getElementById('loadingText').textContent = '';
+      mostrarAviso(mensajes.join('\n\n'));
+      CANDIDATOS_CHAT = [];
+      document.getElementById('candidatosChatContainer').innerHTML = '';
+      document.getElementById('fTextoChat').value = '';
+      toggleImportChat();
+      cargarNovedades();
+    }
+  }
+
+  if (paraNovedades.length > 0) {
+    jsonp(EXEC_URL_GI + '?action=guardarNovedadesSeleccionadas&novedades=' + encodeURIComponent(JSON.stringify(paraNovedades)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      mensajes.push(res && res.ok ? construirMensajeGuardado(res, 'a Novedades') : 'Error en Novedades: ' + (res && res.error ? res.error : 'desconocido'));
+      terminar();
+    });
+  }
+  if (paraBitacora.length > 0) {
+    const notas = paraBitacora.map(c => ({ texto: c.titulo + ': ' + c.descripcion, cargadoPor: 'Importado de chat' }));
+    jsonp(EXEC_URL_GI + '?action=guardarNotasSeleccionadas&notas=' + encodeURIComponent(JSON.stringify(notas)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      mensajes.push(res && res.ok ? res.guardadas + ' notas agregadas a Bitácora.' : 'Error en Bitácora: ' + (res && res.error ? res.error : 'desconocido'));
+      terminar();
+    });
+  }
 }
+
 
 function construirMensajeGuardado(res, origenTexto) {
   let msg = res.guardadas + ' novedades ' + origenTexto + '.';
@@ -475,25 +512,6 @@ function construirMensajeGuardado(res, origenTexto) {
   return msg;
 }
 
-function guardarCandidatosSeleccionados() {
-  const seleccionadas = CANDIDATOS_CHAT.filter(c => c.seleccionado);
-  if (seleccionadas.length === 0) { mostrarAviso('No hay ninguna seleccionada'); return; }
-
-  document.getElementById('loadingText').textContent = 'Guardando...';
-  jsonp(EXEC_URL_GI + '?action=guardarNovedadesSeleccionadas&novedades=' + encodeURIComponent(JSON.stringify(seleccionadas)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
-    document.getElementById('loadingText').textContent = '';
-    if (res && res.ok) {
-      mostrarAviso(construirMensajeGuardado(res, 'guardadas'));
-      CANDIDATOS_CHAT = [];
-      document.getElementById('candidatosChatContainer').innerHTML = '';
-      document.getElementById('fTextoChat').value = '';
-      toggleImportChat();
-      cargarNovedades();
-    } else {
-      mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
-    }
-  });
-}
 let CANDIDATOS_BOLETIN = [];
 
 function sincronizarBoletin() {
@@ -507,7 +525,7 @@ function sincronizarBoletin() {
     }
     CANDIDATOS_BOLETIN = res.novedades.map(n => ({
       idOrigen: n.idBoletin, titulo: n.titulo, descripcion: n.descripcion, fecha: n.fechaCarga,
-      categoria: 'General', seleccionado: true
+      categoria: 'General', destinoNovedades: true, destinoBitacora: false
     }));
     renderCandidatosBoletin();
   });
@@ -516,46 +534,57 @@ function sincronizarBoletin() {
 function renderCandidatosBoletin() {
   const cont = document.getElementById('candidatosBoletinContainer');
   if (CANDIDATOS_BOLETIN.length === 0) { cont.innerHTML = ''; return; }
-  let html = '<div class="field-label">Nuevo en el Boletín (' + CANDIDATOS_BOLETIN.length + ') — revisá categoría y desmarcá lo que no quieras guardar</div>';
+  let html = '<div class="field-label">Nuevo en el Boletín (' + CANDIDATOS_BOLETIN.length + ') — revisá categoría y elegí a dónde va cada una</div>';
   CANDIDATOS_BOLETIN.forEach((c, i) => {
-    html += '<div class="novedad-card" style="display:flex; gap:10px; align-items:flex-start;">';
-    html += '<input type="checkbox" ' + (c.seleccionado ? 'checked' : '') + ' onchange="toggleCandidatoBoletin(' + i + ')" style="margin-top:4px;">';
-    html += '<div style="flex:1;"><div class="novedad-header"><span class="novedad-titulo">' + escapeHtml(c.titulo) + '</span><span class="novedad-fecha">' + c.fecha + '</span></div>';
+    html += '<div class="novedad-card">';
+    html += '<div class="novedad-header"><span class="novedad-titulo">' + escapeHtml(c.titulo) + '</span><span class="novedad-fecha">' + c.fecha + '</span></div>';
     html += '<div class="novedad-desc">' + escapeHtml(c.descripcion) + '</div>';
-    html += '<input type="text" value="' + escapeHtml(c.categoria) + '" onchange="actualizarCategoriaBoletin(' + i + ', this.value)" style="margin-top:6px; font-size:12px; padding:6px 8px;" placeholder="Categoría">';
+    html += '<input type="text" value="' + escapeHtml(c.categoria) + '" onchange="CANDIDATOS_BOLETIN[' + i + '].categoria=this.value" style="margin-top:6px; font-size:12px; padding:6px 8px;" placeholder="Categoría">';
+    html += '<div style="display:flex; gap:16px; margin-top:8px;">';
+    html += '<label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--petroleo); font-weight:700;"><input type="checkbox" ' + (c.destinoNovedades ? 'checked' : '') + ' onchange="CANDIDATOS_BOLETIN[' + i + '].destinoNovedades=this.checked"> → Novedades</label>';
+    html += '<label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--petroleo); font-weight:700;"><input type="checkbox" ' + (c.destinoBitacora ? 'checked' : '') + ' onchange="CANDIDATOS_BOLETIN[' + i + '].destinoBitacora=this.checked"> → Bitácora</label>';
     html += '</div></div>';
   });
-  html += '<button type="button" class="btn-solid" onclick="guardarCandidatosBoletin()">Guardar seleccionadas</button>';
+  html += '<button type="button" class="btn-solid" onclick="guardarCandidatosBoletin()">Guardar</button>';
   cont.innerHTML = html;
 }
 
-function toggleCandidatoBoletin(i) {
-  CANDIDATOS_BOLETIN[i].seleccionado = !CANDIDATOS_BOLETIN[i].seleccionado;
-}
-
-function actualizarCategoriaBoletin(i, valor) {
-  CANDIDATOS_BOLETIN[i].categoria = valor;
-}
-
 function guardarCandidatosBoletin() {
-  const seleccionadas = CANDIDATOS_BOLETIN.filter(c => c.seleccionado).map(c => ({
+  const paraNovedades = CANDIDATOS_BOLETIN.filter(c => c.destinoNovedades).map(c => ({
     fecha: c.fecha, titulo: c.titulo, descripcion: c.descripcion, categoria: c.categoria,
     origen: 'BOLETIN', idOrigen: c.idOrigen
   }));
-  if (seleccionadas.length === 0) { mostrarAviso('No hay ninguna seleccionada'); return; }
+  const paraBitacora = CANDIDATOS_BOLETIN.filter(c => c.destinoBitacora);
+  if (paraNovedades.length === 0 && paraBitacora.length === 0) { mostrarAviso('No marcaste ningún destino'); return; }
 
   document.getElementById('loadingText').textContent = 'Guardando...';
-  jsonp(EXEC_URL_GI + '?action=guardarNovedadesSeleccionadas&novedades=' + encodeURIComponent(JSON.stringify(seleccionadas)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
-    document.getElementById('loadingText').textContent = '';
-    if (res && res.ok) {
-      mostrarAviso(construirMensajeGuardado(res, 'importadas del Boletín'));
+  let pendientes = (paraNovedades.length > 0 ? 1 : 0) + (paraBitacora.length > 0 ? 1 : 0);
+  let mensajes = [];
+
+  function terminar() {
+    pendientes--;
+    if (pendientes <= 0) {
+      document.getElementById('loadingText').textContent = '';
+      mostrarAviso(mensajes.join('\n\n'));
       CANDIDATOS_BOLETIN = [];
       document.getElementById('candidatosBoletinContainer').innerHTML = '';
       cargarNovedades();
-    } else {
-      mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
     }
-  });
+  }
+
+  if (paraNovedades.length > 0) {
+    jsonp(EXEC_URL_GI + '?action=guardarNovedadesSeleccionadas&novedades=' + encodeURIComponent(JSON.stringify(paraNovedades)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      mensajes.push(res && res.ok ? construirMensajeGuardado(res, 'importadas a Novedades') : 'Error en Novedades: ' + (res && res.error ? res.error : 'desconocido'));
+      terminar();
+    });
+  }
+  if (paraBitacora.length > 0) {
+    const notas = paraBitacora.map(c => ({ texto: c.titulo + ': ' + c.descripcion, cargadoPor: 'Importado del Boletín' }));
+    jsonp(EXEC_URL_GI + '?action=guardarNotasSeleccionadas&notas=' + encodeURIComponent(JSON.stringify(notas)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      mensajes.push(res && res.ok ? res.guardadas + ' notas agregadas a Bitácora.' : 'Error en Bitácora: ' + (res && res.error ? res.error : 'desconocido'));
+      terminar();
+    });
+  }
 }
 </script>
 </body>
