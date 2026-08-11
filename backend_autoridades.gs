@@ -118,7 +118,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v39-sueltos-menores-11ago-0900' };
+      resultado = { ok: true, version: 'v40-asamblea-reeleccion-orden-dia-11ago-1000' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -1290,13 +1290,16 @@ function obtenerAsambleaEjercicio() {
   const datos = hoja.getDataRange().getValues();
   for (let i = 1; i < datos.length; i++) {
     if (datos[i][1] === ejercicioActivo.ejercicio.idEjercicio) {
+      let ordenDelDia = [];
+      try { ordenDelDia = JSON.parse(datos[i][5]); } catch (e) {}
       return {
         ok: true,
         idAsamblea: datos[i][0],
         fecha: Utilities.formatDate(new Date(datos[i][2]), Session.getScriptTimeZone(), 'yyyy-MM-dd'),
         hora: formatearHoraSegura(datos[i][3]),
         lugar: datos[i][4],
-        estado: datos[i][6]
+        estado: datos[i][6],
+        ordenDelDia: ordenDelDia
       };
     }
   }

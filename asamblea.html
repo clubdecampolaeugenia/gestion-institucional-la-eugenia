@@ -75,12 +75,12 @@
   </div>
 
   <div id="mainScreen">
+    <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
+    <div id="instrBox" class="instr-box" style="display:none;">Este módulo se usa <strong>el día de la Asamblea</strong> — registrá lo que fue pasando durante el evento.</div>
+
     <div class="bloqueo-box" id="textoBloqueado" style="display:none;">cargando...</div>
 
     <div id="contenidoDisponible">
-      <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
-      <div id="instrBox" class="instr-box" style="display:none;">Este módulo se usa <strong>el día de la Asamblea</strong> — registrá lo que fue pasando durante el evento.</div>
-
       <div class="seccion-titulo">1. Asamblea celebrada</div>
       <div class="form-panel">
         <span class="field-label">Socios presentes</span>
@@ -90,17 +90,21 @@
         <button type="button" class="btn-solid" style="margin-top:10px; margin-bottom:0;" onclick="marcarCelebrada()">Marcar Asamblea como celebrada</button>
       </div>
 
-      <div class="seccion-titulo">2. Autoridades electas</div>
+      <div class="seccion-titulo">2. Autoridades electas — esto DEFINE los cargos</div>
       <div class="form-panel">
-        <div style="color:var(--hueso); font-size:12px; margin-bottom:10px;">Completá el nombre solo de los cargos que se renovaron con nuevo titular. Dejá en blanco el que sigue igual.</div>
+        <div style="color:var(--hueso); font-size:12px; margin-bottom:10px;">Para cada cargo que se renueva, elegí: reelecto/a (mismo titular) o nuevo titular. No dejes ninguno sin marcar.</div>
         <div id="listaCargosRenovar">cargando cargos a renovar...</div>
         <button type="button" class="btn-solid" style="margin-top:10px; margin-bottom:0;" onclick="registrarElectas()">Registrar autoridades electas</button>
+        <div id="resumenElectas" style="display:none; background:var(--blanco); border-radius:12px; padding:12px; margin-top:10px; color:var(--petroleo); font-size:13px;"></div>
       </div>
 
-      <div class="seccion-titulo">3. Acta de Asamblea</div>
+      <div class="seccion-titulo">3. Acta de Asamblea — esto SOLO USA lo de arriba</div>
       <div class="form-panel">
+        <span class="field-label">Orden del Día (para referencia al redactar)</span>
+        <div id="ordenDelDiaVisible" style="background:var(--blanco); border-radius:12px; padding:12px; color:var(--petroleo); font-size:12px; line-height:1.6; margin-bottom:10px; white-space:pre-wrap;">cargando...</div>
         <span class="field-label">Resultados por punto del Orden del Día</span>
         <textarea id="fResultados" placeholder="Ej: Punto 3, Memoria y Balance aprobados por unanimidad. Punto 4, cuota social aprobada en $X..."></textarea>
+        <div style="color:var(--hueso); font-size:11px; margin-top:6px; opacity:.8;">Las autoridades electas de la Sección 2 se agregan solas, no hace falta repetirlas acá.</div>
         <button type="button" class="btn-solid" style="margin-top:10px; margin-bottom:0;" onclick="generarActa()">Generar Acta de Asamblea</button>
       </div>
 
@@ -189,6 +193,7 @@ function chequearFechaYHabilitar() {
       banner.style.display = 'block';
       banner.textContent = '🔒 Todavía no hay fecha de Asamblea cargada. Andá al Home a cargarla primero — mientras tanto podés ver qué se va a poder hacer acá.';
       cargarCargosARenovar();
+    precargarOrdenDelDia();
       return;
     }
     const fecha = new Date(res.fecha);
@@ -202,8 +207,11 @@ function chequearFechaYHabilitar() {
       banner.style.display = 'none';
     }
     cargarCargosARenovar();
+    precargarOrdenDelDia();
   });
 }
+
+let AUTORIDADES_ELECTAS_REGISTRADAS = [];
 
 function cargarCargosARenovar() {
   jsonp(EXEC_URL_GI + '?action=listarAutoridades', function(res) {
@@ -214,9 +222,40 @@ function cargarCargosARenovar() {
       return;
     }
     cont.innerHTML = res.vencenEsteAnio.map((item, i) => {
-      const cargo = item.split(' (')[0];
-      return '<div style="margin-bottom:8px;"><span class="field-label" style="color:var(--lima);">' + escapeHtml(item) + '</span><input type="text" class="input-nuevo-titular" data-cargo="' + escapeHtml(cargo) + '" placeholder="Nombre del/la electo/a (o dejar en blanco si sigue igual)"></div>';
+      const match = item.match(/^(.*) \((.*)\)$/);
+      const cargo = match ? match[1] : item;
+      const titularActual = match ? match[2] : '';
+      return '<div style="margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.15);">' +
+        '<div style="color:var(--lima); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:6px;">' + escapeHtml(cargo) + ' <span style="opacity:.6; font-weight:400; text-transform:none;">(titular actual: ' + escapeHtml(titularActual) + ')</span></div>' +
+        '<label style="display:flex; align-items:center; gap:8px; color:var(--hueso); font-size:12px; margin-bottom:6px;">' +
+        '<input type="checkbox" class="chk-reelecto" data-cargo="' + escapeHtml(cargo) + '" data-titular="' + escapeHtml(titularActual) + '" onchange="toggleReeleccion(this)"> Reelecto/a (sigue ' + escapeHtml(titularActual) + ')</label>' +
+        '<input type="text" class="input-nuevo-titular" data-cargo="' + escapeHtml(cargo) + '" placeholder="O escribí el nombre del/la nuevo/a titular">' +
+        '</div>';
     }).join('');
+  });
+}
+
+function toggleReeleccion(checkbox) {
+  const cargo = checkbox.dataset.cargo;
+  const input = document.querySelector('.input-nuevo-titular[data-cargo="' + cargo + '"]');
+  if (checkbox.checked) {
+    input.value = '';
+    input.disabled = true;
+    input.style.opacity = '.4';
+  } else {
+    input.disabled = false;
+    input.style.opacity = '1';
+  }
+}
+
+function precargarOrdenDelDia() {
+  jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(res) {
+    const cont = document.getElementById('ordenDelDiaVisible');
+    if (res && res.ok && res.ordenDelDia && res.ordenDelDia.length) {
+      cont.textContent = res.ordenDelDia.join('\n');
+    } else {
+      cont.textContent = 'No se encontró el Orden del Día — revisá que se haya generado la Convocatoria.';
+    }
   });
 }
 
@@ -236,11 +275,37 @@ function marcarCelebrada() {
 }
 
 function registrarElectas() {
-  const inputs = document.querySelectorAll('.input-nuevo-titular');
-  const elecciones = Array.from(inputs).map(inp => ({ cargo: inp.dataset.cargo, nombreNuevo: inp.value }));
+  const cargosCheckboxes = document.querySelectorAll('.chk-reelecto');
+  const sinMarcar = [];
+  const elecciones = [];
+
+  cargosCheckboxes.forEach(chk => {
+    const cargo = chk.dataset.cargo;
+    const input = document.querySelector('.input-nuevo-titular[data-cargo="' + cargo + '"]');
+    if (chk.checked) {
+      elecciones.push({ cargo: cargo, nombreNuevo: chk.dataset.titular });
+    } else if (input.value.trim()) {
+      elecciones.push({ cargo: cargo, nombreNuevo: input.value.trim() });
+    } else {
+      sinMarcar.push(cargo);
+    }
+  });
+
+  if (sinMarcar.length > 0) {
+    mostrarAviso('Falta definir: ' + sinMarcar.join(', ') + '. Marcá "Reelecto/a" o escribí el nombre del nuevo titular en cada uno.');
+    return;
+  }
+
   jsonp(EXEC_URL_GI + '?action=registrarAutoridadesElectas&elecciones=' + encodeURIComponent(JSON.stringify(elecciones)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
-    if (res && res.ok) mostrarAviso('Autoridades actualizadas: ' + res.actualizadas + ' cargo(s) con nuevo titular.');
-    else mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+    if (res && res.ok) {
+      AUTORIDADES_ELECTAS_REGISTRADAS = elecciones;
+      const resumen = document.getElementById('resumenElectas');
+      resumen.style.display = 'block';
+      resumen.innerHTML = '<strong>Registrado:</strong><br>' + elecciones.map(e => '• ' + e.cargo + ': ' + e.nombreNuevo).join('<br>');
+      mostrarAviso('Autoridades actualizadas: ' + res.actualizadas + ' cargo(s).');
+    } else {
+      mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+    }
   });
 }
 
@@ -251,8 +316,7 @@ function generarActa() {
   const sociosPresentes = document.getElementById('fSociosPresentes').value;
   const quorumAlcanzado = document.getElementById('fQuorum').value;
   const resultados = document.getElementById('fResultados').value;
-  const inputs = document.querySelectorAll('.input-nuevo-titular');
-  const autoridadesElectas = Array.from(inputs).filter(i => i.value.trim()).map(i => i.dataset.cargo + ': ' + i.value).join('; ');
+  const autoridadesElectas = AUTORIDADES_ELECTAS_REGISTRADAS.map(e => e.cargo + ': ' + e.nombreNuevo).join('; ');
 
   document.getElementById('loadingText').innerHTML = '<span class="spinner"></span> Redactando el Acta de Asamblea...';
   const params = new URLSearchParams({
