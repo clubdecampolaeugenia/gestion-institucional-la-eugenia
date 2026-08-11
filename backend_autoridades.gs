@@ -74,7 +74,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -116,7 +116,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v29-asamblea-pildora-editable-10ago-1600' };
+      resultado = { ok: true, version: 'v30-fix-timezone-fechas-10ago-1700' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -143,6 +143,8 @@ function doGet(e) {
       resultado = obtenerAsambleaEjercicio();
     } else if (action === 'guardarAsambleaEjercicio') {
       resultado = guardarAsambleaEjercicio(e.parameter);
+    } else if (action === 'corregirFechaAsambleaExistente') {
+      resultado = corregirFechaAsambleaExistente();
     } else if (action === 'sembrarAsambleaReal') {
       resultado = sembrarAsambleaReal();
     } else if (action === 'obtenerConfigMemoria') {
@@ -892,6 +894,12 @@ const CONSIDERAR_MEMORIA_DEFAULT = { 'Personal': 'NO' };
 
 // Nunca deja guardar una novedad con fecha fuera del período del Ejercicio activo.
 // El pasado ya cerrado no se toca desde acá; el futuro (próximo Ejercicio) todavía no existe como fila.
+// Convierte 'yyyy-MM-dd' a Date sin el corrimiento de un día que da 'new Date(string)' por interpretarlo como UTC
+function parsearFechaSegura(fechaStr) {
+  const partes = fechaStr.split('-');
+  return new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+}
+
 function fechaEnRangoEjercicio(fechaStr, ejercicio) {
   const fecha = new Date(fechaStr);
   const inicio = new Date(ejercicio.fechaInicio.split('/').reverse().join('-'));
@@ -927,7 +935,7 @@ function guardarNovedad(params) {
   hoja.appendRow([
     nuevoId,
     idEjercicioActual,
-    new Date(params.fecha),
+    parsearFechaSegura(params.fecha),
     params.titulo,
     params.descripcion || '',
     params.categoria,
@@ -991,7 +999,7 @@ function actualizarNovedad(params) {
           const chequeo = fechaEnRangoEjercicio(params.fecha, ejercicioDeLaNovedad);
           if (!chequeo.ok) return chequeo;
         }
-        hoja.getRange(i + 1, idx.FECHA + 1).setValue(new Date(params.fecha));
+        hoja.getRange(i + 1, idx.FECHA + 1).setValue(parsearFechaSegura(params.fecha));
       }
       if (params.considerarMemoria) hoja.getRange(i + 1, idx.CONSIDERAR_MEMORIA + 1).setValue(params.considerarMemoria);
       if (params.titulo) hoja.getRange(i + 1, idx.TITULO + 1).setValue(params.titulo);
@@ -1096,8 +1104,8 @@ function normalizarTexto(s) {
 
 function sonProbablesDuplicados(candidato, existente) {
   // Fecha cercana (7 días) + al menos 3 palabras significativas del título en común
-  const fechaCand = new Date(candidato.fecha.split('/').reverse().join('-'));
-  const fechaExist = new Date(existente.fecha.split('/').reverse().join('-'));
+  const fechaCand = parsearFechaSegura(candidato.fecha.split('/').reverse().join('-'));
+  const fechaExist = parsearFechaSegura(existente.fecha.split('/').reverse().join('-'));
   const diffDias = Math.abs((fechaCand - fechaExist) / (1000 * 60 * 60 * 24));
   if (diffDias > 7) return false;
 
@@ -1257,6 +1265,19 @@ function obtenerAsambleaEjercicio() {
 }
 
 // Guarda o actualiza fecha/hora/lugar de la Asamblea del Ejercicio activo -- editable desde el Dashboard, dato de primera clase
+// Corrige puntualmente la fecha ya guardada con el bug de huso horario (quedó en 23/10 en vez de 24/10)
+function corregirFechaAsambleaExistente() {
+  const hoja = getHojaAsambleas();
+  const datos = hoja.getDataRange().getValues();
+  for (let i = 1; i < datos.length; i++) {
+    if (datos[i][0] === 'ASM-37') {
+      hoja.getRange(i + 1, 3).setValue(parsearFechaSegura('2026-10-24'));
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'No se encontró ASM-37' };
+}
+
 function guardarAsambleaEjercicio(params) {
   const ejercicioActivo = obtenerEjercicioActivo();
   if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
@@ -1265,13 +1286,13 @@ function guardarAsambleaEjercicio(params) {
   const datos = hoja.getDataRange().getValues();
   for (let i = 1; i < datos.length; i++) {
     if (datos[i][1] === ejercicioActivo.ejercicio.idEjercicio) {
-      hoja.getRange(i + 1, 3).setValue(new Date(params.fecha));
+      hoja.getRange(i + 1, 3).setValue(parsearFechaSegura(params.fecha));
       hoja.getRange(i + 1, 4).setValue(params.hora);
       hoja.getRange(i + 1, 5).setValue(params.lugar || '');
       return { ok: true };
     }
   }
-  hoja.appendRow(['ASM-' + ejercicioActivo.ejercicio.numero, ejercicioActivo.ejercicio.idEjercicio, new Date(params.fecha), params.hora, params.lugar || '', JSON.stringify([]), 'CONVOCADA', '', '', '']);
+  hoja.appendRow(['ASM-' + ejercicioActivo.ejercicio.numero, ejercicioActivo.ejercicio.idEjercicio, parsearFechaSegura(params.fecha), params.hora, params.lugar || '', JSON.stringify([]), 'CONVOCADA', '', '', '']);
   return { ok: true };
 }
 
