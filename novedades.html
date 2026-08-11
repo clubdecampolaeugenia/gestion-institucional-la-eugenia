@@ -101,6 +101,7 @@
 
     <button type="button" class="btn-outline" onclick="toggleForm()">➕ Cargar novedad</button>
     <button type="button" class="btn-outline" onclick="toggleImportChat()">💬 Importar desde chat de WhatsApp</button>
+    <button type="button" class="btn-outline" onclick="sincronizarBoletin()">📰 Sincronizar con Boletín Mensual</button>
 
     <div class="form-panel" id="importChatPanel" style="display:none;">
       <span class="field-label" style="margin-bottom:4px; opacity:.8; font-weight:400; text-transform:none; font-size:11px;">Pegá un fragmento del chat exportado (una semana o un mes, no el año completo — hay un límite de tamaño). La IA separa lo institucional del resto y te muestra sugerencias, vos elegís cuáles guardar.</span>
@@ -110,6 +111,7 @@
     </div>
 
     <div id="candidatosChatContainer"></div>
+    <div id="candidatosBoletinContainer"></div>
 
     <div class="form-panel" id="formPanel">
       <span class="field-label">Fecha</span>
@@ -478,6 +480,69 @@ function guardarCandidatosSeleccionados() {
       document.getElementById('candidatosChatContainer').innerHTML = '';
       document.getElementById('fTextoChat').value = '';
       toggleImportChat();
+      cargarNovedades();
+    } else {
+      mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+    }
+  });
+}
+let CANDIDATOS_BOLETIN = [];
+
+function sincronizarBoletin() {
+  document.getElementById('loadingText').innerHTML = '<span class="spinner"></span> Leyendo el Boletín...';
+  jsonp(EXEC_URL_GI + '?action=listarNovedadesDesdeBoletin', function(res) {
+    document.getElementById('loadingText').textContent = '';
+    if (!res || !res.ok) { mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido')); return; }
+    if (res.novedades.length === 0) {
+      mostrarAviso('No hay nada nuevo en el Boletín — ya está todo importado.');
+      return;
+    }
+    CANDIDATOS_BOLETIN = res.novedades.map(n => ({
+      idOrigen: n.idBoletin, titulo: n.titulo, descripcion: n.descripcion, fecha: n.fechaCarga,
+      categoria: 'General', seleccionado: true
+    }));
+    renderCandidatosBoletin();
+  });
+}
+
+function renderCandidatosBoletin() {
+  const cont = document.getElementById('candidatosBoletinContainer');
+  if (CANDIDATOS_BOLETIN.length === 0) { cont.innerHTML = ''; return; }
+  let html = '<div class="field-label">Nuevo en el Boletín (' + CANDIDATOS_BOLETIN.length + ') — revisá categoría y desmarcá lo que no quieras guardar</div>';
+  CANDIDATOS_BOLETIN.forEach((c, i) => {
+    html += '<div class="novedad-card" style="display:flex; gap:10px; align-items:flex-start;">';
+    html += '<input type="checkbox" ' + (c.seleccionado ? 'checked' : '') + ' onchange="toggleCandidatoBoletin(' + i + ')" style="margin-top:4px;">';
+    html += '<div style="flex:1;"><div class="novedad-header"><span class="novedad-titulo">' + escapeHtml(c.titulo) + '</span><span class="novedad-fecha">' + c.fecha + '</span></div>';
+    html += '<div class="novedad-desc">' + escapeHtml(c.descripcion) + '</div>';
+    html += '<input type="text" value="' + escapeHtml(c.categoria) + '" onchange="actualizarCategoriaBoletin(' + i + ', this.value)" style="margin-top:6px; font-size:12px; padding:6px 8px;" placeholder="Categoría">';
+    html += '</div></div>';
+  });
+  html += '<button type="button" class="btn-solid" onclick="guardarCandidatosBoletin()">Guardar seleccionadas</button>';
+  cont.innerHTML = html;
+}
+
+function toggleCandidatoBoletin(i) {
+  CANDIDATOS_BOLETIN[i].seleccionado = !CANDIDATOS_BOLETIN[i].seleccionado;
+}
+
+function actualizarCategoriaBoletin(i, valor) {
+  CANDIDATOS_BOLETIN[i].categoria = valor;
+}
+
+function guardarCandidatosBoletin() {
+  const seleccionadas = CANDIDATOS_BOLETIN.filter(c => c.seleccionado).map(c => ({
+    fecha: c.fecha, titulo: c.titulo, descripcion: c.descripcion, categoria: c.categoria,
+    origen: 'BOLETIN', idOrigen: c.idOrigen
+  }));
+  if (seleccionadas.length === 0) { mostrarAviso('No hay ninguna seleccionada'); return; }
+
+  document.getElementById('loadingText').textContent = 'Guardando...';
+  jsonp(EXEC_URL_GI + '?action=guardarNovedadesSeleccionadas&novedades=' + encodeURIComponent(JSON.stringify(seleccionadas)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    document.getElementById('loadingText').textContent = '';
+    if (res && res.ok) {
+      mostrarAviso(res.guardadas + ' novedades importadas del Boletín.');
+      CANDIDATOS_BOLETIN = [];
+      document.getElementById('candidatosBoletinContainer').innerHTML = '';
       cargarNovedades();
     } else {
       mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));

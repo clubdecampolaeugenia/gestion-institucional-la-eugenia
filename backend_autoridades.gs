@@ -13,6 +13,7 @@
  */
 
 const SHEET_ID = '1mT5ezYh7R-59APw6JF2B2O6EprTj7xbguys1lpvh6dw';
+const SHEET_ID_BOLETIN = '1EplYcC36NhlBUqwizwS_YdeB2LFEFuRjXsj5Q_kKQLw';
 const HOJA_AUTORIDADES = 'AUTORIDADES';
 
 const PINES_CGV_SHEET_ID = '1altioUeYlQW8NXWYVjHf5v_4ocJuQ-K9N0EfdYQSoBc';
@@ -118,7 +119,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v41-progreso-granular-11ago-1200' };
+      resultado = { ok: true, version: 'v42-sync-boletin-novedades-11ago-1400' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -171,6 +172,8 @@ function doGet(e) {
       resultado = actualizarDocumento(e.parameter);
     } else if (action === 'extraerNovedadesDeChat') {
       resultado = extraerNovedadesDeChat(e.parameter);
+    } else if (action === 'listarNovedadesDesdeBoletin') {
+      resultado = listarNovedadesDesdeBoletin();
     } else if (action === 'guardarNovedadesSeleccionadas') {
       resultado = guardarNovedadesSeleccionadas(e.parameter);
     } else if (action === 'eliminarNovedad') {
@@ -980,6 +983,54 @@ function guardarNovedad(params) {
   return { ok: true, idNovedad: nuevoId };
 }
 
+// ============ SINCRONIZACIÓN CON EL BOLETÍN MENSUAL ============
+// La cola de "Novedades del mes" del Boletín es una fuente real de hechos institucionales.
+// Esto la lee, descarta lo que ya se importó antes (por ORIGEN=BOLETIN + ID_ORIGEN), y devuelve solo lo nuevo para revisar.
+function listarNovedadesDesdeBoletin() {
+  const ssBoletin = SpreadsheetApp.openById(SHEET_ID_BOLETIN);
+  const hojas = ssBoletin.getSheets();
+  let hojaCola = null;
+  let idx = {};
+  for (const hoja of hojas) {
+    const datos = hoja.getDataRange().getValues();
+    if (datos.length === 0) continue;
+    const headers = datos[0].map(h => String(h).trim().toUpperCase());
+    if (headers.includes('ID') && headers.includes('TITULO') && headers.includes('DESCRIPCION') && headers.includes('FECHA_CARGA')) {
+      hojaCola = hoja;
+      headers.forEach((h, i) => idx[h] = i);
+      break;
+    }
+  }
+  if (!hojaCola) return { ok: false, error: 'No se encontró la hoja de Novedades del Boletín (buscando columnas ID/TITULO/DESCRIPCION/FECHA_CARGA)' };
+
+  const datosCola = hojaCola.getDataRange().getValues();
+  const candidatos = [];
+  for (let i = 1; i < datosCola.length; i++) {
+    const fila = datosCola[i];
+    if (!fila[idx.ID]) continue;
+    candidatos.push({
+      idBoletin: fila[idx.ID],
+      titulo: fila[idx.TITULO],
+      descripcion: fila[idx.DESCRIPCION],
+      fechaCarga: fila[idx.FECHA_CARGA] instanceof Date ? Utilities.formatDate(fila[idx.FECHA_CARGA], Session.getScriptTimeZone(), 'dd/MM/yyyy') : fila[idx.FECHA_CARGA]
+    });
+  }
+
+  // Filtra lo que ya se importó antes
+  const hojaNov = getHojaNovedades();
+  const datosNov = hojaNov.getDataRange().getValues();
+  const headersNov = datosNov[0];
+  const idxNov = {};
+  headersNov.forEach((h, i) => idxNov[h] = i);
+  const yaImportados = new Set();
+  for (let i = 1; i < datosNov.length; i++) {
+    if (datosNov[i][idxNov.ORIGEN] === 'BOLETIN') yaImportados.add(String(datosNov[i][idxNov.ID_ORIGEN]));
+  }
+
+  const nuevos = candidatos.filter(c => !yaImportados.has(String(c.idBoletin)));
+  return { ok: true, novedades: nuevos, totalEnBoletin: candidatos.length };
+}
+
 function listarNovedades(params) {
   const hoja = getHojaNovedades();
   const datos = hoja.getDataRange().getValues();
@@ -1164,9 +1215,9 @@ function guardarNovedadesSeleccionadas(params) {
     const nuevoId = 'NOV-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss') + '-' + guardadas;
     const considerarMemoria = CONSIDERAR_MEMORIA_DEFAULT[n.categoria] || 'EVALUAR';
     hoja.appendRow([
-      nuevoId, idEjercicioActual, new Date(n.fecha.split('/').reverse().join('-')),
+      nuevoId, idEjercicioActual, parsearFechaSegura(n.fecha.split('/').reverse().join('-')),
       n.titulo, n.descripcion, n.categoria, n.montoSiCorresponde || '',
-      'CHAT_IMPORTADO', '', considerarMemoria, ''
+      n.origen || 'CHAT_IMPORTADO', n.idOrigen || '', considerarMemoria, ''
     ]);
     guardadas++;
   });
