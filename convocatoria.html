@@ -42,7 +42,8 @@
 
   .field-label { color: var(--petroleo); font-size: 11px; font-weight: 900; text-transform: uppercase; margin: 10px 0 4px; display: block; }
   .field-label:first-child { margin-top: 0; }
-  input, textarea, select { width: 100%; border: 2px solid var(--petroleo); border-radius: 12px; padding: 10px 12px; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; }
+  input[type=text], input[type=date], textarea, select { width: 100%; border: 2px solid var(--petroleo); border-radius: 12px; padding: 10px 12px; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; }
+  input[type=checkbox] { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--petroleo); }
   textarea { min-height: 60px; resize: vertical; }
   .form-panel { background: var(--petroleo); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
   .form-panel .field-label { color: var(--lima); }
@@ -101,7 +102,7 @@
       <span class="field-label">Presentes en la reunión (tildá quiénes asistieron)</span>
       <div id="listaPresentesCD" style="background:var(--blanco); border-radius:12px; padding:12px; max-height:220px; overflow-y:auto; margin-bottom:8px;">cargando autoridades...</div>
 
-      <div id="avisoFueraTermino" style="display:none; background:var(--naranja); border-radius:12px; padding:10px; margin-top:10px; font-size:12px; font-weight:700; color:var(--petroleo);"></div>
+      <div id="avisoFueraTermino" style="display:none; background:var(--naranja); border-radius:12px; padding:10px; margin-top:10px; margin-bottom:16px; font-size:12px; font-weight:700; color:var(--petroleo);"></div>
       <div id="campoMotivo" style="display:none;">
         <span class="field-label">Motivo de la demora (Art. 39)</span>
         <textarea id="fMotivoFueraTermino" placeholder="Ej: demora en la confección de la documentación contable"></textarea>
