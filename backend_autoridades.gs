@@ -119,7 +119,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v42-sync-boletin-novedades-11ago-1400' };
+      resultado = { ok: true, version: 'v43-fix-fecha-en-rango-ejercicio-11ago-1430' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -935,9 +935,9 @@ function parsearFechaSegura(fechaStr) {
 }
 
 function fechaEnRangoEjercicio(fechaStr, ejercicio) {
-  const fecha = new Date(fechaStr);
-  const inicio = new Date(ejercicio.fechaInicio.split('/').reverse().join('-'));
-  const cierre = new Date(ejercicio.fechaCierre.split('/').reverse().join('-'));
+  const fecha = parsearFechaSegura(fechaStr.split('/').reverse().join('-')); // fechaStr viene dd/mm/aaaa
+  const inicio = parsearFechaSegura(ejercicio.fechaInicio.split('/').reverse().join('-'));
+  const cierre = parsearFechaSegura(ejercicio.fechaCierre.split('/').reverse().join('-'));
   if (fecha < inicio || fecha > cierre) {
     return {
       ok: false,

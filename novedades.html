@@ -467,6 +467,14 @@ function toggleCandidato(i) {
   CANDIDATOS_CHAT[i].seleccionado = !CANDIDATOS_CHAT[i].seleccionado;
 }
 
+function construirMensajeGuardado(res, origenTexto) {
+  let msg = res.guardadas + ' novedades ' + origenTexto + '.';
+  if (res.rechazadas && res.rechazadas.length > 0) {
+    msg += '\n\n⚠️ ' + res.rechazadas.length + ' no se guardaron:\n' + res.rechazadas.map(r => '• ' + r.titulo + ': ' + r.motivo).join('\n');
+  }
+  return msg;
+}
+
 function guardarCandidatosSeleccionados() {
   const seleccionadas = CANDIDATOS_CHAT.filter(c => c.seleccionado);
   if (seleccionadas.length === 0) { mostrarAviso('No hay ninguna seleccionada'); return; }
@@ -475,7 +483,7 @@ function guardarCandidatosSeleccionados() {
   jsonp(EXEC_URL_GI + '?action=guardarNovedadesSeleccionadas&novedades=' + encodeURIComponent(JSON.stringify(seleccionadas)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
     document.getElementById('loadingText').textContent = '';
     if (res && res.ok) {
-      mostrarAviso(res.guardadas + ' novedades guardadas.');
+      mostrarAviso(construirMensajeGuardado(res, 'guardadas'));
       CANDIDATOS_CHAT = [];
       document.getElementById('candidatosChatContainer').innerHTML = '';
       document.getElementById('fTextoChat').value = '';
@@ -540,7 +548,7 @@ function guardarCandidatosBoletin() {
   jsonp(EXEC_URL_GI + '?action=guardarNovedadesSeleccionadas&novedades=' + encodeURIComponent(JSON.stringify(seleccionadas)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
     document.getElementById('loadingText').textContent = '';
     if (res && res.ok) {
-      mostrarAviso(res.guardadas + ' novedades importadas del Boletín.');
+      mostrarAviso(construirMensajeGuardado(res, 'importadas del Boletín'));
       CANDIDATOS_BOLETIN = [];
       document.getElementById('candidatosBoletinContainer').innerHTML = '';
       cargarNovedades();
