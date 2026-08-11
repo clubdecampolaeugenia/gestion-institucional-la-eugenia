@@ -476,13 +476,38 @@ function actualizarProgreso() {
   document.getElementById('progresoFill').style.width = pct + '%';
   document.getElementById('progresoPct').textContent = pct + '%';
 
-  const totalC = HITOS_CIERRE.length;
-  const sumaC = HITOS_CIERRE.reduce((acc, h) => acc + ESTADO_PESO[h.estado], 0);
-  const pctC = Math.round((sumaC / totalC) * 100);
-  document.getElementById('progresoCierreFill').style.width = pctC + '%';
-  document.getElementById('progresoCierrePct').textContent = pctC + '%';
-
+  actualizarProgresoResultadoAsamblea();
   actualizarProximaAccion();
+}
+
+// La barra de Resultado se calcula con 4 chequeos reales (celebrada, Balance, autoridades, acta firmada),
+// aunque en el Home solo se muestre 1 card -- así el % no salta de 0 a 100% de un solo paso.
+function actualizarProgresoResultadoAsamblea() {
+  jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(resAsam) {
+    if (!resAsam || !resAsam.ok) {
+      document.getElementById('progresoCierreFill').style.width = '0%';
+      document.getElementById('progresoCierrePct').textContent = '0%';
+      return;
+    }
+    let completados = 0;
+    if (resAsam.estado === 'CELEBRADA') completados++;
+    if (resAsam.autoridadesRegistradas) completados++;
+
+    jsonp(EXEC_URL_GI + '?action=listarBalances', function(resBal) {
+      if (resBal && resBal.ok && resBal.balances.length > 0 && resBal.balances[0].estado === 'APROBADO_ASAMBLEA') completados++;
+
+      jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(resEj) {
+        if (resEj && resEj.ok) {
+          jsonp(EXEC_URL_GI + '?action=listarDocumentos&tipo=ACTA_ASAMBLEA&idEjercicio=' + encodeURIComponent(resEj.ejercicio.idEjercicio), function(resDoc) {
+            if (resDoc && resDoc.ok && resDoc.documentos.length > 0 && resDoc.documentos[0].estado === 'FIRMADA') completados++;
+            const pctC = Math.round((completados / 4) * 100);
+            document.getElementById('progresoCierreFill').style.width = pctC + '%';
+            document.getElementById('progresoCierrePct').textContent = pctC + '%';
+          });
+        }
+      });
+    });
+  });
 }
 
 function actualizarProximaAccion() {
@@ -568,13 +593,18 @@ function cargarEstadoConvocatoria() {
         return;
       }
       const tipos = ['ACTA_CD_CONVOCATORIA', 'EDICTO_DIARIO', 'EDICTO_BOLETIN', 'CIRCULAR'];
-      const generados = tipos.filter(t => res.documentos.some(d => d.tipo === t));
-      if (generados.length === 0) {
+      // Se generan siempre los 4 juntos -- o están todos, o no hay ninguno
+      const ultimoDeCadaTipo = tipos.map(t => res.documentos.filter(d => d.tipo === t)[0]).filter(d => d);
+      if (ultimoDeCadaTipo.length === 0) {
         actualizarHito('Acta CD, Convocatoria y Edictos', 'PENDIENTE', 'Todavía no se generó ningún documento');
-      } else if (generados.length === tipos.length) {
-        actualizarHito('Acta CD, Convocatoria y Edictos', 'COMPLETO', 'Los 4 documentos ya se generaron — Acta CD, 2 Edictos y Circular');
       } else {
-        actualizarHito('Acta CD, Convocatoria y Edictos', 'PROGRESO', generados.length + ' de 4 documentos generados');
+        const todosAprobados = ultimoDeCadaTipo.length === tipos.length && ultimoDeCadaTipo.every(d => d.estado === 'APROBADO');
+        if (todosAprobados) {
+          actualizarHito('Acta CD, Convocatoria y Edictos', 'COMPLETO', 'Los 4 documentos generados y aprobados');
+        } else {
+          const aprobados = ultimoDeCadaTipo.filter(d => d.estado === 'APROBADO').length;
+          actualizarHito('Acta CD, Convocatoria y Edictos', 'PROGRESO', 'Generados — ' + aprobados + ' de 4 aprobados');
+        }
       }
     });
   });

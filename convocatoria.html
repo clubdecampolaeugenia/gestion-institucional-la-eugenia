@@ -259,11 +259,37 @@ function cargarUltimosDocumentos() {
         return delTipo.length ? delTipo[0] : null; // ya viene ordenado por versión descendente
       });
       if (ultimos.every(d => d)) {
-        mostrarResultado({ documentos: ultimos.map(d => ({ tipo: d.tipo, contenido: d.contenido })), fueraDeTermino: false });
+        mostrarResultado({ documentos: ultimos.map(d => ({ tipo: d.tipo, contenido: d.contenido, idDocumento: d.idDocumento, estado: d.estado })), fueraDeTermino: false });
       }
     });
   });
 }
+
+function aprobarDocumento(btn) {
+  const box = btn.closest('.doc-box');
+  const idDocumento = box.dataset.idDocumento;
+  if (!idDocumento) { mostrarAviso('Este documento todavía no tiene ID (recargá la página).'); return; }
+  mostrarConfirmacion('Esto marca el documento como aprobado y listo para enviar. ¿Confirmás?', function() {
+    jsonp(EXEC_URL_GI + '?action=actualizarDocumento&idDocumento=' + encodeURIComponent(idDocumento) + '&estado=APROBADO&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      if (res && res.ok) {
+        btn.outerHTML = '<span class="btn-small" style="background:var(--petroleo); color:var(--lima); cursor:default;">✓ Aprobado</span>';
+        mostrarAviso('Documento aprobado.');
+      } else {
+        mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+      }
+    });
+  });
+}
+
+function mostrarConfirmacion(mensaje, callbackAceptar) {
+  const overlay = document.createElement('div');
+  overlay.className = 'aviso-overlay';
+  overlay.innerHTML = '<div class="aviso-card"><div class="aviso-texto">' + mensaje.replace(/</g,'&lt;') + '</div><div style="display:flex; gap:10px; justify-content:center;"><button type="button" class="aviso-btn" style="background:transparent;" id="btnCancelarConf">Cancelar</button><button type="button" class="aviso-btn" id="btnAceptarConf">Aceptar</button></div></div>';
+  document.body.appendChild(overlay);
+  overlay.querySelector('#btnCancelarConf').onclick = function() { document.body.removeChild(overlay); };
+  overlay.querySelector('#btnAceptarConf').onclick = function() { document.body.removeChild(overlay); callbackAceptar(); };
+}
+
 
 function precargarAsambleaReal() {
   jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(res) {
@@ -380,7 +406,13 @@ function mostrarResultado(res) {
   }
   html += '<div style="font-size:11px; color:var(--petroleo); opacity:.8; text-align:center; margin-bottom:12px;">Estos son borradores para consolidar — el formato final de impresión (márgenes, sangría, justificado) se aplica en Word u otro procesador de texto, fuera de la app.</div>';
   res.documentos.forEach(d => {
-    html += '<div class="doc-box"><div class="doc-titulo">' + NOMBRES_TIPO[d.tipo] + '<button type="button" class="btn-small" onclick="copiarTexto(this)">Copiar</button></div><div class="doc-texto">' + escapeHtml(d.contenido) + '</div></div>';
+    const aprobado = d.estado === 'APROBADO';
+    html += '<div class="doc-box" data-id-documento="' + (d.idDocumento || '') + '"><div class="doc-titulo">' + NOMBRES_TIPO[d.tipo] +
+      '<div style="display:flex; gap:6px;"><button type="button" class="btn-small" onclick="copiarTexto(this)">Copiar</button>' +
+      (aprobado
+        ? '<span class="btn-small" style="background:var(--petroleo); color:var(--lima); cursor:default;">✓ Aprobado</span>'
+        : '<button type="button" class="btn-small" onclick="aprobarDocumento(this)">Aprobar</button>') +
+      '</div></div><div class="doc-texto">' + escapeHtml(d.contenido) + '</div></div>';
   });
   cont.innerHTML = html;
 }

@@ -118,7 +118,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v40-asamblea-reeleccion-orden-dia-11ago-1000' };
+      resultado = { ok: true, version: 'v41-progreso-granular-11ago-1200' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -1299,7 +1299,8 @@ function obtenerAsambleaEjercicio() {
         hora: formatearHoraSegura(datos[i][3]),
         lugar: datos[i][4],
         estado: datos[i][6],
-        ordenDelDia: ordenDelDia
+        ordenDelDia: ordenDelDia,
+        autoridadesRegistradas: datos[i][7] === 'SI'
       };
     }
   }
@@ -1439,6 +1440,19 @@ function registrarAutoridadesElectas(params) {
       actualizadas++;
     }
   });
+
+  // Marca en ASAMBLEAS que ya se registraron autoridades, para el cálculo de progreso del Dashboard
+  const ejercicioActivo = obtenerEjercicioActivo();
+  if (ejercicioActivo.ok) {
+    const hojaAsam = getHojaAsambleas();
+    const datosAsam = hojaAsam.getDataRange().getValues();
+    for (let i = 1; i < datosAsam.length; i++) {
+      if (datosAsam[i][1] === ejercicioActivo.ejercicio.idEjercicio) {
+        hojaAsam.getRange(i + 1, 8).setValue('SI'); // columna 8 = AUTORIDADES_REGISTRADAS
+        break;
+      }
+    }
+  }
 
   return { ok: true, actualizadas: actualizadas };
 }
@@ -1605,7 +1619,7 @@ function generarConvocatoriaYDocumentos(params) {
   docs.forEach(doc => {
     const nuevoId = 'DOC-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss') + '-' + doc.tipo;
     hoja.appendRow([nuevoId, ej.idEjercicio, doc.tipo, 1, 'BORRADOR', doc.contenido, 'IA', new Date()]);
-    resultado.push({ tipo: doc.tipo, idDocumento: nuevoId, contenido: doc.contenido });
+    resultado.push({ tipo: doc.tipo, idDocumento: nuevoId, contenido: doc.contenido, estado: 'BORRADOR' });
   });
 
   return { ok: true, documentos: resultado, fueraDeTermino: fueraDeTermino, fechaLimite: Utilities.formatDate(fechaLimite, Session.getScriptTimeZone(), 'dd/MM/yyyy'), numeroActa: nuevoNumeroActa };
