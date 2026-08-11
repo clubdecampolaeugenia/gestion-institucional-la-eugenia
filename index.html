@@ -112,8 +112,8 @@
         <span style="color:var(--naranja); font-family:Impact,sans-serif; font-size:13px; text-transform:uppercase;" id="asambleaPildoraTexto">Asamblea — cargando...</span>
         <span style="font-size:12px; color:var(--naranja);">✏️</span>
       </div>
-      <div id="editorAsamblea" style="display:none; background:rgba(255,255,255,0.08); border-radius:10px; padding:10px; margin-top:8px;">
-        <span class="progreso-titulo" style="color:var(--naranja); font-size:11px; margin-bottom:4px;">Fecha</span>
+      <div id="editorAsamblea" style="display:none; background:rgba(255,255,255,0.08); border-radius:10px; padding:14px; margin-top:8px;">
+        <span class="progreso-titulo" style="color:var(--naranja); font-size:11px; margin-bottom:6px;">Fecha</span>
         <div style="display:flex; gap:6px;">
           <div style="flex:1; text-align:center; font-size:9px; color:var(--lima); font-weight:700; text-transform:uppercase;">Día</div>
           <div style="width:12px;"></div>
@@ -121,27 +121,27 @@
           <div style="width:12px;"></div>
           <div style="flex:1.3; text-align:center; font-size:9px; color:var(--lima); font-weight:700; text-transform:uppercase;">Año</div>
         </div>
-        <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
+        <div style="display:flex; gap:6px; align-items:center; margin-top:2px; margin-bottom:14px;">
           <select id="eAsambleaFecha_d" style="flex:1; border-radius:10px; padding:8px; border:none;"></select>
           <span style="color:var(--hueso); font-weight:900;">/</span>
           <select id="eAsambleaFecha_m" style="flex:1; border-radius:10px; padding:8px; border:none;"></select>
           <span style="color:var(--hueso); font-weight:900;">/</span>
           <select id="eAsambleaFecha_a" style="flex:1.3; border-radius:10px; padding:8px; border:none;"></select>
         </div>
-        <span class="progreso-titulo" style="color:var(--naranja); font-size:11px; margin-bottom:4px;">Hora (24 hs)</span>
-        <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
+        <span class="progreso-titulo" style="color:var(--naranja); font-size:11px; margin-bottom:6px;">Hora (24 hs)</span>
+        <div style="display:flex; gap:6px; align-items:center; margin-bottom:14px;">
           <select id="eAsambleaHora_h" style="flex:1; border-radius:10px; padding:8px; border:none;"></select>
           <span style="color:var(--hueso); font-weight:900;">:</span>
           <select id="eAsambleaHora_m" style="flex:1; border-radius:10px; padding:8px; border:none;"></select>
         </div>
-        <span class="progreso-titulo" style="color:var(--naranja); font-size:11px; margin-bottom:4px;">Lugar</span>
-        <select id="eAsambleaLugarSelect" onchange="toggleLugarOtroHome()" style="width:100%; border-radius:10px; padding:8px; border:none; margin-bottom:8px;">
-          <option value="el salón de usos múltiples del Club, Ruta Nacional N.° 105, Km 5, Garupá, Misiones">El salón de usos múltiples del Club (habitual)</option>
+        <span class="progreso-titulo" style="color:var(--naranja); font-size:11px; margin-bottom:6px;">Lugar</span>
+        <select id="eAsambleaLugarSelect" onchange="toggleLugarOtroHome()" style="width:100%; border-radius:10px; padding:8px; border:none; margin-bottom:14px;">
+          <option value="el salón de usos múltiples del Club, Ruta Nacional N.° 105, Km 5, Garupá, Misiones">el salón de usos múltiples del Club, Ruta Nacional N.° 105, Km 5, Garupá, Misiones</option>
           <option value="__otro__">Otro lugar...</option>
         </select>
-        <input type="text" id="eAsambleaLugar" style="display:none; width:100%; border-radius:10px; padding:8px; border:none; margin-bottom:10px;" placeholder="Escribí el lugar">
-        <button type="button" style="width:100%; padding:10px; border-radius:18px; border:2px solid var(--naranja); background:var(--naranja); color:var(--petroleo); font-weight:900; text-transform:uppercase; font-size:12px; cursor:pointer;" onclick="guardarAsamblea()">Guardar</button>
-        <div style="color:var(--hueso); opacity:.7; font-size:10px; margin-top:8px; text-align:center;">Este es el único lugar donde se define la fecha — Convocatoria solo la muestra.</div>
+        <input type="text" id="eAsambleaLugar" style="display:none; width:100%; border-radius:10px; padding:8px; border:none; margin-bottom:14px;" placeholder="Escribí el lugar">
+        <button type="button" style="width:100%; padding:10px; border-radius:18px; border:2px solid var(--naranja); background:var(--naranja); color:var(--petroleo); font-weight:900; text-transform:uppercase; font-size:12px; cursor:pointer; margin-top:6px;" onclick="guardarAsamblea()">Guardar</button>
+        <div style="color:var(--hueso); opacity:.7; font-size:10px; margin-top:10px; text-align:center;">Este es el único lugar donde se define la fecha — Convocatoria solo la muestra.</div>
       </div>
 
       <div style="margin-top:14px; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--naranja);">Resultado de la Asamblea Ordinaria</div>
