@@ -127,8 +127,12 @@
       <div class="form-panel" id="formNuevaActa" style="display:none; background: var(--petroleo); border-radius: 16px; padding: 14px; margin-bottom: 14px;">
         <span class="field-label" style="color:var(--lima);">Fecha de la reunión</span>
         <input type="date" id="fFechaReunion">
-        <span class="field-label" style="color:var(--lima);">Hora de inicio</span>
-        <input type="time" id="fHoraInicio" value="20:30">
+        <span class="field-label" style="color:var(--lima);">Hora de inicio (24 hs)</span>
+        <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
+          <select id="fHoraInicio_h" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <span style="font-weight:900;">:</span>
+          <select id="fHoraInicio_m" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+        </div>
         <span class="field-label" style="color:var(--lima);">Presentes (separados por coma)</span>
         <input type="text" id="fPresentes" placeholder="Javier Stefañuk, Augusto Coutada...">
         <button type="button" class="btn-solid" style="margin-top:12px;" onclick="generarBorrador()">Generar borrador</button>
@@ -153,8 +157,12 @@
         <div class="field-label">Edición punto por punto</div>
         <div id="puntosContainer"></div>
         <button type="button" class="btn-outline" onclick="agregarPuntoVacio()">➕ Agregar punto</button>
-        <span class="field-label">Hora de cierre</span>
-        <input type="time" id="eHoraFin" value="21:15">
+        <span class="field-label">Hora de cierre (24 hs)</span>
+        <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
+          <select id="eHoraFin_h" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <span style="font-weight:900;">:</span>
+          <select id="eHoraFin_m" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+        </div>
         <button type="button" class="btn-solid" style="margin-top:10px;" onclick="guardarCambiosActa()">Guardar cambios</button>
         <button type="button" class="btn-ghost" onclick="cerrarEditor()">Cerrar</button>
       </div>
@@ -240,11 +248,31 @@ function entrarApp() {
   document.getElementById('mainScreen').classList.add('active');
   cargarNotas();
   cargarActas();
+  poblarSelectorHora('fHoraInicio', '20:30');
+  poblarSelectorHora('eHoraFin', '21:15');
 }
 
 function cerrarSesion() {
   localStorage.removeItem('cgv_pin');
   location.reload();
+}
+
+function poblarSelectorHora(idBase, horaInicial) {
+  const selH = document.getElementById(idBase + '_h');
+  const selM = document.getElementById(idBase + '_m');
+  if (!selH.options.length) {
+    for (let h = 0; h < 24; h++) selH.innerHTML += '<option value="' + String(h).padStart(2,'0') + '">' + String(h).padStart(2,'0') + '</option>';
+    for (let m = 0; m < 60; m += 5) selM.innerHTML += '<option value="' + String(m).padStart(2,'0') + '">' + String(m).padStart(2,'0') + '</option>';
+  }
+  if (horaInicial) {
+    const partes = horaInicial.split(':');
+    selH.value = partes[0];
+    selM.value = partes[1];
+  }
+}
+
+function obtenerValorHora(idBase) {
+  return document.getElementById(idBase + '_h').value + ':' + document.getElementById(idBase + '_m').value;
 }
 
 function cambiarTab(tab) {
@@ -309,7 +337,7 @@ function toggleFormNuevaActa() {
 
 function generarBorrador() {
   const fecha = document.getElementById('fFechaReunion').value;
-  const hora = document.getElementById('fHoraInicio').value;
+  const hora = obtenerValorHora('fHoraInicio');
   const presentes = document.getElementById('fPresentes').value;
   if (!fecha || !presentes) { mostrarAviso('Completá fecha y presentes'); return; }
   document.getElementById('loadingText').textContent = 'Generando borrador...';
@@ -405,7 +433,7 @@ function agregarPuntoVacio() {
 }
 
 function guardarCambiosActa() {
-  const horaFin = document.getElementById('eHoraFin').value;
+  const horaFin = obtenerValorHora('eHoraFin');
   document.getElementById('loadingText').textContent = 'Guardando...';
   const params = 'action=actualizarActa&idActa=' + ACTA_ACTUAL.idActa + '&puntos=' + encodeURIComponent(JSON.stringify(ACTA_ACTUAL.puntos)) + '&horaFin=' + encodeURIComponent(horaFin) + '&pin=' + encodeURIComponent(PIN_SESION);
   jsonp(EXEC_URL_GI + '?' + params, function(res) {
@@ -437,7 +465,7 @@ function construirTextoFinalActa(acta, horaFin) {
 }
 
 function generarTextoFinal() {
-  const horaFin = document.getElementById('eHoraFin').value || '21:15';
+  const horaFin = obtenerValorHora('eHoraFin') || '21:15';
   const texto = construirTextoFinalActa(ACTA_ACTUAL, horaFin);
   document.getElementById('textoFinalBox').textContent = texto;
   document.getElementById('textoFinalBox').style.display = 'block';
