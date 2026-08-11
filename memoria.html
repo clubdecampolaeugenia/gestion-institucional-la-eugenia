@@ -290,11 +290,22 @@ function mostrarMemoria(idDocumento, contenido, estado, version) {
   cont.innerHTML =
     '<div class="memoria-box">' +
     '<div class="memoria-meta">Versión ' + version + '<span class="estado-badge estado-' + estado + '">' + estado + '</span></div>' +
-    '<textarea class="memoria-texto" id="memoriaTextarea">' + contenido + '</textarea>' +
-    '<button type="button" class="btn-outline" style="margin-top:12px;" onclick="guardarEdicion()">Guardar cambios</button>' +
+    '<textarea class="memoria-texto" id="memoriaTextarea" style="font-family:Arial, Helvetica, sans-serif; text-align:justify;">' + contenido + '</textarea>' +
+    '<button type="button" class="btn-outline" id="btnCopiarMemoria" onclick="copiarMemoria()">Copiar texto</button>' +
+    '<div style="font-size:11px; color:var(--petroleo); opacity:.7; text-align:center; margin-bottom:10px;">Esto es un borrador para consolidar — el formato final de impresión se aplica en Word u otro procesador de texto, fuera de la app.</div>' +
+    '<button type="button" class="btn-outline" onclick="guardarEdicion()">Guardar cambios</button>' +
     '<button type="button" class="btn-solid" onclick="cambiarEstado(\'REVISADA\')">Marcar como revisada</button>' +
     '<button type="button" class="btn-solid" style="background:var(--petroleo); color:var(--lima);" onclick="cambiarEstado(\'APROBADA\')">Aprobar (por CD)</button>' +
     '</div>';
+}
+
+function copiarMemoria() {
+  const texto = document.getElementById('memoriaTextarea').value;
+  navigator.clipboard.writeText(texto).then(() => {
+    const btn = document.getElementById('btnCopiarMemoria');
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => { btn.textContent = 'Copiar texto'; }, 1500);
+  });
 }
 
 function guardarEdicion() {

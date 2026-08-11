@@ -156,6 +156,8 @@
         <div class="field-label" id="editorActaTitulo"></div>
         <button type="button" class="btn-outline" style="background:var(--verdecl);" onclick="generarTextoFinal()">👁️ Ver texto final del Acta (no editable)</button>
         <div class="texto-final-box" id="textoFinalBox"></div>
+        <button type="button" class="btn-outline" id="btnCopiarActa" style="display:none;" onclick="copiarTextoFinal()">Copiar texto</button>
+        <div id="avisoImprimirActa" style="display:none; font-size:11px; color:var(--petroleo); opacity:.7; text-align:center; margin-bottom:10px;">Esto es un borrador para consolidar — el formato final de impresión (márgenes, sangría, justificado) se aplica en Word u otro procesador de texto, fuera de la app.</div>
         <hr class="divider">
         <div class="field-label">Edición punto por punto</div>
         <div id="puntosContainer"></div>
@@ -510,6 +512,17 @@ function generarTextoFinal() {
   const texto = construirTextoFinalActa(ACTA_ACTUAL, horaFin);
   document.getElementById('textoFinalBox').textContent = texto;
   document.getElementById('textoFinalBox').style.display = 'block';
+  document.getElementById('btnCopiarActa').style.display = 'block';
+  document.getElementById('avisoImprimirActa').style.display = 'block';
+}
+
+function copiarTextoFinal() {
+  const texto = document.getElementById('textoFinalBox').textContent;
+  navigator.clipboard.writeText(texto).then(() => {
+    const btn = document.getElementById('btnCopiarActa');
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => { btn.textContent = 'Copiar texto'; }, 1500);
+  });
 }
 
 function cargarConsolidado() {

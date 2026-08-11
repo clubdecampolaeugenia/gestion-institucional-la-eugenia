@@ -360,6 +360,7 @@ function mostrarResultado(res) {
   if (res.fueraDeTermino) {
     html += '<div class="alerta-fuera-termino">⚠️ Fuera del plazo estatutario (vencía el ' + res.fechaLimite + '). Los documentos ya incluyen el punto correspondiente.</div>';
   }
+  html += '<div style="font-size:11px; color:var(--hueso); opacity:.8; text-align:center; margin-bottom:12px;">Estos son borradores para consolidar — el formato final de impresión (márgenes, sangría, justificado) se aplica en Word u otro procesador de texto, fuera de la app.</div>';
   res.documentos.forEach(d => {
     html += '<div class="doc-box"><div class="doc-titulo">' + NOMBRES_TIPO[d.tipo] + '<button type="button" class="btn-small" onclick="copiarTexto(this)">Copiar</button></div><div class="doc-texto">' + escapeHtml(d.contenido) + '</div></div>';
   });

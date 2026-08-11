@@ -351,10 +351,21 @@ function mostrarActaAsamblea(idDocumento, contenido, estado, version) {
   document.getElementById('resultadoActa').innerHTML =
     '<div class="resultado-box">' +
     '<div style="font-size:11px; font-weight:900; text-transform:uppercase; opacity:.6; margin-bottom:8px;">Versión ' + version + ' — ' + estado + '</div>' +
-    '<textarea id="actaAsambleaTextarea" style="width:100%; min-height:300px; border:none; font-family:Roboto; font-size:13px; color:var(--petroleo); line-height:1.6;">' + contenido + '</textarea>' +
-    '<button type="button" class="btn-outline" style="margin-top:12px;" onclick="guardarActaAsamblea()">Guardar cambios</button>' +
+    '<textarea id="actaAsambleaTextarea" style="width:100%; min-height:300px; border:none; font-family:Arial, Helvetica, sans-serif; font-size:12px; color:var(--petroleo); line-height:1.5; text-align:justify;">' + contenido + '</textarea>' +
+    '<button type="button" class="btn-outline" id="btnCopiarActaAsamblea" onclick="copiarActaAsamblea()">Copiar texto</button>' +
+    '<div style="font-size:11px; color:var(--petroleo); opacity:.7; text-align:center; margin-bottom:10px;">Esto es un borrador para consolidar — el formato final de impresión se aplica en Word u otro procesador de texto, fuera de la app.</div>' +
+    '<button type="button" class="btn-outline" onclick="guardarActaAsamblea()">Guardar cambios</button>' +
     (estado !== 'FIRMADA' ? '<button type="button" class="btn-solid" onclick="firmarActaAsamblea()">Marcar como Firmada</button>' : '<div style="text-align:center; color:var(--petroleo); font-weight:900; font-size:12px; text-transform:uppercase;">✓ Firmada</div>') +
     '</div>';
+}
+
+function copiarActaAsamblea() {
+  const texto = document.getElementById('actaAsambleaTextarea').value;
+  navigator.clipboard.writeText(texto).then(() => {
+    const btn = document.getElementById('btnCopiarActaAsamblea');
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => { btn.textContent = 'Copiar texto'; }, 1500);
+  });
 }
 
 function guardarActaAsamblea() {
