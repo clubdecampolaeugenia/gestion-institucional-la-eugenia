@@ -74,7 +74,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -116,7 +116,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v36-sum-abreviado-10ago-2000' };
+      resultado = { ok: true, version: 'v37-fix-duplicados-asamblea-10ago-2100' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -145,6 +145,8 @@ function doGet(e) {
       resultado = guardarAsambleaEjercicio(e.parameter);
     } else if (action === 'corregirFechaAsambleaExistente') {
       resultado = corregirFechaAsambleaExistente();
+    } else if (action === 'limpiarDuplicadosAsambleas') {
+      resultado = limpiarDuplicadosAsambleas();
     } else if (action === 'diagnosticoAsambleas') {
       resultado = diagnosticoAsambleas();
     } else if (action === 'sembrarAsambleaReal') {
@@ -1291,6 +1293,27 @@ function diagnosticoAsambleas() {
   };
 }
 
+// Limpia duplicados en ASAMBLEAS (bug ya corregido, esto es solo para arreglar lo que ya quedó mal)
+function limpiarDuplicadosAsambleas() {
+  const ejercicioActivo = obtenerEjercicioActivo();
+  if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
+  const hoja = getHojaAsambleas();
+  const datos = hoja.getDataRange().getValues();
+
+  const filasDelEjercicio = [];
+  for (let i = 1; i < datos.length; i++) {
+    if (datos[i][1] === ejercicioActivo.ejercicio.idEjercicio) filasDelEjercicio.push(i + 1);
+  }
+  if (filasDelEjercicio.length <= 1) return { ok: true, mensaje: 'No había duplicados' };
+
+  // Deja la última (la más reciente) y borra las anteriores
+  const filaAConservar = filasDelEjercicio[filasDelEjercicio.length - 1];
+  const aBorrar = filasDelEjercicio.slice(0, -1).sort((a, b) => b - a); // de mayor a menor, para no correr los índices al borrar
+  aBorrar.forEach(f => hoja.deleteRow(f));
+
+  return { ok: true, borradas: aBorrar.length, conservada: filaAConservar };
+}
+
 function corregirFechaAsambleaExistente() {
   const ejercicioActivo = obtenerEjercicioActivo();
   if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
@@ -1384,8 +1407,21 @@ function generarConvocatoriaYDocumentos(params) {
 
   const nuevoIdAsamblea = 'ASM-' + ej.numero;
   const hojaAsam = getHojaAsambleas();
-  hojaAsam.appendRow([nuevoIdAsamblea, ej.idEjercicio, parsearFechaSegura(params.fechaAsamblea), params.horaAsamblea, params.lugarAsamblea, JSON.stringify(puntos), 'CONVOCADA', '', '', '']);
-  hojaAsam.getRange(hojaAsam.getLastRow(), 4).setNumberFormat('@').setValue(params.horaAsamblea);
+  // Upsert: si ya hay una fila para este Ejercicio, la actualiza en vez de duplicarla
+  const datosAsam = hojaAsam.getDataRange().getValues();
+  let filaExistente = -1;
+  for (let i = 1; i < datosAsam.length; i++) {
+    if (datosAsam[i][1] === ej.idEjercicio) { filaExistente = i + 1; break; }
+  }
+  if (filaExistente > -1) {
+    hojaAsam.getRange(filaExistente, 3).setValue(parsearFechaSegura(params.fechaAsamblea));
+    hojaAsam.getRange(filaExistente, 4).setNumberFormat('@').setValue(params.horaAsamblea);
+    hojaAsam.getRange(filaExistente, 5).setValue(params.lugarAsamblea);
+    hojaAsam.getRange(filaExistente, 6).setValue(JSON.stringify(puntos));
+  } else {
+    hojaAsam.appendRow([nuevoIdAsamblea, ej.idEjercicio, parsearFechaSegura(params.fechaAsamblea), params.horaAsamblea, params.lugarAsamblea, JSON.stringify(puntos), 'CONVOCADA', '', '', '']);
+    hojaAsam.getRange(hojaAsam.getLastRow(), 4).setNumberFormat('@').setValue(params.horaAsamblea);
+  }
 
   const fechaAsambleaFmt = Utilities.formatDate(fechaAsamblea, Session.getScriptTimeZone(), "dd 'de' MMMM 'de' yyyy");
 
