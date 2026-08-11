@@ -116,7 +116,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v31-fix-correccion-asamblea-10ago-1730' };
+      resultado = { ok: true, version: 'v32-diagnostico-asambleas-10ago-1740' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -145,6 +145,8 @@ function doGet(e) {
       resultado = guardarAsambleaEjercicio(e.parameter);
     } else if (action === 'corregirFechaAsambleaExistente') {
       resultado = corregirFechaAsambleaExistente();
+    } else if (action === 'diagnosticoAsambleas') {
+      resultado = diagnosticoAsambleas();
     } else if (action === 'sembrarAsambleaReal') {
       resultado = sembrarAsambleaReal();
     } else if (action === 'obtenerConfigMemoria') {
@@ -1266,6 +1268,17 @@ function obtenerAsambleaEjercicio() {
 
 // Guarda o actualiza fecha/hora/lugar de la Asamblea del Ejercicio activo -- editable desde el Dashboard, dato de primera clase
 // Corrige puntualmente la fecha ya guardada con el bug de huso horario (quedó en 23/10 en vez de 24/10)
+function diagnosticoAsambleas() {
+  const hoja = getHojaAsambleas();
+  const datos = hoja.getDataRange().getValues();
+  const ejercicioActivo = obtenerEjercicioActivo();
+  return {
+    ok: true,
+    idEjercicioActivo: ejercicioActivo.ok ? ejercicioActivo.ejercicio.idEjercicio : 'SIN EJERCICIO ACTIVO',
+    filas: datos.map(fila => fila.map(celda => JSON.stringify(celda)))
+  };
+}
+
 function corregirFechaAsambleaExistente() {
   const ejercicioActivo = obtenerEjercicioActivo();
   if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
