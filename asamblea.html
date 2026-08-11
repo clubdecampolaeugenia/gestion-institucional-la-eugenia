@@ -48,7 +48,8 @@
   .form-panel .field-label { color: var(--lima); font-size: 10px; opacity: .75; font-weight: 700; }
 
   .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--petroleo); border-top-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 6px; vertical-align: middle; }
-  .resultado-box { background: var(--blanco); border-radius: 16px; padding: 16px; margin-top: 14px; white-space: pre-wrap; font-size: 13px; color: var(--petroleo); line-height: 1.6; }
+  .resultado-box { background: var(--blanco); border-radius: 16px; padding: 16px; margin-top: 14px; white-space: pre-wrap; font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: var(--petroleo); line-height: 1.5; text-align: justify; }
+  #actaAsambleaTextarea { font-family: Arial, Helvetica, sans-serif !important; text-align: justify; }
 
   .divider { border: none; border-top: 1.5px solid #9bb583; margin: 16px 0; }
   .loading-text { text-align: center; color: var(--petroleo); font-size: 13px; font-weight: 700; min-height: 20px; }
@@ -76,12 +77,17 @@
 
   <div id="mainScreen">
     <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
-    <div id="instrBox" class="instr-box" style="display:none;">Este módulo se usa <strong>el día de la Asamblea</strong> — registrá lo que fue pasando durante el evento.</div>
+    <div id="instrBox" class="instr-box" style="display:none;">
+      Este módulo se usa <strong>el día de la Asamblea</strong>, para registrar lo que va pasando durante el evento. Tiene 3 pasos, en orden:<br><br>
+      <strong>1. Asamblea celebrada</strong> — cargá cuántos socios estuvieron y si hubo quórum. Es solo un registro, no afecta nada más.<br><br>
+      <strong>2. Autoridades electas</strong> — acá es donde se <strong>define</strong> quién queda en cada cargo que se renueva. Por cada uno, marcás si fue reelecto/a (sigue el mismo) o escribís el nombre del nuevo titular. Al guardar, esto actualiza de verdad la base de Autoridades.<br><br>
+      <strong>3. Acta de Asamblea</strong> — acá solo se <strong>usa</strong> lo que ya cargaste arriba (no lo vuelve a pedir). Tenés el Orden del Día a la vista para guiarte, escribís el resultado de cada punto, y la IA arma el Acta formal completa. Después la podés editar y, cuando esté lista de verdad, marcarla como Firmada.
+    </div>
 
     <div class="bloqueo-box" id="textoBloqueado" style="display:none;">cargando...</div>
 
     <div id="contenidoDisponible">
-      <div class="seccion-titulo">1. Asamblea celebrada</div>
+      <div class="seccion-titulo" id="seccion1">1. Asamblea celebrada</div>
       <div class="form-panel">
         <span class="field-label">Socios presentes</span>
         <input type="text" id="fSociosPresentes" placeholder="Ej: 42">
@@ -90,7 +96,7 @@
         <button type="button" class="btn-solid" style="margin-top:10px; margin-bottom:0;" onclick="marcarCelebrada()">Marcar Asamblea como celebrada</button>
       </div>
 
-      <div class="seccion-titulo">2. Autoridades electas — esto DEFINE los cargos</div>
+      <div class="seccion-titulo" id="seccion2">2. Autoridades electas — esto DEFINE los cargos</div>
       <div class="form-panel">
         <div style="color:var(--hueso); font-size:12px; margin-bottom:10px;">Para cada cargo que se renueva, elegí: reelecto/a (mismo titular) o nuevo titular. No dejes ninguno sin marcar.</div>
         <div id="listaCargosRenovar">cargando cargos a renovar...</div>
@@ -98,7 +104,7 @@
         <div id="resumenElectas" style="display:none; background:var(--blanco); border-radius:12px; padding:12px; margin-top:10px; color:var(--petroleo); font-size:13px;"></div>
       </div>
 
-      <div class="seccion-titulo">3. Acta de Asamblea — esto SOLO USA lo de arriba</div>
+      <div class="seccion-titulo" id="seccion3">3. Acta de Asamblea — esto SOLO USA lo de arriba</div>
       <div class="form-panel">
         <span class="field-label">Orden del Día (para referencia al redactar)</span>
         <div id="ordenDelDiaVisible" style="background:var(--blanco); border-radius:12px; padding:12px; color:var(--petroleo); font-size:12px; line-height:1.6; margin-bottom:10px; white-space:pre-wrap;">cargando...</div>
@@ -182,6 +188,14 @@ function entrarApp() {
   document.getElementById('mainScreen').style.display = 'block';
   document.getElementById('mainScreen').classList.add('active');
   chequearFechaYHabilitar();
+  setTimeout(scrollAAncla, 400);
+}
+
+function scrollAAncla() {
+  if (window.location.hash) {
+    const el = document.querySelector(window.location.hash);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 function chequearFechaYHabilitar() {
