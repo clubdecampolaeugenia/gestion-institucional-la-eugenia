@@ -239,6 +239,9 @@ function registrarElectas() {
   });
 }
 
+let DOCUMENTO_ACTA_ASAMBLEA_ID = null;
+let VERSION_ACTA_ASAMBLEA_ACTUAL = 1;
+
 function generarActa() {
   const sociosPresentes = document.getElementById('fSociosPresentes').value;
   const quorumAlcanzado = document.getElementById('fQuorum').value;
@@ -255,8 +258,51 @@ function generarActa() {
   jsonp(EXEC_URL_GI + '?' + params.toString(), function(res) {
     document.getElementById('loadingText').textContent = '';
     if (!res || !res.ok) { mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido')); return; }
-    document.getElementById('resultadoActa').innerHTML = '<div class="resultado-box">' + escapeHtml(res.contenido) + '</div>';
+    VERSION_ACTA_ASAMBLEA_ACTUAL = res.version;
+    mostrarActaAsamblea(res.idDocumento, res.contenido, 'BORRADOR', res.version);
   });
+}
+
+function mostrarActaAsamblea(idDocumento, contenido, estado, version) {
+  DOCUMENTO_ACTA_ASAMBLEA_ID = idDocumento;
+  document.getElementById('resultadoActa').innerHTML =
+    '<div class="resultado-box">' +
+    '<div style="font-size:11px; font-weight:900; text-transform:uppercase; opacity:.6; margin-bottom:8px;">Versión ' + version + ' — ' + estado + '</div>' +
+    '<textarea id="actaAsambleaTextarea" style="width:100%; min-height:300px; border:none; font-family:Roboto; font-size:13px; color:var(--petroleo); line-height:1.6;">' + contenido + '</textarea>' +
+    '<button type="button" class="btn-outline" style="margin-top:12px;" onclick="guardarActaAsamblea()">Guardar cambios</button>' +
+    (estado !== 'FIRMADA' ? '<button type="button" class="btn-solid" onclick="firmarActaAsamblea()">Marcar como Firmada</button>' : '<div style="text-align:center; color:var(--petroleo); font-weight:900; font-size:12px; text-transform:uppercase;">✓ Firmada</div>') +
+    '</div>';
+}
+
+function guardarActaAsamblea() {
+  const texto = document.getElementById('actaAsambleaTextarea').value;
+  jsonp(EXEC_URL_GI + '?action=actualizarDocumento&idDocumento=' + encodeURIComponent(DOCUMENTO_ACTA_ASAMBLEA_ID) + '&contenido=' + encodeURIComponent(texto) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    if (res && res.ok) mostrarAviso('Guardado.');
+    else mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+  });
+}
+
+function firmarActaAsamblea() {
+  mostrarConfirmacion('Esto marca el Acta como firmada — el documento formal ya está cerrado, con la firma real del Presidente y el Secretario de Asamblea. ¿Confirmás?', function() {
+    const textoActual = document.getElementById('actaAsambleaTextarea').value;
+    jsonp(EXEC_URL_GI + '?action=actualizarDocumento&idDocumento=' + encodeURIComponent(DOCUMENTO_ACTA_ASAMBLEA_ID) + '&estado=FIRMADA&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      if (res && res.ok) {
+        mostrarAviso('Acta de Asamblea marcada como Firmada.');
+        mostrarActaAsamblea(DOCUMENTO_ACTA_ASAMBLEA_ID, textoActual, 'FIRMADA', VERSION_ACTA_ASAMBLEA_ACTUAL);
+      } else {
+        mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+      }
+    });
+  });
+}
+
+function mostrarConfirmacion(mensaje, callbackAceptar) {
+  const overlay = document.createElement('div');
+  overlay.className = 'aviso-overlay';
+  overlay.innerHTML = '<div class="aviso-card"><div class="aviso-texto">' + mensaje.replace(/</g,'&lt;') + '</div><div style="display:flex; gap:10px; justify-content:center;"><button type="button" class="aviso-btn" style="background:transparent;" id="btnCancelarConf">Cancelar</button><button type="button" class="aviso-btn" id="btnAceptarConf">Aceptar</button></div></div>';
+  document.body.appendChild(overlay);
+  overlay.querySelector('#btnCancelarConf').onclick = function() { document.body.removeChild(overlay); };
+  overlay.querySelector('#btnAceptarConf').onclick = function() { document.body.removeChild(overlay); callbackAceptar(); };
 }
 </script>
 </body>
