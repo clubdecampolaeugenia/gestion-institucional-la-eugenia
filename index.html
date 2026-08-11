@@ -49,6 +49,7 @@
   .hito-card.clickable { border: 2px solid var(--petroleo); }
   .hito-card.clickable:active { transform: scale(.98); }
   .hito-card.no-disponible { opacity: .55; border: 2px dashed #bbb; }
+  .hito-card.informativo-completo { opacity: 1; border: 2px solid var(--verdecl); background: var(--hueso); }
   .hito-flecha { display: block; font-size: 11px; font-weight: 900; color: var(--petroleo); margin-top: 3px; }
   .hito-candado { display: block; font-size: 10px; font-weight: 700; color: #888; margin-top: 3px; }
   .hito-num { width: 24px; height: 24px; border-radius: 50%; background: var(--hueso); color: var(--petroleo); font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -329,7 +330,8 @@ function renderHitosGenerico(lista, contenedorId, prefijo) {
       return;
     }
     const el = document.createElement(h.link ? 'a' : 'div');
-    el.className = 'hito-card' + (h.link ? ' clickable' : ' no-disponible');
+    const claseEstado = h.link ? ' clickable' : (h.estado === 'COMPLETO' ? ' informativo-completo' : ' no-disponible');
+    el.className = 'hito-card' + claseEstado;
     if (h.link) el.href = h.link;
     let indicador;
     if (h.link) {
