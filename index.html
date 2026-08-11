@@ -101,7 +101,7 @@
         <button type="button" class="btn-ghost" style="color:var(--hueso); opacity:.65; font-size:10px; padding:6px 0;" onclick="cerrarEjercicio()">Cerrar Ejercicio actual y abrir el siguiente</button>
       </div>
 
-      <div style="margin-top:14px; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--lima);">Preparación para la Asamblea</div>
+      <div style="margin-top:14px; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--lima);">Preparación para la Asamblea Ordinaria</div>
       <div class="progreso-barra-fondo" style="margin-top:6px;"><div class="progreso-barra-fill" id="progresoFill" style="width:0%; background:var(--lima);"></div></div>
       <div class="progreso-pct" id="progresoPct" style="color:var(--lima);">calculando...</div>
 
@@ -123,7 +123,7 @@
         <button type="button" style="width:100%; padding:10px; border-radius:18px; border:2px solid var(--naranja); background:var(--naranja); color:var(--petroleo); font-weight:900; text-transform:uppercase; font-size:12px; cursor:pointer;" onclick="guardarAsamblea()">Guardar</button>
       </div>
 
-      <div style="margin-top:14px; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--naranja);">Resultado de la Asamblea</div>
+      <div style="margin-top:14px; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--naranja);">Resultado de la Asamblea Ordinaria</div>
       <div class="progreso-barra-fondo" style="margin-top:6px;"><div class="progreso-barra-fill" id="progresoCierreFill" style="width:0%; background:var(--naranja);"></div></div>
       <div class="progreso-pct" id="progresoCierrePct" style="color:var(--naranja);">calculando...</div>
     </div>
@@ -139,10 +139,10 @@
       <div class="hito-info"><div class="hito-nombre">Novedades</div><div class="hito-detalle">Registro de hechos del año — revisar y aprobar antes de generar la Memoria</div><span class="hito-flecha">Abrir &rarr;</span></div>
     </a>
 
-    <div class="seccion-titulo">Preparación para la Asamblea</div>
+    <div class="seccion-titulo">Preparación para la Asamblea Ordinaria</div>
     <div id="listaHitos"></div>
 
-    <div class="seccion-titulo">Resultado de la Asamblea</div>
+    <div class="seccion-titulo">Resultado de la Asamblea Ordinaria</div>
     <div id="listaHitosCierre"></div>
 
     <hr class="divider">
@@ -196,7 +196,7 @@ const HITOS = [
 // Por eso van en una barra separada: mezclarlos con la de arriba hacía que el 100% fuera imposible aunque todo estuviera bien.
 const HITOS_CIERRE = [
   { nombre: 'Asamblea General Ordinaria celebrada', detalle: 'cargando fecha real...', estado: 'PENDIENTE', link: null, manual: true },
-  { nombre: 'Balance — aprobado por Asamblea', detalle: 'Recién se completa el día del evento — no hay botón para esto todavía en ningún módulo', estado: 'PENDIENTE', link: null, manual: true },
+  { nombre: 'Balance — aprobado por Asamblea Ordinaria', detalle: 'Recién se completa el día del evento — no hay botón para esto todavía en ningún módulo', estado: 'PENDIENTE', link: null, manual: true },
   { nombre: 'Autoridades renovadas', detalle: 'Se define en la Asamblea', estado: 'PENDIENTE', link: null, manual: true },
   { nombre: 'Acta de Asamblea firmada', detalle: 'Se redacta durante el evento', estado: 'PENDIENTE', link: null, manual: true },
 ];
@@ -312,7 +312,7 @@ function renderHitosGenerico(lista, contenedorId, prefijo) {
   cont.innerHTML = '';
   lista.forEach((h, i) => {
     // Caso especial: este hito tiene su propia acción con fecha, no un link a otro módulo
-    if (h.nombre === 'Balance — aprobado por Asamblea') {
+    if (h.nombre === 'Balance — aprobado por Asamblea Ordinaria') {
       const div = document.createElement('div');
       div.className = 'hito-card no-disponible';
       div.style.cursor = 'pointer';
@@ -375,13 +375,13 @@ function cargarFechaAsamblea(callback) {
       FECHA_ASAMBLEA = new Date(res.fecha);
       LUGAR_ASAMBLEA_REAL = res.lugar;
       const fechaLegible = FECHA_ASAMBLEA.toLocaleDateString('es-AR', { timeZone: 'UTC' });
-      textoPildora.textContent = 'Asamblea: ' + fechaLegible + ', ' + res.hora + ' hs';
+      textoPildora.textContent = 'Asamblea Ordinaria: ' + fechaLegible + ', ' + res.hora + ' hs';
       document.getElementById('eAsambleaFecha').value = res.fecha;
       poblarSelectorHora('eAsambleaHora', res.hora);
       document.getElementById('eAsambleaLugar').value = res.lugar;
       actualizarHito('Asamblea General Ordinaria celebrada', 'PENDIENTE', 'Convocada para ' + fechaLegible + ', ' + res.hora + ' hs');
     } else {
-      textoPildora.textContent = 'Asamblea: sin fecha — tocá para cargarla';
+      textoPildora.textContent = 'Asamblea Ordinaria: sin fecha — tocá para cargarla';
       poblarSelectorHora('eAsambleaHora', '16:00');
       actualizarHito('Asamblea General Ordinaria celebrada', 'PENDIENTE', 'Todavía sin fecha registrada');
     }
@@ -404,7 +404,7 @@ function guardarAsamblea() {
     if (res && res.ok) {
       toggleEditorAsamblea();
       cargarFechaAsamblea();
-      mostrarAviso('Fecha de la Asamblea guardada.');
+      mostrarAviso('Fecha de la Asamblea Ordinaria guardada.');
     } else {
       mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
     }
@@ -419,27 +419,27 @@ function togglePanelBalanceAsamblea(idSufijo) {
   if (!abrir) return;
 
   if (!FECHA_ASAMBLEA) {
-    panel.innerHTML = '<div style="color:var(--hueso); font-size:13px;">Todavía no hay fecha de Asamblea registrada en el sistema — se carga desde el módulo Convocatoria cuando se genere.</div>';
+    panel.innerHTML = '<div style="color:var(--hueso); font-size:13px;">Todavía no hay fecha de Asamblea Ordinaria registrada en el sistema — se carga desde el módulo Convocatoria cuando se genere.</div>';
     return;
   }
   const hoy = new Date();
   if (hoy < FECHA_ASAMBLEA) {
-    panel.innerHTML = '<div style="color:var(--hueso); font-size:13px;">🔒 Disponible recién el <strong>' + FECHA_ASAMBLEA.toLocaleDateString('es-AR') + '</strong>, fecha real de la Asamblea (tomada de la Convocatoria). No se puede marcar antes, aunque el Balance ya esté Legalizado.</div>';
+    panel.innerHTML = '<div style="color:var(--hueso); font-size:13px;">🔒 Disponible recién el <strong>' + FECHA_ASAMBLEA.toLocaleDateString('es-AR') + '</strong>, fecha real de la Asamblea Ordinaria (tomada de la Convocatoria). No se puede marcar antes, aunque el Balance ya esté Legalizado.</div>';
     return;
   }
   if (!ID_BALANCE_ACTIVO_DASHBOARD) {
     panel.innerHTML = '<div style="color:var(--hueso); font-size:13px;">No hay Balance procesado para marcar.</div>';
     return;
   }
-  panel.innerHTML = '<div style="color:var(--hueso); font-size:13px; margin-bottom:10px;">Ya es el día de la Asamblea o después. Si el Balance fue aprobado en el evento:</div>' +
-    '<button type="button" style="display:block; width:100%; padding:12px; border-radius:20px; border:2px solid var(--naranja); background:var(--hueso); color:var(--petroleo); font-family:\'Roboto\'; font-size:13px; font-weight:900; text-transform:uppercase; cursor:pointer;" onclick="marcarBalanceAprobadoAsamblea()">Marcar como Aprobado por Asamblea</button>';
+  panel.innerHTML = '<div style="color:var(--hueso); font-size:13px; margin-bottom:10px;">Ya es el día de la Asamblea Ordinaria o después. Si el Balance fue aprobado en el evento:</div>' +
+    '<button type="button" style="display:block; width:100%; padding:12px; border-radius:20px; border:2px solid var(--naranja); background:var(--hueso); color:var(--petroleo); font-family:\'Roboto\'; font-size:13px; font-weight:900; text-transform:uppercase; cursor:pointer;" onclick="marcarBalanceAprobadoAsamblea()">Marcar como Aprobado por Asamblea Ordinaria</button>';
 }
 
 function marcarBalanceAprobadoAsamblea() {
   jsonp(EXEC_URL_GI + '?action=actualizarEstadoBalance&idBalance=' + encodeURIComponent(ID_BALANCE_ACTIVO_DASHBOARD) + '&estado=APROBADO_ASAMBLEA&pin=' + encodeURIComponent(PIN_SESION), function(res) {
     if (res && res.ok) {
       cargarEstadoBalance();
-      mostrarAviso('Balance marcado como Aprobado por Asamblea.');
+      mostrarAviso('Balance marcado como Aprobado por Asamblea Ordinaria.');
     } else {
       mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
     }
@@ -481,7 +481,7 @@ function actualizarProximaAccion() {
     el.textContent = 'Avanzar: ' + pendiente.nombre;
     return;
   }
-  el.textContent = '✅ Todo listo para la Asamblea.';
+  el.textContent = '✅ Todo listo para la Asamblea Ordinaria.';
 }
 
 function actualizarHito(nombre, estado, detalle) {
@@ -546,7 +546,7 @@ function cargarEstadoBalance() {
   jsonp(EXEC_URL_GI + '?action=listarBalances', function(res) {
     if (!res || !res.ok || res.balances.length === 0) {
       actualizarHito('Balance', 'NOINICIADO', 'Todavía no se procesó ningún balance');
-      actualizarHito('Balance — aprobado por Asamblea', 'PENDIENTE', 'Recién se completa el día del evento');
+      actualizarHito('Balance — aprobado por Asamblea Ordinaria', 'PENDIENTE', 'Recién se completa el día del evento');
       return;
     }
     const ultimo = res.balances[0];
@@ -568,9 +568,9 @@ function cargarEstadoBalance() {
     }
     // Para "Cierre del Ejercicio": solo cuenta si ya lo aprobó la Asamblea.
     if (ultimo.estado === 'APROBADO_ASAMBLEA') {
-      actualizarHito('Balance — aprobado por Asamblea', 'COMPLETO', textos.APROBADO_ASAMBLEA);
+      actualizarHito('Balance — aprobado por Asamblea Ordinaria', 'COMPLETO', textos.APROBADO_ASAMBLEA);
     } else {
-      actualizarHito('Balance — aprobado por Asamblea', 'PENDIENTE', 'Recién se completa el día del evento');
+      actualizarHito('Balance — aprobado por Asamblea Ordinaria', 'PENDIENTE', 'Recién se completa el día del evento');
     }
   });
 }

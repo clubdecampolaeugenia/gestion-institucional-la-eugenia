@@ -235,7 +235,7 @@ function construirBotonesEstado(estado) {
     }
   });
   if (idxActual === pasos.length - 1) {
-    html += '<div style="background:var(--verdecl); border-radius:16px; padding:12px 14px; font-size:12px; color:var(--petroleo); font-weight:700; margin-top:4px;">Este Balance ya está Legalizado. Su aprobación final ahora depende de la Asamblea — eso se registra en el Dashboard, no acá.</div>';
+    html += '<div style="background:var(--verdecl); border-radius:16px; padding:12px 14px; font-size:12px; color:var(--petroleo); font-weight:700; margin-top:4px;">Este Balance ya está Legalizado. Su aprobación final ahora depende de la Asamblea Ordinaria — eso se registra en el Dashboard, no acá.</div>';
   }
   html += '</div>';
   return html;
@@ -243,7 +243,7 @@ function construirBotonesEstado(estado) {
 
 const DESCRIPCION_ESTADO_BALANCE = {
   'APROBADO_CD': 'El Balance quedó Aprobado por CD. Falta legalizarlo ante el CPCE.',
-  'LEGALIZADO': 'El Balance quedó Legalizado. Ya está listo para presentarse a la Asamblea — su aprobación definitiva se registra ahí, no en este módulo.'
+  'LEGALIZADO': 'El Balance quedó Legalizado. Ya está listo para presentarse a la Asamblea Ordinaria — su aprobación definitiva se registra ahí, no en este módulo.'
 };
 
 function avanzarEstadoBalance(nuevoEstado) {
