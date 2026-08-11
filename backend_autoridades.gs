@@ -116,7 +116,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v33-fix-hora-como-texto-10ago-1750' };
+      resultado = { ok: true, version: 'v34-fix-hora-actas-10ago-1800' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -372,8 +372,8 @@ function obtenerActa(idActa) {
           idActa: fila[idx.ID_ACTA],
           idActaAnterior: fila[idx.ID_ACTA_ANTERIOR],
           fechaReunion: fila[idx.FECHA_REUNION] ? Utilities.formatDate(new Date(fila[idx.FECHA_REUNION]), Session.getScriptTimeZone(), 'dd/MM/yyyy') : '',
-          horaInicio: fila[idx.HORA_INICIO],
-          horaFin: fila[idx.HORA_FIN],
+          horaInicio: formatearHoraSegura(fila[idx.HORA_INICIO]),
+          horaFin: formatearHoraSegura(fila[idx.HORA_FIN]),
           presentes: fila[idx.PRESENTES],
           puntos: fila[idx.PUNTOS] ? JSON.parse(fila[idx.PUNTOS]) : [],
           estado: fila[idx.ESTADO]
@@ -424,6 +424,7 @@ function generarBorradorActa(params) {
     'BORRADOR',
     ultimoNumero
   ]);
+  hojaActas.getRange(hojaActas.getLastRow(), 4).setNumberFormat('@').setValue(params.horaInicio || ''); // refuerza texto
 
   // Marca las notas usadas como procesadas
   idsNotasUsadas.forEach(n => {
@@ -447,6 +448,9 @@ function guardarActaHistorica(params) {
     params.estado || 'FIRMADA',
     params.idActaAnterior || ''
   ]);
+  const fila = hoja.getLastRow();
+  hoja.getRange(fila, 4).setNumberFormat('@').setValue(params.horaInicio); // refuerza texto
+  hoja.getRange(fila, 5).setNumberFormat('@').setValue(params.horaFin); // refuerza texto
   return { ok: true };
 }
 
@@ -461,7 +465,7 @@ function actualizarActa(params) {
     if (String(datos[i][idx.ID_ACTA]) === String(params.idActa)) {
       const row = i + 1;
       if (params.puntos) hoja.getRange(row, idx.PUNTOS + 1).setValue(params.puntos);
-      if (params.horaFin) hoja.getRange(row, idx.HORA_FIN + 1).setValue(params.horaFin);
+      if (params.horaFin) hoja.getRange(row, idx.HORA_FIN + 1).setNumberFormat('@').setValue(params.horaFin);
       if (params.presentes) hoja.getRange(row, idx.PRESENTES + 1).setValue(params.presentes);
       if (params.estado) hoja.getRange(row, idx.ESTADO + 1).setValue(params.estado);
       return { ok: true };
