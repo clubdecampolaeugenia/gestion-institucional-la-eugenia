@@ -116,7 +116,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v30-fix-timezone-fechas-10ago-1700' };
+      resultado = { ok: true, version: 'v31-fix-correccion-asamblea-10ago-1730' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -1267,15 +1267,17 @@ function obtenerAsambleaEjercicio() {
 // Guarda o actualiza fecha/hora/lugar de la Asamblea del Ejercicio activo -- editable desde el Dashboard, dato de primera clase
 // Corrige puntualmente la fecha ya guardada con el bug de huso horario (quedó en 23/10 en vez de 24/10)
 function corregirFechaAsambleaExistente() {
+  const ejercicioActivo = obtenerEjercicioActivo();
+  if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
   const hoja = getHojaAsambleas();
   const datos = hoja.getDataRange().getValues();
   for (let i = 1; i < datos.length; i++) {
-    if (datos[i][0] === 'ASM-37') {
+    if (String(datos[i][1]).trim() === ejercicioActivo.ejercicio.idEjercicio) {
       hoja.getRange(i + 1, 3).setValue(parsearFechaSegura('2026-10-24'));
-      return { ok: true };
+      return { ok: true, filaEncontrada: i + 1 };
     }
   }
-  return { ok: false, error: 'No se encontró ASM-37' };
+  return { ok: false, error: 'No se encontró ninguna fila con ID_EJERCICIO=' + ejercicioActivo.ejercicio.idEjercicio + ' en ASAMBLEAS' };
 }
 
 function guardarAsambleaEjercicio(params) {
