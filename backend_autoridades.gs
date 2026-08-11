@@ -116,7 +116,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v35-convocatoria-selectores-fecha-10ago-1900' };
+      resultado = { ok: true, version: 'v36-sum-abreviado-10ago-2000' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -1335,7 +1335,7 @@ function sembrarAsambleaReal() {
   for (let i = 1; i < datos.length; i++) {
     if (datos[i][1] === ejercicioActivo.ejercicio.idEjercicio) return { ok: true, mensaje: 'Ya existía, no se duplica' };
   }
-  hoja.appendRow(['ASM-' + ejercicioActivo.ejercicio.numero, ejercicioActivo.ejercicio.idEjercicio, new Date('2026-10-24'), '16:00', 'el salón de usos múltiples del Club, Ruta Nacional N.° 105, Km 5, Garupá, Misiones', JSON.stringify([]), 'CONVOCADA', '', '', '']);
+  hoja.appendRow(['ASM-' + ejercicioActivo.ejercicio.numero, ejercicioActivo.ejercicio.idEjercicio, new Date('2026-10-24'), '16:00', 'S.U.M. del Club, Ruta Nacional N.° 105, Km 5, Garupá, Misiones', JSON.stringify([]), 'CONVOCADA', '', '', '']);
   return { ok: true };
 }
 
