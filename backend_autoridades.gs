@@ -116,7 +116,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v34-fix-hora-actas-10ago-1800' };
+      resultado = { ok: true, version: 'v35-convocatoria-selectores-fecha-10ago-1900' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -1352,7 +1352,7 @@ function generarConvocatoriaYDocumentos(params) {
   const ej = ejercicioActivo.ejercicio;
 
   const fechaLimite = calcularFechaLimiteAsamblea(ej.fechaCierre);
-  const fechaAsamblea = new Date(params.fechaAsamblea);
+  const fechaAsamblea = parsearFechaSegura(params.fechaAsamblea);
   const fueraDeTermino = fechaAsamblea > fechaLimite;
 
   const autRes = listarAutoridades();
@@ -1384,7 +1384,8 @@ function generarConvocatoriaYDocumentos(params) {
 
   const nuevoIdAsamblea = 'ASM-' + ej.numero;
   const hojaAsam = getHojaAsambleas();
-  hojaAsam.appendRow([nuevoIdAsamblea, ej.idEjercicio, new Date(params.fechaAsamblea), params.horaAsamblea, params.lugarAsamblea, JSON.stringify(puntos), 'CONVOCADA', '', '', '']);
+  hojaAsam.appendRow([nuevoIdAsamblea, ej.idEjercicio, parsearFechaSegura(params.fechaAsamblea), params.horaAsamblea, params.lugarAsamblea, JSON.stringify(puntos), 'CONVOCADA', '', '', '']);
+  hojaAsam.getRange(hojaAsam.getLastRow(), 4).setNumberFormat('@').setValue(params.horaAsamblea);
 
   const fechaAsambleaFmt = Utilities.formatDate(fechaAsamblea, Session.getScriptTimeZone(), "dd 'de' MMMM 'de' yyyy");
 
