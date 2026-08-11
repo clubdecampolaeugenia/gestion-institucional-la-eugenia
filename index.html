@@ -207,7 +207,7 @@ const HITOS = [
   { nombre: 'Balance', detalle: 'Recibido, con errores detectados (entidad y fechas)', estado: 'OBSERVADO', link: 'balance.html', manual: false },
   { nombre: 'Informe Comisión Revisora', detalle: 'Falta informe formal firmado (Art. 36)', estado: 'PENDIENTE', link: 'informe-revisor.html', manual: false },
   { nombre: 'Memoria', detalle: 'Borrador redactado, falta aprobación de CD', estado: 'PROGRESO', link: 'memoria.html', manual: false },
-  { nombre: 'Acta CD, Convocatoria y Edictos', detalle: 'Se generan los 4 documentos juntos, con el mismo Orden del Día', estado: 'PROGRESO', link: 'convocatoria.html', manual: false },
+  { nombre: 'Acta CD, Convocatoria y Edictos', detalle: 'cargando...', estado: 'PENDIENTE', link: 'convocatoria.html', manual: false },
   { nombre: 'Autoridades', detalle: 'cargando...', estado: 'PROGRESO', link: 'autoridades.html', manual: false },
   { nombre: 'Padrón de socios', detalle: 'No iniciado — se arma leyendo Base Madre', estado: 'NOINICIADO', link: null, manual: true },
   { nombre: 'Bitácora y Actas', detalle: 'cargando...', estado: 'PROGRESO', link: 'actas.html', manual: false },
@@ -265,6 +265,7 @@ function entrarApp() {
   cargarEstadoBalance();
   cargarEjercicioActivo();
   cargarFechaAsamblea();
+  cargarEstadoConvocatoria();
 }
 
 let EJERCICIO_ACTIVO = null;
@@ -555,6 +556,27 @@ function cargarEstadoActas() {
     } else {
       actualizarHito('Bitácora y Actas', 'COMPLETO', total + ' acta(s), todas cerradas');
     }
+  });
+}
+
+function cargarEstadoConvocatoria() {
+  jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(resEj) {
+    if (!resEj || !resEj.ok) return;
+    jsonp(EXEC_URL_GI + '?action=listarDocumentos&idEjercicio=' + encodeURIComponent(resEj.ejercicio.idEjercicio), function(res) {
+      if (!res || !res.ok) {
+        actualizarHito('Acta CD, Convocatoria y Edictos', 'PENDIENTE', 'Todavía no se generó ningún documento');
+        return;
+      }
+      const tipos = ['ACTA_CD_CONVOCATORIA', 'EDICTO_DIARIO', 'EDICTO_BOLETIN', 'CIRCULAR'];
+      const generados = tipos.filter(t => res.documentos.some(d => d.tipo === t));
+      if (generados.length === 0) {
+        actualizarHito('Acta CD, Convocatoria y Edictos', 'PENDIENTE', 'Todavía no se generó ningún documento');
+      } else if (generados.length === tipos.length) {
+        actualizarHito('Acta CD, Convocatoria y Edictos', 'COMPLETO', 'Los 4 documentos ya se generaron — Acta CD, 2 Edictos y Circular');
+      } else {
+        actualizarHito('Acta CD, Convocatoria y Edictos', 'PROGRESO', generados.length + ' de 4 documentos generados');
+      }
+    });
   });
 }
 

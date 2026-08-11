@@ -245,6 +245,24 @@ function entrarApp() {
   poblarSelectorHora('fHoraFinReunionCD', '21:15');
   poblarSelectorFechaDDMM('fFechaReunionCD', new Date().toISOString().split('T')[0]);
   precargarAsambleaReal();
+  cargarUltimosDocumentos();
+}
+
+function cargarUltimosDocumentos() {
+  jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(resEj) {
+    if (!resEj || !resEj.ok) return;
+    jsonp(EXEC_URL_GI + '?action=listarDocumentos&idEjercicio=' + encodeURIComponent(resEj.ejercicio.idEjercicio), function(res) {
+      if (!res || !res.ok) return;
+      const tipos = ['ACTA_CD_CONVOCATORIA', 'EDICTO_DIARIO', 'EDICTO_BOLETIN', 'CIRCULAR'];
+      const ultimos = tipos.map(t => {
+        const delTipo = res.documentos.filter(d => d.tipo === t);
+        return delTipo.length ? delTipo[0] : null; // ya viene ordenado por versión descendente
+      });
+      if (ultimos.every(d => d)) {
+        mostrarResultado({ documentos: ultimos.map(d => ({ tipo: d.tipo, contenido: d.contenido })), fueraDeTermino: false });
+      }
+    });
+  });
 }
 
 function precargarAsambleaReal() {
@@ -360,7 +378,7 @@ function mostrarResultado(res) {
   if (res.fueraDeTermino) {
     html += '<div class="alerta-fuera-termino">⚠️ Fuera del plazo estatutario (vencía el ' + res.fechaLimite + '). Los documentos ya incluyen el punto correspondiente.</div>';
   }
-  html += '<div style="font-size:11px; color:var(--hueso); opacity:.8; text-align:center; margin-bottom:12px;">Estos son borradores para consolidar — el formato final de impresión (márgenes, sangría, justificado) se aplica en Word u otro procesador de texto, fuera de la app.</div>';
+  html += '<div style="font-size:11px; color:var(--petroleo); opacity:.8; text-align:center; margin-bottom:12px;">Estos son borradores para consolidar — el formato final de impresión (márgenes, sangría, justificado) se aplica en Word u otro procesador de texto, fuera de la app.</div>';
   res.documentos.forEach(d => {
     html += '<div class="doc-box"><div class="doc-titulo">' + NOMBRES_TIPO[d.tipo] + '<button type="button" class="btn-small" onclick="copiarTexto(this)">Copiar</button></div><div class="doc-texto">' + escapeHtml(d.contenido) + '</div></div>';
   });
