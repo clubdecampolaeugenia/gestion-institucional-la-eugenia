@@ -96,7 +96,13 @@
         <button type="button" class="btn-solid" style="margin-top:10px; margin-bottom:0;" onclick="marcarCelebrada()">Marcar Asamblea como celebrada</button>
       </div>
 
-      <div class="seccion-titulo" id="seccion2">2. Autoridades electas — esto DEFINE los cargos</div>
+      <div class="seccion-titulo" id="seccion4">2. Balance — aprobado por Asamblea</div>
+      <div class="form-panel">
+        <div style="color:var(--hueso); font-size:12px; margin-bottom:10px;">Si el Balance fue aprobado en el evento, marcalo acá — esto cierra formalmente el proceso de aprobación (CD → Legalizado → Asamblea).</div>
+        <button type="button" class="btn-solid" style="margin-top:0; margin-bottom:0;" onclick="marcarBalanceAprobado()">Marcar Balance como Aprobado por Asamblea</button>
+      </div>
+
+      <div class="seccion-titulo" id="seccion2">3. Autoridades electas — esto DEFINE los cargos</div>
       <div class="form-panel">
         <div style="color:var(--hueso); font-size:12px; margin-bottom:10px;">Para cada cargo que se renueva, elegí: reelecto/a (mismo titular) o nuevo titular. No dejes ninguno sin marcar.</div>
         <div id="listaCargosRenovar">cargando cargos a renovar...</div>
@@ -104,7 +110,7 @@
         <div id="resumenElectas" style="display:none; background:var(--blanco); border-radius:12px; padding:12px; margin-top:10px; color:var(--petroleo); font-size:13px;"></div>
       </div>
 
-      <div class="seccion-titulo" id="seccion3">3. Acta de Asamblea — esto SOLO USA lo de arriba</div>
+      <div class="seccion-titulo" id="seccion3">4. Acta de Asamblea — esto SOLO USA lo de arriba</div>
       <div class="form-panel">
         <span class="field-label">Orden del Día (para referencia al redactar)</span>
         <div id="ordenDelDiaVisible" style="background:var(--blanco); border-radius:12px; padding:12px; color:var(--petroleo); font-size:12px; line-height:1.6; margin-bottom:10px; white-space:pre-wrap;">cargando...</div>
@@ -199,6 +205,7 @@ function chequearFechaYHabilitar() {
       banner.textContent = '🔒 Todavía no hay fecha de Asamblea cargada. Andá al Home a cargarla primero — mientras tanto podés ver qué se va a poder hacer acá.';
       cargarCargosARenovar();
     precargarOrdenDelDia();
+    precargarIdBalance();
       return;
     }
     const fecha = new Date(res.fecha);
@@ -213,6 +220,7 @@ function chequearFechaYHabilitar() {
     }
     cargarCargosARenovar();
     precargarOrdenDelDia();
+    precargarIdBalance();
   });
 }
 
@@ -268,6 +276,24 @@ function escapeHtml(s) {
   const d = document.createElement('div');
   d.textContent = s || '';
   return d.innerHTML;
+}
+
+let ID_BALANCE_ACTUAL = null;
+
+function precargarIdBalance() {
+  jsonp(EXEC_URL_GI + '?action=listarBalances', function(res) {
+    if (res && res.ok && res.balances.length > 0) ID_BALANCE_ACTUAL = res.balances[0].idBalance;
+  });
+}
+
+function marcarBalanceAprobado() {
+  if (!ID_BALANCE_ACTUAL) { mostrarAviso('No hay ningún Balance procesado para marcar.'); return; }
+  mostrarConfirmacion('Esto significa que la Asamblea YA APROBÓ formalmente este Balance con quórum y votación real. ¿Confirmás?', function() {
+    jsonp(EXEC_URL_GI + '?action=actualizarEstadoBalance&idBalance=' + encodeURIComponent(ID_BALANCE_ACTUAL) + '&estado=APROBADO_ASAMBLEA&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      if (res && res.ok) mostrarAviso('Balance marcado como Aprobado por Asamblea.');
+      else mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+    });
+  });
 }
 
 function marcarCelebrada() {

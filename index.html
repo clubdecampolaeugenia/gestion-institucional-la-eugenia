@@ -216,8 +216,7 @@ const HITOS = [
 // Estos NO pueden estar completos antes del día de la Asamblea — se cierran con/después de ella.
 // Por eso van en una barra separada: mezclarlos con la de arriba hacía que el 100% fuera imposible aunque todo estuviera bien.
 const HITOS_CIERRE = [
-  { nombre: 'Asamblea: celebración, autoridades y acta', detalle: 'cargando fecha real...', estado: 'PENDIENTE', link: 'asamblea.html', manual: false },
-  { nombre: 'Balance — aprobado por Asamblea Ordinaria', detalle: 'Recién se completa el día del evento — no hay botón para esto todavía en ningún módulo', estado: 'PENDIENTE', link: null, manual: true },
+  { nombre: 'Asamblea: celebración, Balance, autoridades y acta', detalle: 'cargando fecha real...', estado: 'PENDIENTE', link: 'asamblea.html', manual: false },
 ];
 
 const ESTADO_LABEL = { COMPLETO: 'Completo', PROGRESO: 'En progreso', OBSERVADO: 'Observado', PENDIENTE: 'Pendiente', NOINICIADO: 'No iniciado' };
@@ -330,18 +329,6 @@ function renderHitosGenerico(lista, contenedorId, prefijo) {
   const cont = document.getElementById(contenedorId);
   cont.innerHTML = '';
   lista.forEach((h, i) => {
-    // Caso especial: este hito tiene su propia acción con fecha, no un link a otro módulo
-    if (h.nombre === 'Balance — aprobado por Asamblea Ordinaria') {
-      const div = document.createElement('div');
-      div.className = 'hito-card no-disponible';
-      div.onclick = () => mostrarPopupBalanceAsamblea();
-      div.innerHTML =
-        '<div class="hito-num">' + (i + 1) + '</div>' +
-        '<div class="hito-info"><div class="hito-nombre">' + h.nombre + '</div><div class="hito-detalle" id="' + prefijo + 'detalle-' + i + '">' + h.detalle + '</div><span class="hito-flecha">Ver &rarr;</span></div>' +
-        '<span class="hito-estado estado-' + h.estado.toLowerCase().replace('í','i') + '" id="' + prefijo + 'estado-' + i + '">' + ESTADO_LABEL[h.estado] + '</span>';
-      cont.appendChild(div);
-      return;
-    }
     const el = document.createElement(h.link ? 'a' : 'div');
     const claseEstado = h.link ? ' clickable' : (h.estado === 'COMPLETO' ? ' informativo-completo' : ' no-disponible');
     el.className = 'hito-card' + claseEstado;
@@ -440,12 +427,12 @@ function cargarFechaAsamblea(callback) {
         document.getElementById('eAsambleaLugar').style.display = 'block';
         document.getElementById('eAsambleaLugar').value = res.lugar;
       }
-      actualizarHito('Asamblea: celebración, autoridades y acta', 'PENDIENTE', 'Convocada para ' + fechaLegible + ', ' + res.hora + ' hs — 3 pasos, todos en la misma pantalla');
+      actualizarHito('Asamblea: celebración, Balance, autoridades y acta', 'PENDIENTE', 'Convocada para ' + fechaLegible + ', ' + res.hora + ' hs — 4 pasos, todos en la misma pantalla');
     } else {
       textoPildora.textContent = 'Asamblea Ordinaria: sin fecha — tocá para cargarla';
       poblarSelectorFecha('eAsambleaFecha', new Date().toISOString().split('T')[0]);
       poblarSelectorHora('eAsambleaHora', '16:00');
-      actualizarHito('Asamblea: celebración, autoridades y acta', 'PENDIENTE', 'Todavía sin fecha registrada');
+      actualizarHito('Asamblea: celebración, Balance, autoridades y acta', 'PENDIENTE', 'Todavía sin fecha registrada');
     }
     if (callback) callback();
   });
@@ -474,35 +461,6 @@ function guardarAsamblea() {
   });
 }
 let ID_BALANCE_ACTIVO_DASHBOARD = null;
-
-function mostrarPopupBalanceAsamblea() {
-  let mensaje, botonHtml = '';
-  if (!FECHA_ASAMBLEA) {
-    mensaje = 'Todavía no hay fecha de Asamblea Ordinaria registrada en el sistema — cargala primero en la píldora de arriba.';
-  } else if (new Date() < FECHA_ASAMBLEA) {
-    mensaje = '🔒 Disponible recién el ' + FECHA_ASAMBLEA.toLocaleDateString('es-AR') + ', fecha real de la Asamblea Ordinaria. No se puede marcar antes, aunque el Balance ya esté Legalizado.';
-  } else if (!ID_BALANCE_ACTIVO_DASHBOARD) {
-    mensaje = 'No hay Balance procesado para marcar.';
-  } else {
-    mensaje = 'Ya es el día de la Asamblea Ordinaria o después. Si el Balance fue aprobado en el evento, tocá el botón.';
-    botonHtml = '<button type="button" class="aviso-btn" style="margin-top:10px;" onclick="this.closest(\'.aviso-overlay\').remove(); marcarBalanceAprobadoAsamblea();">Marcar como Aprobado por Asamblea</button>';
-  }
-  const overlay = document.createElement('div');
-  overlay.className = 'aviso-overlay';
-  overlay.innerHTML = '<div class="aviso-card"><div class="aviso-texto">' + mensaje + '</div>' + botonHtml + '<button type="button" class="aviso-btn" style="margin-top:8px; background:transparent; color:var(--petroleo);" onclick="this.closest(\'.aviso-overlay\').remove();">Cerrar</button></div>';
-  document.body.appendChild(overlay);
-}
-
-function marcarBalanceAprobadoAsamblea() {
-  jsonp(EXEC_URL_GI + '?action=actualizarEstadoBalance&idBalance=' + encodeURIComponent(ID_BALANCE_ACTIVO_DASHBOARD) + '&estado=APROBADO_ASAMBLEA&pin=' + encodeURIComponent(PIN_SESION), function(res) {
-    if (res && res.ok) {
-      cargarEstadoBalance();
-      mostrarAviso('Balance marcado como Aprobado por Asamblea Ordinaria.');
-    } else {
-      mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
-    }
-  });
-}
 
 function renderHitos() {
   renderHitosGenerico(HITOS, 'listaHitos', '');
@@ -604,7 +562,6 @@ function cargarEstadoBalance() {
   jsonp(EXEC_URL_GI + '?action=listarBalances', function(res) {
     if (!res || !res.ok || res.balances.length === 0) {
       actualizarHito('Balance', 'NOINICIADO', 'Todavía no se procesó ningún balance');
-      actualizarHito('Balance — aprobado por Asamblea Ordinaria', 'PENDIENTE', 'Recién se completa el día del evento');
       return;
     }
     const ultimo = res.balances[0];
@@ -623,12 +580,6 @@ function cargarEstadoBalance() {
       actualizarHito('Balance', 'COMPLETO', textos[ultimo.estado]);
     } else {
       actualizarHito('Balance', 'PROGRESO', textos[ultimo.estado] || ('Versión ' + ultimo.version + ' — ' + ultimo.estado));
-    }
-    // Para "Cierre del Ejercicio": solo cuenta si ya lo aprobó la Asamblea.
-    if (ultimo.estado === 'APROBADO_ASAMBLEA') {
-      actualizarHito('Balance — aprobado por Asamblea Ordinaria', 'COMPLETO', textos.APROBADO_ASAMBLEA);
-    } else {
-      actualizarHito('Balance — aprobado por Asamblea Ordinaria', 'PENDIENTE', 'Recién se completa el día del evento');
     }
   });
 }
