@@ -79,7 +79,8 @@
     </div>
 
     <div id="contenidoDisponible" style="display:none;">
-      <div class="instr-box">Este módulo se usa <strong>el día de la Asamblea</strong> — registrá lo que fue pasando durante el evento.</div>
+      <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
+      <div id="instrBox" class="instr-box" style="display:none;">Este módulo se usa <strong>el día de la Asamblea</strong> — registrá lo que fue pasando durante el evento.</div>
 
       <div class="seccion-titulo">1. Asamblea celebrada</div>
       <div class="form-panel">
@@ -135,6 +136,14 @@ document.addEventListener('DOMContentLoaded', function() {
   const savedPin = localStorage.getItem('cgv_pin');
   if (savedPin) { PIN_SESION = savedPin; entrarApp(); }
 });
+
+function toggleInstrucciones() {
+  const box = document.getElementById('instrBox');
+  const flecha = document.getElementById('instrFlecha');
+  const abrir = box.style.display === 'none';
+  box.style.display = abrir ? 'block' : 'none';
+  flecha.textContent = abrir ? '▴' : '▾';
+}
 
 function jsonp(url, cb) {
   const cbName = 'cb_' + Date.now() + Math.floor(Math.random()*100000);

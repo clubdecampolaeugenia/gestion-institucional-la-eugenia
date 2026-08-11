@@ -76,7 +76,8 @@
   </div>
 
   <div id="mainScreen">
-    <div class="instr-box">
+    <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
+    <div id="instrBox" class="instr-box" style="display:none;">
       Genera de una sola vez los 4 documentos que necesitás para convocar a la Asamblea Ordinaria: Acta de Comisión Directiva, Edicto para diario local, Edicto para Boletín Oficial, y Circular a socios — todos con el <strong>mismo Orden del Día</strong>, para que nunca queden inconsistentes entre sí.
     </div>
 
@@ -151,6 +152,14 @@ document.addEventListener('DOMContentLoaded', function() {
   const savedPin = localStorage.getItem('cgv_pin');
   if (savedPin) { PIN_SESION = savedPin; entrarApp(); }
 });
+
+function toggleInstrucciones() {
+  const box = document.getElementById('instrBox');
+  const flecha = document.getElementById('instrFlecha');
+  const abrir = box.style.display === 'none';
+  box.style.display = abrir ? 'block' : 'none';
+  flecha.textContent = abrir ? '▴' : '▾';
+}
 
 function jsonp(url, cb) {
   const cbName = 'cb_' + Date.now() + Math.floor(Math.random()*100000);
