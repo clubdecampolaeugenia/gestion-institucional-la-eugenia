@@ -79,38 +79,9 @@
     </div>
 
     <div class="form-panel">
-      <span class="field-label">Fecha de la Asamblea Ordinaria</span>
-      <div style="display:flex; gap:6px;">
-        <div style="flex:1; text-align:center; font-size:10px; color:var(--lima); font-weight:700; text-transform:uppercase; margin-bottom:2px;">Día</div>
-        <div style="width:14px;"></div>
-        <div style="flex:1; text-align:center; font-size:10px; color:var(--lima); font-weight:700; text-transform:uppercase; margin-bottom:2px;">Mes</div>
-        <div style="width:14px;"></div>
-        <div style="flex:1.3; text-align:center; font-size:10px; color:var(--lima); font-weight:700; text-transform:uppercase; margin-bottom:2px;">Año</div>
-      </div>
-      <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
-        <select id="fFechaAsamblea_d" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
-        <span style="font-weight:900; color:var(--petroleo);">/</span>
-        <select id="fFechaAsamblea_m" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
-        <span style="font-weight:900; color:var(--petroleo);">/</span>
-        <select id="fFechaAsamblea_a" style="flex:1.3; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
-      </div>
-      <span class="field-label">Hora (24 hs)</span>
-      <div style="display:flex; gap:6px;">
-        <div style="flex:1; text-align:center; font-size:10px; color:var(--lima); font-weight:700; text-transform:uppercase; margin-bottom:2px;">Hora</div>
-        <div style="width:14px;"></div>
-        <div style="flex:1; text-align:center; font-size:10px; color:var(--lima); font-weight:700; text-transform:uppercase; margin-bottom:2px;">Min</div>
-      </div>
-      <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
-        <select id="fHoraAsamblea_h" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
-        <span style="font-weight:900; color:var(--petroleo);">:</span>
-        <select id="fHoraAsamblea_m" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
-      </div>
-      <span class="field-label">Lugar</span>
-      <select id="fLugarAsambleaSelect" onchange="toggleLugarOtro()">
-        <option value="el salón de usos múltiples del Club, Ruta Nacional N.° 105, Km 5, Garupá, Misiones">El salón de usos múltiples del Club (habitual)</option>
-        <option value="__otro__">Otro lugar...</option>
-      </select>
-      <input type="text" id="fLugarAsamblea" style="display:none; margin-top:8px;" placeholder="Escribí el lugar">
+      <span class="field-label">Fecha, hora y lugar de la Asamblea Ordinaria</span>
+      <div id="datosAsambleaSoloLectura" style="background:var(--blanco); border-radius:12px; padding:14px; margin-bottom:6px; color:var(--petroleo); font-size:14px; font-weight:700;">cargando...</div>
+      <a href="index.html" style="display:block; text-align:center; color:var(--lima); font-size:11px; font-weight:700; text-decoration:underline; margin-bottom:8px;">¿Está mal? Cambialo en el Home — acá solo se muestra</a>
 
       <span class="field-label" style="margin-top:16px;">Reunión de Comisión Directiva que aprueba esta convocatoria</span>
       <span class="field-label">Fecha de la reunión (dd/mm/aaaa)</span>
@@ -221,46 +192,7 @@ function obtenerValorHora(idBase) {
   return document.getElementById(idBase + '_h').value + ':' + document.getElementById(idBase + '_m').value;
 }
 
-function poblarSelectorFecha(idBase, fechaInicialISO) {
-  const selD = document.getElementById(idBase + '_d');
-  const selM = document.getElementById(idBase + '_m');
-  const selA = document.getElementById(idBase + '_a');
-  if (!selD.options.length) {
-    for (let d = 1; d <= 31; d++) selD.innerHTML += '<option value="' + String(d).padStart(2,'0') + '">' + String(d).padStart(2,'0') + '</option>';
-    for (let m = 1; m <= 12; m++) selM.innerHTML += '<option value="' + String(m).padStart(2,'0') + '">' + String(m).padStart(2,'0') + '</option>';
-    const anioActual = new Date().getFullYear();
-    for (let a = anioActual; a <= anioActual + 3; a++) selA.innerHTML += '<option value="' + a + '">' + a + '</option>';
-  }
-  if (fechaInicialISO) {
-    const partes = fechaInicialISO.split('-'); // yyyy-MM-dd
-    selA.value = partes[0];
-    selM.value = partes[1];
-    selD.value = partes[2];
-  }
-  selD.onchange = chequearFueraDeTermino;
-  selM.onchange = chequearFueraDeTermino;
-  selA.onchange = chequearFueraDeTermino;
-}
-
-function obtenerValorFecha(idBase) {
-  const a = document.getElementById(idBase + '_a').value;
-  const m = document.getElementById(idBase + '_m').value;
-  const d = document.getElementById(idBase + '_d').value;
-  return a + '-' + m + '-' + d;
-}
-
-function toggleLugarOtro() {
-  const select = document.getElementById('fLugarAsambleaSelect');
-  const input = document.getElementById('fLugarAsamblea');
-  if (select.value === '__otro__') {
-    input.style.display = 'block';
-    input.value = '';
-    input.focus();
-  } else {
-    input.style.display = 'none';
-    input.value = select.value;
-  }
-}
+let DATOS_ASAMBLEA_REAL = null;
 
 function entrarApp() {
   document.getElementById('pinScreen').style.display = 'none';
@@ -274,23 +206,14 @@ function entrarApp() {
 
 function precargarAsambleaReal() {
   jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(res) {
+    const cont = document.getElementById('datosAsambleaSoloLectura');
     if (res && res.ok) {
-      poblarSelectorFecha('fFechaAsamblea', res.fecha);
-      poblarSelectorHora('fHoraAsamblea', res.hora);
-      // Si el lugar guardado coincide con el habitual, deja seleccionada esa opción; si no, usa "Otro"
-      const select = document.getElementById('fLugarAsambleaSelect');
-      const coincide = Array.from(select.options).some(o => o.value === res.lugar);
-      if (coincide) {
-        select.value = res.lugar;
-      } else {
-        select.value = '__otro__';
-        document.getElementById('fLugarAsamblea').style.display = 'block';
-        document.getElementById('fLugarAsamblea').value = res.lugar;
-      }
+      DATOS_ASAMBLEA_REAL = res;
+      const fechaLegible = new Date(res.fecha).toLocaleDateString('es-AR', { timeZone: 'UTC' });
+      cont.innerHTML = '📅 ' + fechaLegible + ' — 🕓 ' + res.hora + ' hs<br>📍 ' + res.lugar;
     } else {
-      // Sin dato real todavía: arranca con valores por defecto
-      poblarSelectorFecha('fFechaAsamblea', '2026-10-24');
-      poblarSelectorHora('fHoraAsamblea', '16:00');
+      DATOS_ASAMBLEA_REAL = null;
+      cont.innerHTML = '⚠️ No hay fecha cargada todavía. Andá al Home a cargarla primero.';
     }
     chequearFueraDeTermino();
   });
@@ -313,9 +236,10 @@ function cerrarSesion() {
 }
 
 function chequearFueraDeTermino() {
+  if (!DATOS_ASAMBLEA_REAL) return;
   jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(res) {
     if (!res || !res.ok) return;
-    const fechaAsamblea = new Date(obtenerValorFecha('fFechaAsamblea'));
+    const fechaAsamblea = new Date(DATOS_ASAMBLEA_REAL.fecha);
     const cierre = new Date(res.ejercicio.fechaCierre.split('/').reverse().join('-'));
     const limite = new Date(cierre);
     limite.setMonth(limite.getMonth() + 3);
@@ -339,6 +263,10 @@ function escapeHtml(s) {
 }
 
 function generarDocumentos() {
+  if (!DATOS_ASAMBLEA_REAL) {
+    mostrarAviso('No hay fecha de Asamblea cargada. Andá al Home a cargarla primero.');
+    return;
+  }
   const btn = document.getElementById('btnGenerar');
   btn.disabled = true;
   document.getElementById('loadingText').innerHTML = '<span class="spinner"></span> Armando los 4 documentos...';
@@ -346,9 +274,9 @@ function generarDocumentos() {
 
   const params = new URLSearchParams({
     action: 'generarConvocatoriaYDocumentos',
-    fechaAsamblea: obtenerValorFecha('fFechaAsamblea'),
-    horaAsamblea: obtenerValorHora('fHoraAsamblea'),
-    lugarAsamblea: document.getElementById('fLugarAsamblea').style.display === 'none' ? document.getElementById('fLugarAsambleaSelect').value : document.getElementById('fLugarAsamblea').value,
+    fechaAsamblea: DATOS_ASAMBLEA_REAL.fecha,
+    horaAsamblea: DATOS_ASAMBLEA_REAL.hora,
+    lugarAsamblea: DATOS_ASAMBLEA_REAL.lugar,
     fechaReunionCD: document.getElementById('fFechaReunionCD').value,
     horaReunionCD: obtenerValorHora('fHoraReunionCD'),
     horaFinReunionCD: obtenerValorHora('fHoraFinReunionCD'),
