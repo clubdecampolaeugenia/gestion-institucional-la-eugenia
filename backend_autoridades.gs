@@ -116,7 +116,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v32-diagnostico-asambleas-10ago-1740' };
+      resultado = { ok: true, version: 'v33-fix-hora-como-texto-10ago-1750' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -1245,6 +1245,14 @@ function getHojaAsambleas() {
 }
 
 // La app SIEMPRE debe leer la fecha de acá, nunca tenerla escrita fija en el código del front-end.
+// Si Sheets convirtió el texto "16:00" en un objeto de hora, lo devuelve al formato HH:mm; si ya es texto, lo deja igual
+function formatearHoraSegura(valor) {
+  if (valor instanceof Date) {
+    return Utilities.formatDate(valor, Session.getScriptTimeZone(), 'HH:mm');
+  }
+  return valor;
+}
+
 function obtenerAsambleaEjercicio() {
   const ejercicioActivo = obtenerEjercicioActivo();
   if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
@@ -1257,7 +1265,7 @@ function obtenerAsambleaEjercicio() {
         ok: true,
         idAsamblea: datos[i][0],
         fecha: Utilities.formatDate(new Date(datos[i][2]), Session.getScriptTimeZone(), 'yyyy-MM-dd'),
-        hora: datos[i][3],
+        hora: formatearHoraSegura(datos[i][3]),
         lugar: datos[i][4],
         estado: datos[i][6]
       };
@@ -1302,12 +1310,16 @@ function guardarAsambleaEjercicio(params) {
   for (let i = 1; i < datos.length; i++) {
     if (datos[i][1] === ejercicioActivo.ejercicio.idEjercicio) {
       hoja.getRange(i + 1, 3).setValue(parsearFechaSegura(params.fecha));
-      hoja.getRange(i + 1, 4).setValue(params.hora);
+      const celdaHora = hoja.getRange(i + 1, 4);
+      celdaHora.setNumberFormat('@'); // fuerza texto plano, para que Sheets no la convierta en hora
+      celdaHora.setValue(params.hora);
       hoja.getRange(i + 1, 5).setValue(params.lugar || '');
       return { ok: true };
     }
   }
+  const nuevaFila = hoja.getLastRow() + 1;
   hoja.appendRow(['ASM-' + ejercicioActivo.ejercicio.numero, ejercicioActivo.ejercicio.idEjercicio, parsearFechaSegura(params.fecha), params.hora, params.lugar || '', JSON.stringify([]), 'CONVOCADA', '', '', '']);
+  hoja.getRange(nuevaFila, 4).setNumberFormat('@').setValue(params.hora); // refuerza formato de texto en la fila nueva
   return { ok: true };
 }
 
