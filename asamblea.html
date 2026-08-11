@@ -33,7 +33,8 @@
   .pin-error { text-align: center; color: var(--error); font-size: 13px; font-weight: 700; min-height: 18px; margin-bottom: 8px; }
 
   .instr-box { background: var(--petroleo); border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; font-size: 13px; color: var(--hueso); line-height: 1.5; }
-  .bloqueo-box { background: #e8e8e8; border-radius: 16px; padding: 20px; margin-bottom: 16px; color: #888; font-size: 14px; font-weight: 700; text-align: center; }
+  .bloqueo-box { background: #e8e8e8; border-radius: 16px; padding: 16px; margin-bottom: 16px; color: #888; font-size: 13px; font-weight: 700; text-align: center; }
+  #contenidoDisponible.modo-bloqueado { filter: grayscale(1); opacity: .55; pointer-events: none; user-select: none; }
 
   .btn-solid { display: block; width: 100%; padding: 14px; border-radius: 24px; border: 2px solid var(--petroleo); background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
   .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 2px solid var(--petroleo); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
@@ -74,11 +75,9 @@
   </div>
 
   <div id="mainScreen">
-    <div id="contenidoBloqueado" style="display:none;">
-      <div class="bloqueo-box" id="textoBloqueado">cargando...</div>
-    </div>
+    <div class="bloqueo-box" id="textoBloqueado" style="display:none;">cargando...</div>
 
-    <div id="contenidoDisponible" style="display:none;">
+    <div id="contenidoDisponible">
       <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
       <div id="instrBox" class="instr-box" style="display:none;">Este módulo se usa <strong>el día de la Asamblea</strong> — registrá lo que fue pasando durante el evento.</div>
 
@@ -183,20 +182,26 @@ function entrarApp() {
 
 function chequearFechaYHabilitar() {
   jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(res) {
+    const cont = document.getElementById('contenidoDisponible');
+    const banner = document.getElementById('textoBloqueado');
     if (!res || !res.ok) {
-      document.getElementById('contenidoBloqueado').style.display = 'block';
-      document.getElementById('textoBloqueado').textContent = 'Todavía no hay fecha de Asamblea cargada. Andá al Home a cargarla primero.';
+      cont.classList.add('modo-bloqueado');
+      banner.style.display = 'block';
+      banner.textContent = '🔒 Todavía no hay fecha de Asamblea cargada. Andá al Home a cargarla primero — mientras tanto podés ver qué se va a poder hacer acá.';
+      cargarCargosARenovar();
       return;
     }
     const fecha = new Date(res.fecha);
     const hoy = new Date();
     if (hoy < fecha) {
-      document.getElementById('contenidoBloqueado').style.display = 'block';
-      document.getElementById('textoBloqueado').textContent = '🔒 Este módulo se habilita el ' + fecha.toLocaleDateString('es-AR', { timeZone: 'UTC' }) + ', el día real de la Asamblea. Ya está construido, solo falta que llegue la fecha.';
+      cont.classList.add('modo-bloqueado');
+      banner.style.display = 'block';
+      banner.textContent = '🔒 Se habilita el ' + fecha.toLocaleDateString('es-AR', { timeZone: 'UTC' }) + ', el día real de la Asamblea. Ya está todo construido — así se va a ver y usar ese día.';
     } else {
-      document.getElementById('contenidoDisponible').style.display = 'block';
-      cargarCargosARenovar();
+      cont.classList.remove('modo-bloqueado');
+      banner.style.display = 'none';
     }
+    cargarCargosARenovar();
   });
 }
 
