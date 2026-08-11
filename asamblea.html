@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#135457">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="icon" type="image/png" href="logo.png">
+<title>Asamblea – Gestión Institucional La Eugenia</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --petroleo: #135457; --lima: #c4df57; --naranja: #deaf4d; --verdecl: #b7d6b5;
+    --blanco: #ffffff; --hueso: #f5f3ec; --negro: #000000; --error: #c0392b;
+  }
+  body { margin: 0; min-height: 100vh; background: var(--petroleo); font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
+  @keyframes fadeInScreen { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes shakeError { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 40%{transform:translateX(6px);} 60%{transform:translateX(-4px);} 80%{transform:translateX(4px);} }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 600px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
+  .logo-wrap img { width: 140px; display: block; margin: 0 auto; filter: drop-shadow(0 4px 7px rgba(0,0,0,0.2)); }
+  h1 { margin: 2px 0 4px; color: var(--negro); font-family: Impact, sans-serif; font-size: 24px; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
+  .subtitle { text-align: center; color: var(--petroleo); font-size: 13px; margin-bottom: 18px; text-transform: uppercase; letter-spacing: .5px; }
+
+  #pinScreen { display: block; animation: fadeInScreen .3s ease-out; }
+  #mainScreen { display: none; }
+  #mainScreen.active { animation: fadeInScreen .3s ease-out; }
+  .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
+  .pin-input { display: block; width: 100%; text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; border: 2px solid var(--petroleo); border-radius: 16px; padding: 12px; background: var(--blanco); color: var(--petroleo); outline: none; margin-bottom: 12px; }
+  .pin-input.error { animation: shakeError .35s ease-in-out; border-color: var(--error); }
+  .pin-error { text-align: center; color: var(--error); font-size: 13px; font-weight: 700; min-height: 18px; margin-bottom: 8px; }
+
+  .instr-box { background: var(--petroleo); border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; font-size: 13px; color: var(--hueso); line-height: 1.5; }
+  .bloqueo-box { background: #e8e8e8; border-radius: 16px; padding: 20px; margin-bottom: 16px; color: #888; font-size: 14px; font-weight: 700; text-align: center; }
+
+  .btn-solid { display: block; width: 100%; padding: 14px; border-radius: 24px; border: 2px solid var(--petroleo); background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
+  .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 2px solid var(--petroleo); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
+  .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; text-align: center; }
+
+  .field-label { color: var(--petroleo); font-size: 11px; font-weight: 900; text-transform: uppercase; margin: 10px 0 4px; display: block; }
+  .field-label:first-child { margin-top: 0; }
+  input[type=text], textarea { width: 100%; border: 2px solid var(--petroleo); border-radius: 12px; padding: 10px 12px; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; }
+  textarea { min-height: 70px; resize: vertical; }
+  .form-panel { background: var(--petroleo); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+  .form-panel .field-label { color: var(--lima); }
+
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--petroleo); border-top-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 6px; vertical-align: middle; }
+  .resultado-box { background: var(--blanco); border-radius: 16px; padding: 16px; margin-top: 14px; white-space: pre-wrap; font-size: 13px; color: var(--petroleo); line-height: 1.6; }
+
+  .divider { border: none; border-top: 1.5px solid #9bb583; margin: 16px 0; }
+  .loading-text { text-align: center; color: var(--petroleo); font-size: 13px; font-weight: 700; min-height: 20px; }
+  .seccion-titulo { font-family: Impact, sans-serif; font-size: 14px; color: var(--petroleo); text-transform: uppercase; margin: 18px 0 10px; }
+
+  .aviso-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
+  .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 12px 32px rgba(0,0,0,0.35); text-align: center; }
+  .aviso-texto { color: var(--petroleo); font-size: 14px; line-height: 1.5; margin-bottom: 18px; white-space: pre-wrap; }
+  .aviso-btn { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="card">
+  <a href="index.html" style="display:inline-block; text-align:left; color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:none; opacity:.75; margin-bottom:10px;">&larr; Volver al panel</a>
+  <a href="index.html" class="logo-wrap" style="cursor:pointer;"><img src="logo.png" alt="Logo La Eugenia"></a>
+  <h1>Gestión Institucional</h1>
+  <div class="subtitle"><strong style="color:var(--negro); text-transform:uppercase;">Asamblea Ordinaria</strong></div>
+
+  <div id="pinScreen">
+    <div class="pin-label">Ingresá el PIN</div>
+    <input class="pin-input" type="password" inputmode="numeric" maxlength="4" id="pinInput" placeholder="····">
+    <div class="pin-error" id="pinError"></div>
+    <button type="button" class="btn-solid" onclick="verificarPin()">Ingresar</button>
+  </div>
+
+  <div id="mainScreen">
+    <div id="contenidoBloqueado" style="display:none;">
+      <div class="bloqueo-box" id="textoBloqueado">cargando...</div>
+    </div>
+
+    <div id="contenidoDisponible" style="display:none;">
+      <div class="instr-box">Este módulo se usa <strong>el día de la Asamblea</strong> — registrá lo que fue pasando durante el evento.</div>
+
+      <div class="seccion-titulo">1. Asamblea celebrada</div>
+      <div class="form-panel">
+        <span class="field-label">Socios presentes</span>
+        <input type="text" id="fSociosPresentes" placeholder="Ej: 42">
+        <span class="field-label">Quórum alcanzado</span>
+        <input type="text" id="fQuorum" placeholder="Ej: Sí, en primera convocatoria">
+        <button type="button" class="btn-solid" style="margin-top:10px; margin-bottom:0;" onclick="marcarCelebrada()">Marcar Asamblea como celebrada</button>
+      </div>
+
+      <div class="seccion-titulo">2. Autoridades electas</div>
+      <div class="form-panel">
+        <div style="color:var(--hueso); font-size:12px; margin-bottom:10px;">Completá el nombre solo de los cargos que se renovaron con nuevo titular. Dejá en blanco el que sigue igual.</div>
+        <div id="listaCargosRenovar">cargando cargos a renovar...</div>
+        <button type="button" class="btn-solid" style="margin-top:10px; margin-bottom:0;" onclick="registrarElectas()">Registrar autoridades electas</button>
+      </div>
+
+      <div class="seccion-titulo">3. Acta de Asamblea</div>
+      <div class="form-panel">
+        <span class="field-label">Resultados por punto del Orden del Día</span>
+        <textarea id="fResultados" placeholder="Ej: Punto 3, Memoria y Balance aprobados por unanimidad. Punto 4, cuota social aprobada en $X..."></textarea>
+        <button type="button" class="btn-solid" style="margin-top:10px; margin-bottom:0;" onclick="generarActa()">Generar Acta de Asamblea</button>
+      </div>
+
+      <div class="loading-text" id="loadingText"></div>
+      <div id="resultadoActa"></div>
+    </div>
+
+    <hr class="divider">
+    <button type="button" class="btn-outline" onclick="window.location.href='index.html'">← Volver al panel</button>
+    <button type="button" class="btn-ghost" onclick="cerrarSesion()">Cerrar sesión</button>
+  </div>
+</div>
+
+<script>
+function mostrarAviso(mensaje, callback) {
+  const overlay = document.createElement('div');
+  overlay.className = 'aviso-overlay';
+  overlay.innerHTML = '<div class="aviso-card"><div class="aviso-texto">' + mensaje.replace(/</g,'&lt;') + '</div><button type="button" class="aviso-btn">Aceptar</button></div>';
+  document.body.appendChild(overlay);
+  overlay.querySelector('.aviso-btn').onclick = function() {
+    document.body.removeChild(overlay);
+    if (callback) callback();
+  };
+}
+
+const EXEC_URL_PINES_CGV_CHECK = 'https://script.google.com/macros/s/AKfycbyt4PoL_IWHaXRlMNDy2cPtWmvj7f0-DLpSe5IHir54yPDNg8osPtX_0ezoopC4aGR_7A/exec';
+const EXEC_URL_GI = 'https://script.google.com/macros/s/AKfycbyBxlDAteVncpf2hyQ-Nna6YZjMiZodntG9gZZ9aPXPei1As_yhqMUCnjnM9mHmJYYZJg/exec';
+
+let PIN_SESION = '';
+
+document.addEventListener('DOMContentLoaded', function() {
+  const savedPin = localStorage.getItem('cgv_pin');
+  if (savedPin) { PIN_SESION = savedPin; entrarApp(); }
+});
+
+function jsonp(url, cb) {
+  const cbName = 'cb_' + Date.now() + Math.floor(Math.random()*100000);
+  window[cbName] = function(res) { delete window[cbName]; document.body.removeChild(script); cb(res); };
+  const script = document.createElement('script');
+  script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+  document.body.appendChild(script);
+}
+
+function verificarPin() {
+  const pin = document.getElementById('pinInput').value;
+  jsonp(EXEC_URL_PINES_CGV_CHECK + '?action=validarPin&pin=' + encodeURIComponent(pin) + '&modulo=gestion-institucional', function(res) {
+    if (res && res.ok && res.valido) {
+      PIN_SESION = pin;
+      localStorage.setItem('cgv_pin', pin);
+      entrarApp();
+    } else {
+      const input = document.getElementById('pinInput');
+      input.classList.add('error');
+      document.getElementById('pinError').textContent = 'PIN incorrecto';
+      setTimeout(() => input.classList.remove('error'), 400);
+    }
+  });
+}
+
+function cerrarSesion() {
+  localStorage.removeItem('cgv_pin');
+  location.reload();
+}
+
+function entrarApp() {
+  document.getElementById('pinScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'block';
+  document.getElementById('mainScreen').classList.add('active');
+  chequearFechaYHabilitar();
+}
+
+function chequearFechaYHabilitar() {
+  jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(res) {
+    if (!res || !res.ok) {
+      document.getElementById('contenidoBloqueado').style.display = 'block';
+      document.getElementById('textoBloqueado').textContent = 'Todavía no hay fecha de Asamblea cargada. Andá al Home a cargarla primero.';
+      return;
+    }
+    const fecha = new Date(res.fecha);
+    const hoy = new Date();
+    if (hoy < fecha) {
+      document.getElementById('contenidoBloqueado').style.display = 'block';
+      document.getElementById('textoBloqueado').textContent = '🔒 Este módulo se habilita el ' + fecha.toLocaleDateString('es-AR', { timeZone: 'UTC' }) + ', el día real de la Asamblea. Ya está construido, solo falta que llegue la fecha.';
+    } else {
+      document.getElementById('contenidoDisponible').style.display = 'block';
+      cargarCargosARenovar();
+    }
+  });
+}
+
+function cargarCargosARenovar() {
+  jsonp(EXEC_URL_GI + '?action=listarAutoridades', function(res) {
+    const cont = document.getElementById('listaCargosRenovar');
+    if (!res || !res.ok) { cont.textContent = 'No se pudo cargar Autoridades.'; return; }
+    if (!res.vencenEsteAnio || res.vencenEsteAnio.length === 0) {
+      cont.innerHTML = '<div style="color:var(--hueso); font-size:12px;">Ningún cargo renueva este año.</div>';
+      return;
+    }
+    cont.innerHTML = res.vencenEsteAnio.map((item, i) => {
+      const cargo = item.split(' (')[0];
+      return '<div style="margin-bottom:8px;"><span class="field-label" style="color:var(--lima);">' + escapeHtml(item) + '</span><input type="text" class="input-nuevo-titular" data-cargo="' + escapeHtml(cargo) + '" placeholder="Nombre del/la electo/a (o dejar en blanco si sigue igual)"></div>';
+    }).join('');
+  });
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+function marcarCelebrada() {
+  const sociosPresentes = document.getElementById('fSociosPresentes').value;
+  const quorumAlcanzado = document.getElementById('fQuorum').value;
+  jsonp(EXEC_URL_GI + '?action=marcarAsambleaCelebrada&sociosPresentes=' + encodeURIComponent(sociosPresentes) + '&quorumAlcanzado=' + encodeURIComponent(quorumAlcanzado) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    if (res && res.ok) mostrarAviso('Asamblea marcada como celebrada.');
+    else mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+  });
+}
+
+function registrarElectas() {
+  const inputs = document.querySelectorAll('.input-nuevo-titular');
+  const elecciones = Array.from(inputs).map(inp => ({ cargo: inp.dataset.cargo, nombreNuevo: inp.value }));
+  jsonp(EXEC_URL_GI + '?action=registrarAutoridadesElectas&elecciones=' + encodeURIComponent(JSON.stringify(elecciones)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    if (res && res.ok) mostrarAviso('Autoridades actualizadas: ' + res.actualizadas + ' cargo(s) con nuevo titular.');
+    else mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+  });
+}
+
+function generarActa() {
+  const sociosPresentes = document.getElementById('fSociosPresentes').value;
+  const quorumAlcanzado = document.getElementById('fQuorum').value;
+  const resultados = document.getElementById('fResultados').value;
+  const inputs = document.querySelectorAll('.input-nuevo-titular');
+  const autoridadesElectas = Array.from(inputs).filter(i => i.value.trim()).map(i => i.dataset.cargo + ': ' + i.value).join('; ');
+
+  document.getElementById('loadingText').innerHTML = '<span class="spinner"></span> Redactando el Acta de Asamblea...';
+  const params = new URLSearchParams({
+    action: 'generarActaAsamblea',
+    sociosPresentes, quorumAlcanzado, resultados, autoridadesElectas,
+    pin: PIN_SESION
+  });
+  jsonp(EXEC_URL_GI + '?' + params.toString(), function(res) {
+    document.getElementById('loadingText').textContent = '';
+    if (!res || !res.ok) { mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido')); return; }
+    document.getElementById('resultadoActa').innerHTML = '<div class="resultado-box">' + escapeHtml(res.contenido) + '</div>';
+  });
+}
+</script>
+</body>
+</html>

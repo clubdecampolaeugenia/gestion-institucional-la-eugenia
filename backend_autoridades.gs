@@ -74,7 +74,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -116,7 +116,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v37-fix-duplicados-asamblea-10ago-2100' };
+      resultado = { ok: true, version: 'v38-modulo-asamblea-10ago-2200' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -147,6 +147,12 @@ function doGet(e) {
       resultado = corregirFechaAsambleaExistente();
     } else if (action === 'limpiarDuplicadosAsambleas') {
       resultado = limpiarDuplicadosAsambleas();
+    } else if (action === 'marcarAsambleaCelebrada') {
+      resultado = marcarAsambleaCelebrada(e.parameter);
+    } else if (action === 'registrarAutoridadesElectas') {
+      resultado = registrarAutoridadesElectas(e.parameter);
+    } else if (action === 'generarActaAsamblea') {
+      resultado = generarActaAsamblea(e.parameter);
     } else if (action === 'diagnosticoAsambleas') {
       resultado = diagnosticoAsambleas();
     } else if (action === 'sembrarAsambleaReal') {
@@ -1367,6 +1373,125 @@ function calcularFechaLimiteAsamblea(fechaCierreStr) {
   const limite = new Date(cierre);
   limite.setMonth(limite.getMonth() + 3);
   return limite;
+}
+
+// ============ ASAMBLEA (el día del evento) ============
+
+function marcarAsambleaCelebrada(params) {
+  const ejercicioActivo = obtenerEjercicioActivo();
+  if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
+  const hoja = getHojaAsambleas();
+  const datos = hoja.getDataRange().getValues();
+  for (let i = 1; i < datos.length; i++) {
+    if (datos[i][1] === ejercicioActivo.ejercicio.idEjercicio) {
+      hoja.getRange(i + 1, 7).setValue('CELEBRADA');
+      hoja.getRange(i + 1, 8).setValue(params.sociosPresentes || '');
+      hoja.getRange(i + 1, 9).setValue(params.quorumAlcanzado || '');
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'No hay Asamblea registrada para este Ejercicio' };
+}
+
+function registrarAutoridadesElectas(params) {
+  const elecciones = JSON.parse(params.elecciones); // [{cargo, grupo, nombreNuevo}]
+  const hoja = getHoja();
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const idx = {};
+  headers.forEach((h, i) => idx[h] = i);
+
+  const hoy = new Date();
+  const finMandato = new Date(hoy);
+  finMandato.setFullYear(finMandato.getFullYear() + 2);
+
+  let actualizadas = 0;
+  elecciones.forEach(e => {
+    // Finaliza al titular anterior de ese cargo, si está VIGENTE
+    for (let i = 1; i < datos.length; i++) {
+      if (datos[i][idx.CARGO] === e.cargo && datos[i][idx.ESTADO] === 'VIGENTE') {
+        hoja.getRange(i + 1, idx.ESTADO + 1).setValue('FINALIZADO');
+      }
+    }
+    // Da de alta al nuevo, si se informó un nombre
+    if (e.nombreNuevo && e.nombreNuevo.trim()) {
+      hoja.appendRow(['AUT-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss') + '-' + actualizadas, 'COMISION_DIRECTIVA', e.cargo, e.grupo || '', e.nombreNuevo, '', hoy, finMandato, 'VIGENTE', '']);
+      actualizadas++;
+    }
+  });
+
+  return { ok: true, actualizadas: actualizadas };
+}
+
+const PROMPT_ACTA_ASAMBLEA = `Sos el redactor institucional del Club de Campo "La Eugenia". Vas a escribir el ACTA DE ASAMBLEA GENERAL ORDINARIA, el documento formal que registra lo tratado y resuelto en la Asamblea.
+
+ESTILO OBLIGATORIO:
+- Arranca así: "ACTA DE ASAMBLEA GENERAL ORDINARIA\\n\\nEn la ciudad de Garupá, Provincia de Misiones, siendo las [HORA] horas del día [FECHA], se reúnen los socios del Club de Campo \"La Eugenia\" en Asamblea General Ordinaria, en [LUGAR], para tratar el Orden del Día previamente notificado."
+- Menciona el quórum alcanzado y los socios presentes según el dato que te paso.
+- Desarrollá cada punto del Orden del Día como un párrafo de resultado (aprobado, con modificaciones, etc.), usando los datos reales que te doy -- no inventes resultados que no te haya dado.
+- Si se informaron autoridades electas, mencionalas nominalmente en el punto de renovación de Comisión Directiva.
+- Cierra con: "Siendo las [HORA] horas se da por finalizada la Asamblea, firmando la presente el Presidente y el Secretario de Asamblea designados.\\n\\nGarupá, [FECHA]."
+
+Respondé ÚNICAMENTE con el texto completo del acta, sin explicaciones adicionales, sin markdown.`;
+
+function generarActaAsamblea(params) {
+  const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+  if (!apiKey) return { ok: false, error: 'Falta configurar ANTHROPIC_API_KEY en Script Properties' };
+
+  const ejercicioActivo = obtenerEjercicioActivo();
+  if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
+  const asamblea = obtenerAsambleaEjercicio();
+  if (!asamblea.ok) return { ok: false, error: 'No hay Asamblea registrada' };
+
+  const hoja = getHojaAsambleas();
+  const datos = hoja.getDataRange().getValues();
+  let ordenDelDia = [];
+  for (let i = 1; i < datos.length; i++) {
+    if (datos[i][1] === ejercicioActivo.ejercicio.idEjercicio) {
+      try { ordenDelDia = JSON.parse(datos[i][5]); } catch (e) {}
+      break;
+    }
+  }
+
+  const inputTexto = 'FECHA: ' + asamblea.fecha + '\nHORA: ' + asamblea.hora + '\nLUGAR: ' + asamblea.lugar +
+    '\nSOCIOS PRESENTES: ' + (params.sociosPresentes || '[no informado]') + '\nQUÓRUM: ' + (params.quorumAlcanzado || '[no informado]') +
+    '\n\nORDEN DEL DÍA:\n' + ordenDelDia.join('\n') +
+    '\n\nRESULTADOS INFORMADOS POR PUNTO:\n' + (params.resultados || '[no informado]') +
+    '\n\nAUTORIDADES ELECTAS (si corresponde):\n' + (params.autoridadesElectas || '[no informado]');
+
+  const payload = {
+    model: 'claude-sonnet-5',
+    max_tokens: 6000,
+    thinking: { type: 'disabled' },
+    system: PROMPT_ACTA_ASAMBLEA,
+    messages: [{ role: 'user', content: inputTexto }]
+  };
+
+  const response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+
+  if (response.getResponseCode() !== 200) {
+    return { ok: false, error: 'Error de la API (' + response.getResponseCode() + '): ' + response.getContentText() };
+  }
+  const data = JSON.parse(response.getContentText());
+  const bloqueTexto = (data.content || []).find(b => b.type === 'text');
+  if (!bloqueTexto) return { ok: false, error: 'La IA no devolvió texto' };
+
+  const hojaDocs = getHojaDocumentos();
+  const datosDocs = hojaDocs.getDataRange().getValues();
+  let version = 1;
+  for (let i = 1; i < datosDocs.length; i++) {
+    if (datosDocs[i][0] && datosDocs[i][2] === 'ACTA_ASAMBLEA' && datosDocs[i][1] === ejercicioActivo.ejercicio.idEjercicio) version++;
+  }
+  const nuevoId = 'DOC-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
+  hojaDocs.appendRow([nuevoId, ejercicioActivo.ejercicio.idEjercicio, 'ACTA_ASAMBLEA', version, 'BORRADOR', bloqueTexto.text, 'IA', new Date()]);
+
+  return { ok: true, idDocumento: nuevoId, contenido: bloqueTexto.text, version: version };
 }
 
 function generarConvocatoriaYDocumentos(params) {
