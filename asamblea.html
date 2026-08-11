@@ -188,16 +188,7 @@ function entrarApp() {
   document.getElementById('mainScreen').style.display = 'block';
   document.getElementById('mainScreen').classList.add('active');
   chequearFechaYHabilitar();
-  setTimeout(scrollAAncla, 400);
 }
-
-function scrollAAncla() {
-  if (window.location.hash) {
-    const el = document.querySelector(window.location.hash);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-}
-
 function chequearFechaYHabilitar() {
   jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(res) {
     const cont = document.getElementById('contenidoDisponible');

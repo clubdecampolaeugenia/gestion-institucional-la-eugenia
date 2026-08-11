@@ -216,10 +216,8 @@ const HITOS = [
 // Estos NO pueden estar completos antes del día de la Asamblea — se cierran con/después de ella.
 // Por eso van en una barra separada: mezclarlos con la de arriba hacía que el 100% fuera imposible aunque todo estuviera bien.
 const HITOS_CIERRE = [
-  { nombre: 'Asamblea General Ordinaria celebrada', detalle: 'cargando fecha real...', estado: 'PENDIENTE', link: 'asamblea.html#seccion1', manual: false },
+  { nombre: 'Asamblea: celebración, autoridades y acta', detalle: 'cargando fecha real...', estado: 'PENDIENTE', link: 'asamblea.html', manual: false },
   { nombre: 'Balance — aprobado por Asamblea Ordinaria', detalle: 'Recién se completa el día del evento — no hay botón para esto todavía en ningún módulo', estado: 'PENDIENTE', link: null, manual: true },
-  { nombre: 'Autoridades renovadas', detalle: 'Se define en la Asamblea', estado: 'PENDIENTE', link: 'asamblea.html#seccion2', manual: false },
-  { nombre: 'Acta de Asamblea firmada', detalle: 'Se redacta durante el evento', estado: 'PENDIENTE', link: 'asamblea.html#seccion3', manual: false },
 ];
 
 const ESTADO_LABEL = { COMPLETO: 'Completo', PROGRESO: 'En progreso', OBSERVADO: 'Observado', PENDIENTE: 'Pendiente', NOINICIADO: 'No iniciado' };
@@ -442,12 +440,12 @@ function cargarFechaAsamblea(callback) {
         document.getElementById('eAsambleaLugar').style.display = 'block';
         document.getElementById('eAsambleaLugar').value = res.lugar;
       }
-      actualizarHito('Asamblea General Ordinaria celebrada', 'PENDIENTE', 'Convocada para ' + fechaLegible + ', ' + res.hora + ' hs');
+      actualizarHito('Asamblea: celebración, autoridades y acta', 'PENDIENTE', 'Convocada para ' + fechaLegible + ', ' + res.hora + ' hs — 3 pasos, todos en la misma pantalla');
     } else {
       textoPildora.textContent = 'Asamblea Ordinaria: sin fecha — tocá para cargarla';
       poblarSelectorFecha('eAsambleaFecha', new Date().toISOString().split('T')[0]);
       poblarSelectorHora('eAsambleaHora', '16:00');
-      actualizarHito('Asamblea General Ordinaria celebrada', 'PENDIENTE', 'Todavía sin fecha registrada');
+      actualizarHito('Asamblea: celebración, autoridades y acta', 'PENDIENTE', 'Todavía sin fecha registrada');
     }
     if (callback) callback();
   });
