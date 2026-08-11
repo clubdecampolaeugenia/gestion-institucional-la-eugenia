@@ -80,8 +80,8 @@
 
     <div class="form-panel">
       <span class="field-label">Fecha, hora y lugar de la Asamblea Ordinaria</span>
-      <div id="datosAsambleaSoloLectura" style="background:var(--blanco); border-radius:12px; padding:14px; margin-bottom:6px; color:var(--petroleo); font-size:14px; font-weight:700;">cargando...</div>
-      <a href="index.html" style="display:block; text-align:center; color:var(--lima); font-size:11px; font-weight:700; text-decoration:underline; margin-bottom:8px;">¿Está mal? Cambialo en el Home — acá solo se muestra</a>
+      <div id="datosAsambleaSoloLectura" style="background:var(--blanco); border-radius:12px; padding:16px; margin-bottom:10px; color:var(--petroleo); font-size:14px; font-weight:700; line-height:1.7;">cargando...</div>
+      <a href="index.html" style="display:block; text-align:center; color:var(--lima); font-size:11px; font-weight:700; text-decoration:underline; margin-bottom:16px;">¿Está mal? Cambialo en el Home — acá solo se muestra</a>
 
       <span class="field-label" style="margin-top:16px;">Reunión de Comisión Directiva que aprueba esta convocatoria</span>
       <span class="field-label">Fecha de la reunión (dd/mm/aaaa)</span>
@@ -98,8 +98,8 @@
         <span style="font-weight:900; color:var(--petroleo);">:</span>
         <select id="fHoraFinReunionCD_m" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
       </div>
-      <span class="field-label">Presentes (nombre y cargo, separados por coma)</span>
-      <textarea id="fPresentesCD" placeholder="Javier Stefañuk, Presidente; Augusto Coutada, Vicepresidente..."></textarea>
+      <span class="field-label">Presentes en la reunión (tildá quiénes asistieron)</span>
+      <div id="listaPresentesCD" style="background:var(--blanco); border-radius:12px; padding:12px; max-height:220px; overflow-y:auto; margin-bottom:8px;">cargando autoridades...</div>
 
       <div id="avisoFueraTermino" style="display:none; background:var(--naranja); border-radius:12px; padding:10px; margin-top:10px; font-size:12px; font-weight:700; color:var(--petroleo);"></div>
       <div id="campoMotivo" style="display:none;">
@@ -210,7 +210,7 @@ function precargarAsambleaReal() {
     if (res && res.ok) {
       DATOS_ASAMBLEA_REAL = res;
       const fechaLegible = new Date(res.fecha).toLocaleDateString('es-AR', { timeZone: 'UTC' });
-      cont.innerHTML = '📅 ' + fechaLegible + ' — 🕓 ' + res.hora + ' hs<br>📍 ' + res.lugar;
+      cont.innerHTML = '<div style="margin-bottom:6px;">📅 ' + fechaLegible + ' &nbsp;·&nbsp; 🕓 ' + res.hora + ' hs</div><div>📍 ' + res.lugar + '</div>';
     } else {
       DATOS_ASAMBLEA_REAL = null;
       cont.innerHTML = '⚠️ No hay fecha cargada todavía. Andá al Home a cargarla primero.';
@@ -221,13 +221,21 @@ function precargarAsambleaReal() {
 
 function precargarPresentesCD() {
   jsonp(EXEC_URL_GI + '?action=listarAutoridades', function(res) {
-    if (!res || !res.ok) return;
+    const cont = document.getElementById('listaPresentesCD');
+    if (!res || !res.ok) { cont.textContent = 'No se pudo cargar Autoridades.'; return; }
     const orden = ['Presidente','Vicepresidente','Secretario','Prosecretario','Tesorero','Protesorero','Vocal Titular 1°','Vocal Titular 2°','Vocal Titular 3°','Vocal Suplente 1°','Vocal Suplente 2°','Vocal Suplente 3°'];
     const porCargo = {};
     res.autoridades.forEach(a => { porCargo[a.cargo] = a.nombre; });
-    const texto = orden.filter(c => porCargo[c]).map(c => porCargo[c] + ', ' + c).join('; ');
-    if (texto) document.getElementById('fPresentesCD').value = texto;
+    cont.innerHTML = orden.filter(c => porCargo[c]).map((c, i) =>
+      '<label style="display:flex; align-items:center; gap:8px; padding:6px 0; font-size:13px; color:var(--petroleo); border-bottom:1px solid #eee;">' +
+      '<input type="checkbox" class="chk-presente" value="' + escapeHtml(porCargo[c]) + ', ' + c + '">' +
+      '<span>' + escapeHtml(porCargo[c]) + ' — ' + c + '</span></label>'
+    ).join('');
   });
+}
+
+function obtenerPresentesSeleccionados() {
+  return Array.from(document.querySelectorAll('.chk-presente:checked')).map(c => c.value).join('; ');
 }
 
 function cerrarSesion() {
@@ -280,7 +288,7 @@ function generarDocumentos() {
     fechaReunionCD: document.getElementById('fFechaReunionCD').value,
     horaReunionCD: obtenerValorHora('fHoraReunionCD'),
     horaFinReunionCD: obtenerValorHora('fHoraFinReunionCD'),
-    presentesCD: document.getElementById('fPresentesCD').value,
+    presentesCD: obtenerPresentesSeleccionados(),
     motivoFueraDeTermino: document.getElementById('fMotivoFueraTermino').value,
     pin: PIN_SESION
   });

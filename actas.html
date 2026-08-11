@@ -133,8 +133,8 @@
           <span style="font-weight:900;">:</span>
           <select id="fHoraInicio_m" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
         </div>
-        <span class="field-label" style="color:var(--lima);">Presentes (separados por coma)</span>
-        <input type="text" id="fPresentes" placeholder="Javier Stefañuk, Augusto Coutada...">
+        <span class="field-label" style="color:var(--lima);">Presentes (tildá quiénes asistieron)</span>
+        <div id="listaPresentesActa" style="background:var(--blanco); border-radius:12px; padding:12px; max-height:220px; overflow-y:auto; margin-bottom:8px;">cargando autoridades...</div>
         <button type="button" class="btn-solid" style="margin-top:12px;" onclick="generarBorrador()">Generar borrador</button>
       </div>
 
@@ -250,6 +250,26 @@ function entrarApp() {
   cargarActas();
   poblarSelectorHora('fHoraInicio', '20:30');
   poblarSelectorHora('eHoraFin', '21:15');
+  precargarPresentesActa();
+}
+
+function precargarPresentesActa() {
+  jsonp(EXEC_URL_GI + '?action=listarAutoridades', function(res) {
+    const cont = document.getElementById('listaPresentesActa');
+    if (!res || !res.ok) { cont.textContent = 'No se pudo cargar Autoridades.'; return; }
+    const orden = ['Presidente','Vicepresidente','Secretario','Prosecretario','Tesorero','Protesorero','Vocal Titular 1°','Vocal Titular 2°','Vocal Titular 3°','Vocal Suplente 1°','Vocal Suplente 2°','Vocal Suplente 3°'];
+    const porCargo = {};
+    res.autoridades.forEach(a => { porCargo[a.cargo] = a.nombre; });
+    cont.innerHTML = orden.filter(c => porCargo[c]).map(c =>
+      '<label style="display:flex; align-items:center; gap:8px; padding:6px 0; font-size:13px; color:var(--petroleo); border-bottom:1px solid #eee;">' +
+      '<input type="checkbox" class="chk-presente-acta" value="' + escapeHtml(porCargo[c]) + ', ' + c + '">' +
+      '<span>' + escapeHtml(porCargo[c]) + ' — ' + c + '</span></label>'
+    ).join('');
+  });
+}
+
+function obtenerPresentesActaSeleccionados() {
+  return Array.from(document.querySelectorAll('.chk-presente-acta:checked')).map(c => c.value).join('; ');
 }
 
 function cerrarSesion() {
@@ -338,7 +358,7 @@ function toggleFormNuevaActa() {
 function generarBorrador() {
   const fecha = document.getElementById('fFechaReunion').value;
   const hora = obtenerValorHora('fHoraInicio');
-  const presentes = document.getElementById('fPresentes').value;
+  const presentes = obtenerPresentesActaSeleccionados();
   if (!fecha || !presentes) { mostrarAviso('Completá fecha y presentes'); return; }
   document.getElementById('loadingText').textContent = 'Generando borrador...';
   const params = 'action=generarBorradorActa&fechaReunion=' + encodeURIComponent(fecha) + '&horaInicio=' + encodeURIComponent(hora) + '&presentes=' + encodeURIComponent(presentes) + '&pin=' + encodeURIComponent(PIN_SESION);
@@ -346,7 +366,7 @@ function generarBorrador() {
     document.getElementById('loadingText').textContent = '';
     if (res && res.ok) {
       toggleFormNuevaActa();
-      document.getElementById('fPresentes').value = '';
+      document.querySelectorAll('.chk-presente-acta:checked').forEach(c => c.checked = false);
       cargarActas();
       cargarNotas();
       abrirEditor(res.idActa);
