@@ -68,6 +68,13 @@
   .loading-text { text-align: center; color: var(--petroleo); font-size: 13px; font-weight: 700; min-height: 20px; }
   .divider { border: none; border-top: 1.5px solid #9bb583; margin: 16px 0; }
   .empty-msg { text-align: center; color: var(--petroleo); opacity: .6; font-size: 13px; padding: 20px 0; }
+  .novedad-card { background: var(--blanco); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; }
+  .novedad-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .novedad-titulo { font-weight: 900; color: var(--petroleo); font-size: 13px; }
+  .novedad-fecha { font-size: 11px; color: var(--petroleo); opacity: .6; }
+  .novedad-desc { font-size: 12px; color: var(--petroleo); line-height: 1.4; }
+  .chip-categoria { display: inline-block; background: var(--petroleo); color: var(--verdecl); border-radius: 10px; padding: 2px 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-top: 6px; }
+  .form-panel { background: var(--petroleo); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
 
   .aviso-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
   .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 12px 32px rgba(0,0,0,0.35); text-align: center; }
@@ -117,6 +124,20 @@
       <span class="field-label">Nota suelta (texto de WhatsApp, decisión, comentario...)</span>
       <textarea id="notaTexto" placeholder="Pegá o escribí lo que pasó. Ej: 'Se decidió aprobar la compra de la desmalezadora, $450.000, votado por unanimidad'"></textarea>
       <button type="button" class="btn-solid" style="margin-top:10px;" onclick="agregarNota()">Agregar a la bitácora</button>
+
+      <hr class="divider">
+      <button type="button" class="btn-outline" onclick="toggleImportChatBitacora()">💬 Importar desde chat de WhatsApp</button>
+      <button type="button" class="btn-outline" onclick="sincronizarBoletinBitacora()">📰 Sincronizar con Boletín Mensual</button>
+
+      <div class="form-panel" id="importChatPanelBitacora" style="display:none; background:var(--petroleo); border-radius:16px; padding:16px; margin-top:10px;">
+        <span class="field-label" style="color:var(--lima); margin-bottom:4px; opacity:.8; font-weight:400; text-transform:none; font-size:11px;">Pegá un fragmento del chat exportado (una semana o un mes, no el año completo). La IA separa lo institucional, vos elegís a dónde va cada cosa.</span>
+        <textarea id="fTextoChatBitacora" style="min-height:140px; margin-top:8px;" placeholder="Pegá acá el texto exportado del chat..."></textarea>
+        <button type="button" class="btn-solid" style="margin-top:12px;" onclick="analizarChatBitacora()">Analizar chat</button>
+        <button type="button" class="btn-ghost" style="color:var(--hueso);" onclick="toggleImportChatBitacora()">Cancelar</button>
+      </div>
+
+      <div id="candidatosChatBitacoraContainer"></div>
+      <div id="candidatosBoletinBitacoraContainer"></div>
 
       <hr class="divider">
       <div class="field-label">Notas pendientes (sin usar en ningún acta)</div>
@@ -335,6 +356,149 @@ function agregarNota() {
       mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
     }
   });
+}
+
+// ===== IMPORTAR A BITÁCORA (chat + Boletín, mismo patrón de doble destino que Novedades) =====
+let CANDIDATOS_CHAT_BIT = [];
+let CANDIDATOS_BOLETIN_BIT = [];
+
+function toggleImportChatBitacora() {
+  const el = document.getElementById('importChatPanelBitacora');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function analizarChatBitacora() {
+  const texto = document.getElementById('fTextoChatBitacora').value;
+  if (!texto.trim()) { mostrarAviso('Pegá el texto del chat primero'); return; }
+  document.getElementById('loadingText').innerHTML = '<span class="spinner"></span> Analizando...';
+  jsonp(EXEC_URL_GI + '?action=extraerNovedadesDeChat&textoChat=' + encodeURIComponent(texto) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    document.getElementById('loadingText').textContent = '';
+    if (!res || !res.ok) { mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido')); return; }
+    CANDIDATOS_CHAT_BIT = res.candidatos.map(c => Object.assign({ destinoNovedades: !c.posibleDuplicadoDe, destinoBitacora: true }, c));
+    renderCandidatosChatBit();
+  });
+}
+
+function renderCandidatosChatBit() {
+  const cont = document.getElementById('candidatosChatBitacoraContainer');
+  if (CANDIDATOS_CHAT_BIT.length === 0) { cont.innerHTML = '<div class="empty-msg">No se encontró nada institucional relevante.</div>'; return; }
+  let html = '<div class="field-label">Sugerencias encontradas (' + CANDIDATOS_CHAT_BIT.length + ') — elegí a dónde va cada una</div>';
+  CANDIDATOS_CHAT_BIT.forEach((c, i) => {
+    const estiloDup = c.posibleDuplicadoDe ? 'border:2px solid var(--naranja);' : '';
+    html += '<div class="novedad-card" style="' + estiloDup + '">';
+    html += '<div class="novedad-header"><span class="novedad-titulo">' + escapeHtml(c.titulo) + '</span><span class="novedad-fecha">' + c.fecha + '</span></div>';
+    html += '<div class="novedad-desc">' + escapeHtml(c.descripcion) + '</div>';
+    if (c.posibleDuplicadoDe) html += '<div style="background:var(--naranja); border-radius:8px; padding:5px 8px; font-size:11px; font-weight:700; color:var(--petroleo); margin:6px 0;">⚠️ Posible duplicado de: ' + escapeHtml(c.posibleDuplicadoDe) + '</div>';
+    html += '<span class="chip-categoria">' + c.categoria + '</span>';
+    html += '<div style="display:flex; gap:16px; margin-top:8px;">';
+    html += '<label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--petroleo); font-weight:700;"><input type="checkbox" ' + (c.destinoNovedades ? 'checked' : '') + ' onchange="CANDIDATOS_CHAT_BIT[' + i + '].destinoNovedades=this.checked"> → Novedades</label>';
+    html += '<label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--petroleo); font-weight:700;"><input type="checkbox" ' + (c.destinoBitacora ? 'checked' : '') + ' onchange="CANDIDATOS_CHAT_BIT[' + i + '].destinoBitacora=this.checked"> → Bitácora</label>';
+    html += '</div></div>';
+  });
+  html += '<button type="button" class="btn-solid" onclick="guardarCandidatosChatBit()">Guardar</button>';
+  cont.innerHTML = html;
+}
+
+function construirMensajeGuardadoBit(res, txt) {
+  let msg = res.guardadas + ' novedades ' + txt + '.';
+  if (res.rechazadas && res.rechazadas.length > 0) msg += '\n\n⚠️ ' + res.rechazadas.length + ' no se guardaron:\n' + res.rechazadas.map(r => '• ' + r.titulo + ': ' + r.motivo).join('\n');
+  return msg;
+}
+
+function guardarCandidatosChatBit() {
+  const paraNov = CANDIDATOS_CHAT_BIT.filter(c => c.destinoNovedades);
+  const paraBit = CANDIDATOS_CHAT_BIT.filter(c => c.destinoBitacora);
+  if (paraNov.length === 0 && paraBit.length === 0) { mostrarAviso('No marcaste ningún destino'); return; }
+  let pendientes = (paraNov.length > 0 ? 1 : 0) + (paraBit.length > 0 ? 1 : 0);
+  let mensajes = [];
+  function terminar() {
+    pendientes--;
+    if (pendientes <= 0) {
+      mostrarAviso(mensajes.join('\n\n'));
+      CANDIDATOS_CHAT_BIT = [];
+      document.getElementById('candidatosChatBitacoraContainer').innerHTML = '';
+      document.getElementById('fTextoChatBitacora').value = '';
+      toggleImportChatBitacora();
+      cargarNotas();
+    }
+  }
+  if (paraNov.length > 0) {
+    jsonp(EXEC_URL_GI + '?action=guardarNovedadesSeleccionadas&novedades=' + encodeURIComponent(JSON.stringify(paraNov)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      mensajes.push(res && res.ok ? construirMensajeGuardadoBit(res, 'a Novedades') : 'Error en Novedades: ' + (res && res.error ? res.error : 'desconocido'));
+      terminar();
+    });
+  }
+  if (paraBit.length > 0) {
+    const notas = paraBit.map(c => ({ texto: c.titulo + ': ' + c.descripcion, cargadoPor: 'Importado de chat' }));
+    jsonp(EXEC_URL_GI + '?action=guardarNotasSeleccionadas&notas=' + encodeURIComponent(JSON.stringify(notas)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      mensajes.push(res && res.ok ? res.guardadas + ' notas agregadas a Bitácora.' : 'Error en Bitácora: ' + (res && res.error ? res.error : 'desconocido'));
+      terminar();
+    });
+  }
+}
+
+function sincronizarBoletinBitacora() {
+  document.getElementById('loadingText').innerHTML = '<span class="spinner"></span> Leyendo el Boletín...';
+  jsonp(EXEC_URL_GI + '?action=listarNovedadesDesdeBoletin', function(res) {
+    document.getElementById('loadingText').textContent = '';
+    if (!res || !res.ok) { mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido')); return; }
+    if (res.novedades.length === 0) { mostrarAviso('No hay nada nuevo en el Boletín.'); return; }
+    CANDIDATOS_BOLETIN_BIT = res.novedades.map(n => ({
+      idOrigen: n.idBoletin, titulo: n.titulo, descripcion: n.descripcion, fecha: n.fechaCarga,
+      categoria: 'General', destinoNovedades: true, destinoBitacora: true
+    }));
+    renderCandidatosBoletinBit();
+  });
+}
+
+function renderCandidatosBoletinBit() {
+  const cont = document.getElementById('candidatosBoletinBitacoraContainer');
+  if (CANDIDATOS_BOLETIN_BIT.length === 0) { cont.innerHTML = ''; return; }
+  let html = '<div class="field-label">Nuevo en el Boletín (' + CANDIDATOS_BOLETIN_BIT.length + ')</div>';
+  CANDIDATOS_BOLETIN_BIT.forEach((c, i) => {
+    html += '<div class="novedad-card">';
+    html += '<div class="novedad-header"><span class="novedad-titulo">' + escapeHtml(c.titulo) + '</span><span class="novedad-fecha">' + c.fecha + '</span></div>';
+    html += '<div class="novedad-desc">' + escapeHtml(c.descripcion) + '</div>';
+    html += '<input type="text" value="' + escapeHtml(c.categoria) + '" onchange="CANDIDATOS_BOLETIN_BIT[' + i + '].categoria=this.value" style="margin-top:6px; font-size:12px; padding:6px 8px;" placeholder="Categoría">';
+    html += '<div style="display:flex; gap:16px; margin-top:8px;">';
+    html += '<label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--petroleo); font-weight:700;"><input type="checkbox" ' + (c.destinoNovedades ? 'checked' : '') + ' onchange="CANDIDATOS_BOLETIN_BIT[' + i + '].destinoNovedades=this.checked"> → Novedades</label>';
+    html += '<label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--petroleo); font-weight:700;"><input type="checkbox" ' + (c.destinoBitacora ? 'checked' : '') + ' onchange="CANDIDATOS_BOLETIN_BIT[' + i + '].destinoBitacora=this.checked"> → Bitácora</label>';
+    html += '</div></div>';
+  });
+  html += '<button type="button" class="btn-solid" onclick="guardarCandidatosBoletinBit()">Guardar</button>';
+  cont.innerHTML = html;
+}
+
+function guardarCandidatosBoletinBit() {
+  const paraNov = CANDIDATOS_BOLETIN_BIT.filter(c => c.destinoNovedades).map(c => ({
+    fecha: c.fecha, titulo: c.titulo, descripcion: c.descripcion, categoria: c.categoria, origen: 'BOLETIN', idOrigen: c.idOrigen
+  }));
+  const paraBit = CANDIDATOS_BOLETIN_BIT.filter(c => c.destinoBitacora);
+  if (paraNov.length === 0 && paraBit.length === 0) { mostrarAviso('No marcaste ningún destino'); return; }
+  let pendientes = (paraNov.length > 0 ? 1 : 0) + (paraBit.length > 0 ? 1 : 0);
+  let mensajes = [];
+  function terminar() {
+    pendientes--;
+    if (pendientes <= 0) {
+      mostrarAviso(mensajes.join('\n\n'));
+      CANDIDATOS_BOLETIN_BIT = [];
+      document.getElementById('candidatosBoletinBitacoraContainer').innerHTML = '';
+      cargarNotas();
+    }
+  }
+  if (paraNov.length > 0) {
+    jsonp(EXEC_URL_GI + '?action=guardarNovedadesSeleccionadas&novedades=' + encodeURIComponent(JSON.stringify(paraNov)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      mensajes.push(res && res.ok ? construirMensajeGuardadoBit(res, 'importadas a Novedades') : 'Error en Novedades: ' + (res && res.error ? res.error : 'desconocido'));
+      terminar();
+    });
+  }
+  if (paraBit.length > 0) {
+    const notas = paraBit.map(c => ({ texto: c.titulo + ': ' + c.descripcion, cargadoPor: 'Importado del Boletín' }));
+    jsonp(EXEC_URL_GI + '?action=guardarNotasSeleccionadas&notas=' + encodeURIComponent(JSON.stringify(notas)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      mensajes.push(res && res.ok ? res.guardadas + ' notas agregadas a Bitácora.' : 'Error en Bitácora: ' + (res && res.error ? res.error : 'desconocido'));
+      terminar();
+    });
+  }
 }
 
 function cargarNotas() {
