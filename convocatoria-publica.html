@@ -32,8 +32,8 @@
   .aviso-box { background: #f5f3ec; border-radius: 10px; padding: 14px 16px; margin-top: 18px; }
   .aviso-box div { color: #135457; font-size: 12px; line-height: 1.7; }
 
-  .cta { display: block; text-align: center; background: #deaf4d; border-radius: 10px; padding: 14px 16px; margin-top: 22px; }
-  .cta .label { color: #135457; font-size: 11px; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; }
+  .cta { display: block; text-align: center; background: #deaf4d; border-radius: 10px; padding: 14px 16px 16px; margin-top: 22px; }
+  .cta .label { color: #135457; font-size: 11px; font-weight: bold; text-transform: uppercase; margin: 0 0 8px; line-height: 1; }
   .cta a { display: inline-block; background: #135457; color: #c4df57; font-size: 12px; font-weight: bold; text-transform: uppercase; padding: 9px 20px; border-radius: 20px; text-decoration: none; }
 
   .firma { color: #135457; font-size: 14px; line-height: 1.6; margin: 22px 0 0; text-align: center; font-weight: bold; }
@@ -103,9 +103,9 @@ jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(res) {
 
   html += '<div class="aviso-box"><div>Conforme al Estatuto Social, si a la hora fijada no se reuniera la mayoría absoluta de los asociados con derecho a voto, la Asamblea se celebrará válidamente una hora después, con los socios presentes.<br><br>Solo pueden participar y votar los socios activos que se encuentren al día con el pago de sus cuotas sociales.</div></div>';
 
-  html += '<div class="cta"><div class="label">Consultas y gestiones</div><a href="https://clubdecampolaeugenia.taplink.site/" target="_blank">Ir al Centro de Gestión Vecinal</a></div>';
+  html += '<div class="firma">Comisión Directiva<br>Asociación Civil La Eugenia</div>';
 
-  html += '<div class="firma">Comisión Directiva<br>Club de Campo La Eugenia</div>';
+  html += '<div class="cta"><div class="label">Consultas y gestiones</div><a href="https://clubdecampolaeugenia.taplink.site/" target="_blank">Ir al Centro de Gestión Vecinal</a></div>';
 
   cuerpo.innerHTML = html;
 });
