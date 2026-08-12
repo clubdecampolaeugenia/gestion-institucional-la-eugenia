@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#135457">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="icon" type="image/png" href="logo.png">
+<title>Convocatoria a Asamblea — Club de Campo La Eugenia</title>
+<meta property="og:title" content="Convocatoria a Asamblea General Ordinaria — Club de Campo La Eugenia">
+<meta property="og:description" content="Fecha, hora, lugar y Orden del Día de la próxima Asamblea">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --petroleo: #135457; --lima: #c4df57; --naranja: #deaf4d; --verdecl: #b7d6b5;
+    --blanco: #ffffff; --hueso: #f5f3ec; --negro: #000000;
+  }
+  body { margin: 0; min-height: 100vh; background: var(--petroleo); font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
+  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 600px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
+  .logo-wrap img { width: 130px; display: block; margin: 0 auto; filter: drop-shadow(0 4px 7px rgba(0,0,0,0.2)); }
+  h1 { margin: 10px 0 4px; color: var(--negro); font-family: Impact, sans-serif; font-size: 24px; letter-spacing: 1px; text-transform: uppercase; text-align: center; line-height: 1.15; }
+  .subtitle { text-align: center; color: var(--petroleo); font-size: 13px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: .5px; font-weight: 700; }
+
+  .datos-box { background: var(--petroleo); border-radius: 18px; padding: 20px; margin-bottom: 20px; }
+  .dato-linea { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .dato-linea:last-child { margin-bottom: 0; }
+  .dato-icono { font-size: 22px; width: 30px; text-align: center; }
+  .dato-texto { color: var(--hueso); font-size: 15px; font-weight: 700; line-height: 1.3; }
+  .dato-texto .chico { font-size: 11px; opacity: .75; font-weight: 400; text-transform: uppercase; display: block; margin-bottom: 2px; }
+
+  .orden-titulo { font-family: Impact, sans-serif; font-size: 16px; color: var(--petroleo); text-transform: uppercase; margin-bottom: 12px; text-align: center; }
+  .orden-lista { background: var(--blanco); border-radius: 18px; padding: 18px 20px; margin-bottom: 20px; }
+  .orden-item { font-size: 13px; color: var(--petroleo); line-height: 1.5; margin-bottom: 12px; text-align: justify; }
+  .orden-item:last-child { margin-bottom: 0; }
+
+  .aviso-quorum { background: var(--naranja); border-radius: 14px; padding: 14px 16px; font-size: 12px; color: var(--petroleo); text-align: center; line-height: 1.5; margin-bottom: 16px; }
+  .footer-firma { text-align: center; color: var(--petroleo); font-size: 12px; font-weight: 900; text-transform: uppercase; margin-top: 8px; }
+
+  .loading { text-align: center; color: var(--petroleo); font-weight: 700; padding: 40px 0; }
+  .error-box { background: var(--blanco); border-radius: 14px; padding: 20px; text-align: center; color: var(--petroleo); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="card" id="tarjeta">
+  <div class="logo-wrap"><img src="logo.png" alt="Logo La Eugenia"></div>
+  <h1>Convocatoria a<br>Asamblea General Ordinaria</h1>
+  <div class="subtitle">Club de Campo La Eugenia — Garupá, Misiones</div>
+  <div class="loading" id="loading">Cargando...</div>
+  <div id="contenido" style="display:none;"></div>
+</div>
+
+<script>
+const EXEC_URL_GI = 'https://script.google.com/macros/s/AKfycbyBxlDAteVncpf2hyQ-Nna6YZjMiZodntG9gZZ9aPXPei1As_yhqMUCnjnM9mHmJYYZJg/exec';
+
+function jsonp(url, cb) {
+  const cbName = 'cb_' + Date.now() + Math.floor(Math.random()*100000);
+  window[cbName] = function(res) { delete window[cbName]; document.body.removeChild(script); cb(res); };
+  const script = document.createElement('script');
+  script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+  document.body.appendChild(script);
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(res) {
+  document.getElementById('loading').style.display = 'none';
+  const cont = document.getElementById('contenido');
+  cont.style.display = 'block';
+
+  if (!res || !res.ok) {
+    cont.innerHTML = '<div class="error-box">Todavía no hay una Asamblea convocada.</div>';
+    return;
+  }
+
+  const fecha = new Date(res.fecha);
+  const fechaLegible = fecha.toLocaleDateString('es-AR', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  let html = '<div class="datos-box">';
+  html += '<div class="dato-linea"><span class="dato-icono">📅</span><div class="dato-texto"><span class="chico">Fecha</span>' + fechaLegible + '</div></div>';
+  html += '<div class="dato-linea"><span class="dato-icono">🕓</span><div class="dato-texto"><span class="chico">Hora</span>' + res.hora + ' hs</div></div>';
+  html += '<div class="dato-linea"><span class="dato-icono">📍</span><div class="dato-texto"><span class="chico">Lugar</span>' + escapeHtml(res.lugar) + '</div></div>';
+  html += '</div>';
+
+  html += '<div class="orden-titulo">Orden del Día</div>';
+  html += '<div class="orden-lista">';
+  if (res.ordenDelDia && res.ordenDelDia.length > 0) {
+    res.ordenDelDia.forEach(punto => { html += '<div class="orden-item">' + escapeHtml(punto) + '</div>'; });
+  } else {
+    html += '<div class="orden-item" style="opacity:.6;">Todavía no se cargó el Orden del Día.</div>';
+  }
+  html += '</div>';
+
+  html += '<div class="aviso-quorum">Conforme al Estatuto Social, si a la hora fijada no se reuniera la mayoría absoluta de los asociados con derecho a voto, la Asamblea se celebrará válidamente una hora después, con los socios presentes.<br><br>Solo pueden participar y votar los socios activos al día con sus cuotas sociales.</div>';
+
+  html += '<div class="footer-firma">Comisión Directiva</div>';
+
+  cont.innerHTML = html;
+});
+</script>
+</body>
+</html>
