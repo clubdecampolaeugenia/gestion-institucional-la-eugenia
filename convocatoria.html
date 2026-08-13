@@ -415,7 +415,11 @@ function mostrarResultado(res) {
       (aprobado
         ? '<span class="btn-small" style="background:var(--petroleo); color:var(--lima); cursor:default;">✓ Aprobado</span>'
         : '<button type="button" class="btn-small" onclick="aprobarDocumento(this)">Aprobar</button>') +
-      '</div></div><div class="doc-texto">' + escapeHtml(d.contenido) + '</div></div>';
+      '</div></div><div class="doc-texto">' + escapeHtml(d.contenido) + '</div>';
+    if (d.tipo === 'CIRCULAR') {
+      html += '<div style="background:var(--hueso); border-radius:10px; padding:10px 12px; margin-top:10px; font-size:11px; color:var(--petroleo); line-height:1.5;">Este documento de texto normalmente se suple por su versión en HTML (el mismo contenido, con diseño), que es la que efectivamente se remite a los socios por mail desde la app del Boletín Mensual. <a href="https://clubdecampolaeugenia.github.io/boletin-la-eugenia/admin.html" target="_blank" style="color:var(--petroleo); font-weight:900; text-decoration:underline;">Ir al Boletín →</a></div>';
+    }
+    html += '</div>';
   });
   cont.innerHTML = html;
 }
