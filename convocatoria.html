@@ -287,6 +287,21 @@ function aprobarDocumento(btn) {
   });
 }
 
+function borrarDocumento(btn) {
+  const box = btn.closest('.doc-box');
+  const idDocumento = box.dataset.idDocumento;
+  if (!idDocumento) { mostrarAviso('Este documento todavía no tiene ID (recargá la página).'); return; }
+  mostrarConfirmacion('¿Borrar este documento? No se puede deshacer.', function() {
+    jsonp(EXEC_URL_GI + '?action=eliminarDocumento&idDocumento=' + encodeURIComponent(idDocumento) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      if (res && res.ok) {
+        box.remove();
+      } else {
+        mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+      }
+    });
+  });
+}
+
 function mostrarConfirmacion(mensaje, callbackAceptar) {
   const overlay = document.createElement('div');
   overlay.className = 'aviso-overlay';
@@ -415,6 +430,7 @@ function mostrarResultado(res) {
       (aprobado
         ? '<span class="btn-small" style="background:var(--petroleo); color:var(--lima); cursor:default;">✓ Aprobado</span>'
         : '<button type="button" class="btn-small" onclick="aprobarDocumento(this)">Aprobar</button>') +
+      '<button type="button" class="btn-small" style="background:var(--error); color:var(--hueso);" onclick="borrarDocumento(this)">Borrar</button>' +
       '</div></div><div class="doc-texto">' + escapeHtml(d.contenido) + '</div>';
     if (d.tipo === 'CIRCULAR') {
       html += '<div style="background:var(--hueso); border-radius:10px; padding:10px 12px; margin-top:10px; font-size:11px; color:var(--petroleo); line-height:1.5;">Este documento de texto normalmente se suple por su versión en HTML (el mismo contenido, con diseño), que es la que efectivamente se remite a los socios por mail desde la app del Boletín Mensual. <a href="https://clubdecampolaeugenia.github.io/boletin-la-eugenia/admin.html" target="_blank" style="color:var(--petroleo); font-weight:900; text-decoration:underline;">Ir al Boletín →</a></div>';
