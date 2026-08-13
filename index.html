@@ -201,7 +201,7 @@ let PIN_SESION = '';
 const HITOS = [
   { nombre: 'Ejercicio cerrado', detalle: 'Cierre del período contable (30/04/2026) — distinto del cierre institucional que se hace con la Asamblea', estado: 'COMPLETO', link: null, manual: true },
   { nombre: 'Balance', detalle: 'Recibido, con errores detectados (entidad y fechas)', estado: 'OBSERVADO', link: 'balance.html', manual: false },
-  { nombre: 'Informe Comisión Revisora', detalle: 'Falta informe formal firmado (Art. 36)', estado: 'PENDIENTE', link: 'informe-revisor.html', manual: false },
+  { nombre: 'Informe Comisión Revisora', detalle: 'cargando...', estado: 'PENDIENTE', link: 'informe-revisor.html', manual: false },
   { nombre: 'Memoria', detalle: 'cargando...', estado: 'PENDIENTE', link: 'memoria.html', manual: false },
   { nombre: 'Acta CD, Convocatoria y Edictos', detalle: 'cargando...', estado: 'PENDIENTE', link: 'convocatoria.html', manual: false },
   { nombre: 'Autoridades', detalle: 'cargando...', estado: 'PROGRESO', link: 'autoridades.html', manual: false },
@@ -266,6 +266,7 @@ function entrarApp() {
   cargarEstadoActas();
   cargarEstadoBalance();
   cargarEstadoMemoria();
+  cargarEstadoInformeRevisor();
   cargarEjercicioActivo();
   cargarFechaAsamblea();
   cargarEstadoConvocatoria();
@@ -622,6 +623,20 @@ function cargarEstadoMemoria() {
     } else {
       actualizarHito('Memoria', 'PROGRESO', 'Versión ' + ultima.version + ' — borrador, falta revisión y aprobación');
     }
+  });
+}
+
+function cargarEstadoInformeRevisor() {
+  jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(resEj) {
+    if (!resEj || !resEj.ok) return;
+    jsonp(EXEC_URL_GI + '?action=listarDocumentos&tipo=INFORME_REVISOR&idEjercicio=' + encodeURIComponent(resEj.ejercicio.idEjercicio), function(res) {
+      if (!res || !res.ok || res.documentos.length === 0) {
+        actualizarHito('Informe Comisión Revisora', 'PENDIENTE', 'Falta informe formal firmado (Art. 36)');
+        return;
+      }
+      const ultimo = res.documentos[0];
+      actualizarHito('Informe Comisión Revisora', 'COMPLETO', 'Versión ' + ultimo.version + ' — recibido y registrado');
+    });
   });
 }
 </script>
