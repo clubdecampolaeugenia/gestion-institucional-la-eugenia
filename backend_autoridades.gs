@@ -18,34 +18,6 @@ const HOJA_AUTORIDADES = 'AUTORIDADES';
 
 const PINES_CGV_SHEET_ID = '1altioUeYlQW8NXWYVjHf5v_4ocJuQ-K9N0EfdYQSoBc';
 
-function debugPin(pin) {
-  const info = { pinRecibido: pin };
-  try {
-    const ss = SpreadsheetApp.openById(PINES_CGV_SHEET_ID);
-    info.nombresDeHojas = ss.getSheets().map(s => s.getName());
-
-    const hoja = ss.getSheetByName('PINES_CGV');
-    info.encontroHojaPorNombre = !!hoja;
-
-    const hojaUsada = hoja || ss.getSheets()[0];
-    const datos = hojaUsada.getDataRange().getValues();
-    info.totalFilas = datos.length;
-    info.primeras3Filas = datos.slice(0, 3);
-
-    let filaHeaders = -1;
-    for (let i = 0; i < datos.length; i++) {
-      if (datos[i].indexOf('PIN') !== -1) { filaHeaders = i; break; }
-    }
-    info.filaHeadersDetectada = filaHeaders;
-    if (filaHeaders !== -1) info.headersEncontrados = datos[filaHeaders];
-
-    info.resultadoValidacion = validarPinInterno(pin, 'gestion-institucional');
-  } catch (err) {
-    info.excepcion = err.message;
-  }
-  return { ok: true, debug: info };
-}
-
 function validarPinInterno(pin, moduloRequerido) {
   if (!pin) return false;
   const hoja = SpreadsheetApp.openById(PINES_CGV_SHEET_ID).getSheetByName('PINES_CGV');
@@ -75,7 +47,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -118,10 +90,8 @@ function doGet(e) {
       resultado = obtenerBalance(e.parameter.idBalance);
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(e.parameter);
-    } else if (action === 'debugPin') {
-      resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v45-fuente-unica-fecha-asamblea-12ago-2000' };
+      resultado = { ok: true, version: 'v48-seguridad-bloque1-13ago-0900' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -170,6 +140,8 @@ function doGet(e) {
       resultado = obtenerUltimosSocios(e.parameter);
     } else if (action === 'listarDocumentos') {
       resultado = listarDocumentos(e.parameter);
+    } else if (action === 'eliminarDocumento') {
+      resultado = eliminarDocumento(e.parameter);
     } else if (action === 'actualizarDocumento') {
       resultado = actualizarDocumento(e.parameter);
     } else if (action === 'extraerNovedadesDeChat') {
@@ -1650,7 +1622,8 @@ function generarConvocatoriaYDocumentos(params) {
   // quedan intactas, esta función nunca las toca.
   hojaAsam.getRange(filaExistente, 6).setValue(JSON.stringify(puntos));
 
-  const fechaAsambleaFmt = Utilities.formatDate(fechaAsamblea, Session.getScriptTimeZone(), "dd 'de' MMMM 'de' yyyy");
+  const MESES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fechaAsambleaFmt = Utilities.formatDate(fechaAsamblea, Session.getScriptTimeZone(), 'dd') + ' de ' + MESES_ES[fechaAsamblea.getMonth()] + ' de ' + Utilities.formatDate(fechaAsamblea, Session.getScriptTimeZone(), 'yyyy');
 
   // ---- 1. Acta de Comisión Directiva ----
   let actaCD = 'ACTA N.º ' + nuevoNumeroActa + '\n\n';
@@ -1672,7 +1645,7 @@ function generarConvocatoriaYDocumentos(params) {
   let edictoBoletin = edictoDiario + '\n\n[Publíquese 2 (dos) días en el Boletín Oficial de la Provincia de Misiones. El plazo de 15 días corridos se cuenta desde la última publicación hasta la Asamblea.]';
 
   // ---- 4. Circular a socios ----
-  let circular = 'Señores Socios:\n\nPor medio de la presente, la Comisión Directiva convoca a la Asamblea General Ordinaria, que se celebrará el día ' + fechaAsambleaFmt + ', a las ' + horaAsamblea + ' horas, en ' + lugarAsamblea + ', para tratar el siguiente:\n\nORDEN DEL DÍA\n\n' + ordenDelDiaTexto;
+  let circular = 'CIRCULAR\n\nSeñores Socios:\n\nPor medio de la presente circular, conforme al artículo 41 del Estatuto Social, la Comisión Directiva convoca a la Asamblea General Ordinaria, que se celebrará el día ' + fechaAsambleaFmt + ', a las ' + horaAsamblea + ' horas, en ' + lugarAsamblea + ', para tratar el siguiente:\n\nORDEN DEL DÍA\n\n' + ordenDelDiaTexto;
   circular += '\n\nRecordamos que, conforme a los artículos 13 y 47 del Estatuto Social, solo podrán participar y votar los socios activos que se encuentren al día con el pago de sus cuotas sociales.\n\nCOMISIÓN DIRECTIVA';
 
   // Guarda los 4 documentos en la tabla única
@@ -1867,6 +1840,19 @@ function listarDocumentos(params) {
   }
   documentos.sort((a, b) => b.version - a.version);
   return { ok: true, documentos: documentos };
+}
+
+function eliminarDocumento(params) {
+  if (!params.idDocumento) return { ok: false, error: 'ID requerido' };
+  const hoja = getHojaDocumentos();
+  const datos = hoja.getDataRange().getValues();
+  for (let i = 1; i < datos.length; i++) {
+    if (datos[i][0] === params.idDocumento) {
+      hoja.deleteRow(i + 1);
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'No encontrado' };
 }
 
 function actualizarDocumento(params) {
