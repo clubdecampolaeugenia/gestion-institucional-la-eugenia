@@ -47,7 +47,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -62,6 +62,10 @@ function doGet(e) {
   try {
     if (action === 'listarAutoridades') {
       resultado = listarAutoridades();
+    } else if (action === 'listarAutoridadesTodas') {
+      resultado = listarAutoridadesTodas();
+    } else if (action === 'eliminarAutoridad') {
+      resultado = eliminarAutoridad(e.parameter);
     } else if (action === 'guardarAutoridad') {
       resultado = guardarAutoridad(e.parameter);
     } else if (action === 'guardarNota') {
@@ -217,12 +221,61 @@ function listarAutoridades() {
   return { ok: true, autoridades: autoridades.filter(a => a.estado === 'VIGENTE'), vencenEsteAnio: vencenEsteAnio };
 }
 
+// Igual que listarAutoridades pero sin filtrar por estado -- incluye FINALIZADO.
+// Sirve para detectar duplicados o filas cargadas por error y poder eliminarlas.
+function listarAutoridadesTodas() {
+  const hoja = getHoja();
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const idx = {};
+  headers.forEach((h, i) => idx[h] = i);
+
+  const autoridades = [];
+  for (let i = 1; i < datos.length; i++) {
+    const fila = datos[i];
+    if (!fila[idx.NOMBRE]) continue; // fila vacía
+    autoridades.push({
+      fila: i + 1, // número de fila real en la hoja, útil para depurar
+      idAutoridad: fila[idx.ID_AUTORIDAD],
+      organo: fila[idx.ORGANO],
+      cargo: fila[idx.CARGO],
+      grupoEstatutario: fila[idx.GRUPO_ESTATUTARIO],
+      nombre: fila[idx.NOMBRE],
+      dni: fila[idx.DNI],
+      fechaInicioMandato: fila[idx.FECHA_INICIO_MANDATO] ? Utilities.formatDate(new Date(fila[idx.FECHA_INICIO_MANDATO]), Session.getScriptTimeZone(), 'dd/MM/yyyy') : '',
+      fechaFinMandato: fila[idx.FECHA_FIN_MANDATO] ? Utilities.formatDate(new Date(fila[idx.FECHA_FIN_MANDATO]), Session.getScriptTimeZone(), 'dd/MM/yyyy') : '',
+      estado: fila[idx.ESTADO]
+    });
+  }
+  return { ok: true, autoridades: autoridades };
+}
+
+// Borra directamente una fila de AUTORIDADES por ID. Pensado para errores de carga
+// (fecha mal tipeada, duplicados) -- no para bajas reales de un cargo, eso es guardarAutoridad
+// (que cierra el VIGENTE anterior y agrega el reemplazo real).
+function eliminarAutoridad(params) {
+  if (!params.idAutoridad) return { ok: false, error: 'ID requerido' };
+  const hoja = getHoja();
+  const datos = hoja.getDataRange().getValues();
+  const idx = {};
+  datos[0].forEach((h, i) => idx[h] = i);
+
+  for (let i = 1; i < datos.length; i++) {
+    if (String(datos[i][idx.ID_AUTORIDAD]) === String(params.idAutoridad)) {
+      hoja.deleteRow(i + 1);
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'No encontrado' };
+}
+
 // Grupo estatutario automático por cargo (Art. 21/22 del Estatuto)
 const GRUPO_POR_CARGO = {
   'Presidente': 2, 'Secretario': 2, 'Tesorero': 2,
   'Vocal Titular 1°': 2, 'Vocal Titular 2°': 2, 'Vocal Titular 3°': 2,
   'Vicepresidente': 1, 'Prosecretario': 1, 'Protesorero': 1,
   'Vocal Suplente 1°': 1, 'Vocal Suplente 2°': 1, 'Vocal Suplente 3°': 1
+
 };
 
 function calcularFechaFinMandato(organo, cargo, fechaInicio) {

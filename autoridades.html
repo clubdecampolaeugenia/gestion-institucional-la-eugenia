@@ -48,6 +48,16 @@
   .vence-este-anio { background: var(--error); color: var(--blanco); }
   .vacante-card { background: rgba(192,57,43,0.12); border: 2px dashed var(--error); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; color: var(--error); font-weight: 700; font-size: 13px; text-align: center; }
 
+  .historial-card { background: var(--blanco); border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .historial-card.finalizado { opacity: .65; }
+  .historial-card.duplicado { border: 2px solid var(--error); }
+  .historial-info { flex: 1; font-size: 12px; color: var(--petroleo); line-height: 1.5; }
+  .historial-estado-badge { font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 3px 8px; border-radius: 12px; margin-left: 6px; }
+  .historial-estado-vigente { background: var(--verdecl); }
+  .historial-estado-finalizado { background: #ddd; }
+  .historial-dup-tag { color: var(--error); font-weight: 900; font-size: 10px; text-transform: uppercase; }
+  .btn-eliminar-mini { background: var(--error); color: var(--blanco); border: none; border-radius: 12px; padding: 8px 12px; font-family: 'Roboto'; font-size: 11px; font-weight: 900; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+
   .form-panel { background: var(--petroleo); border-radius: 16px; padding: 16px; margin-top: 14px; display: none; }
   .form-panel.open { display: block; }
   .field-label { color: var(--lima); font-size: 11px; font-weight: 900; text-transform: uppercase; margin: 10px 0 4px; display: block; }
@@ -108,6 +118,10 @@
     </div>
 
     <div id="listaOrganos"></div>
+
+    <hr class="divider">
+    <div class="instr-toggle" onclick="toggleHistorial()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">Ver / limpiar historial completo <span id="historialFlecha">▾</span></div>
+    <div id="historialBox" style="display:none;"></div>
 
     <div class="loading-text" id="loadingText"></div>
     <hr class="divider">
@@ -278,6 +292,82 @@ function guardarAutoridad() {
       cargarAutoridades();
     } else {
       mostrarAviso('Error al guardar: ' + (res && res.error ? res.error : 'desconocido'));
+    }
+  });
+}
+
+let HISTORIAL_CARGADO = false;
+
+function toggleHistorial() {
+  const box = document.getElementById('historialBox');
+  const flecha = document.getElementById('historialFlecha');
+  const abrir = box.style.display === 'none';
+  box.style.display = abrir ? 'block' : 'none';
+  flecha.textContent = abrir ? '▴' : '▾';
+  if (abrir && !HISTORIAL_CARGADO) cargarHistorialCompleto();
+}
+
+function cargarHistorialCompleto() {
+  document.getElementById('historialBox').innerHTML = '<div class="loading-text">Cargando historial...</div>';
+  jsonp(EXEC_URL_GI + '?action=listarAutoridadesTodas', function(res) {
+    if (!res || !res.ok) {
+      document.getElementById('historialBox').innerHTML = '<div class="loading-text">No se pudo cargar el historial.</div>';
+      return;
+    }
+    HISTORIAL_CARGADO = true;
+    renderHistorial(res.autoridades);
+  });
+}
+
+function renderHistorial(autoridades) {
+  const box = document.getElementById('historialBox');
+  if (autoridades.length === 0) {
+    box.innerHTML = '<div class="loading-text">Sin registros.</div>';
+    return;
+  }
+
+  // Duplicado = mismo órgano + cargo + nombre en más de una fila (típicamente un error de carga
+  // vuelto a cargar en vez de corregido, o el mismo cargo cargado dos veces por accidente).
+  const claves = {};
+  autoridades.forEach(a => {
+    const clave = a.organo + '|' + a.cargo + '|' + a.nombre;
+    claves[clave] = (claves[clave] || 0) + 1;
+  });
+
+  box.innerHTML = '<div style="font-size:11px; color:var(--petroleo); opacity:.8; margin-bottom:10px;">Acá se ve todo lo cargado alguna vez, incluidas las finalizadas. Marcadas en rojo: mismo cargo y persona cargados más de una vez -- probablemente un error de carga para eliminar.</div>';
+
+  autoridades
+    .slice()
+    .sort((a, b) => (a.organo + a.cargo).localeCompare(b.organo + b.cargo))
+    .forEach(a => {
+      const clave = a.organo + '|' + a.cargo + '|' + a.nombre;
+      const esDuplicado = claves[clave] > 1;
+      const div = document.createElement('div');
+      div.className = 'historial-card' + (a.estado !== 'VIGENTE' ? ' finalizado' : '') + (esDuplicado ? ' duplicado' : '');
+      div.innerHTML =
+        '<div class="historial-info">' +
+        '<strong>' + a.nombre + '</strong> — ' + a.cargo + (esDuplicado ? ' <span class="historial-dup-tag">⚠ duplicado</span>' : '') + '<br>' +
+        NOMBRES_ORGANO[a.organo] + ' · ' + a.fechaInicioMandato + ' a ' + a.fechaFinMandato +
+        '<span class="historial-estado-badge historial-estado-' + (a.estado === 'VIGENTE' ? 'vigente' : 'finalizado') + '">' + a.estado + '</span>' +
+        '</div>';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn-eliminar-mini';
+      btn.textContent = 'Eliminar';
+      btn.onclick = () => eliminarAutoridadUI(a.idAutoridad, a.nombre, a.cargo);
+      div.appendChild(btn);
+      box.appendChild(div);
+    });
+}
+
+function eliminarAutoridadUI(idAutoridad, nombre, cargo) {
+  if (!confirm('¿Eliminar definitivamente el registro de "' + nombre + '" (' + cargo + ')? Esto borra la fila del historial, no se puede deshacer.')) return;
+  jsonp(EXEC_URL_GI + '?action=eliminarAutoridad&idAutoridad=' + encodeURIComponent(idAutoridad) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    if (res && res.ok) {
+      cargarHistorialCompleto();
+      cargarAutoridades();
+    } else {
+      mostrarAviso('Error al eliminar: ' + (res && res.error ? res.error : 'desconocido'));
     }
   });
 }
