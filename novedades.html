@@ -192,8 +192,14 @@ let FILTRO_ACTUAL = null;
 document.addEventListener('DOMContentLoaded', function() {
   const savedPin = localStorage.getItem('cgv_pin');
   if (!savedPin) return;
-  PIN_SESION = savedPin;
-  entrarApp();
+  jsonp(EXEC_URL_PINES_CGV_CHECK + '?action=validarPin&pin=' + encodeURIComponent(savedPin) + '&modulo=gestion-institucional', function(res) {
+    if (res && res.ok && res.valido) {
+      PIN_SESION = savedPin;
+      entrarApp();
+    } else {
+      localStorage.removeItem('cgv_pin');
+    }
+  });
 });
 
 function toggleInstrucciones() {

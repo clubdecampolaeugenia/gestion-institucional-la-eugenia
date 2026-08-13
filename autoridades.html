@@ -146,11 +146,17 @@ document.addEventListener('DOMContentLoaded', function() {
   actualizarCargos();
   const savedPin = localStorage.getItem('cgv_pin');
   if (!savedPin) return;
-  PIN_SESION = savedPin;
-  document.getElementById('pinScreen').style.display = 'none';
-  document.getElementById('mainScreen').style.display = 'block';
-  document.getElementById('mainScreen').classList.add('active');
-  cargarAutoridades();
+  jsonp(EXEC_URL_PINES_CGV_CHECK + '?action=validarPin&pin=' + encodeURIComponent(savedPin) + '&modulo=gestion-institucional', function(res) {
+    if (res && res.ok && res.valido) {
+      PIN_SESION = savedPin;
+      document.getElementById('pinScreen').style.display = 'none';
+      document.getElementById('mainScreen').style.display = 'block';
+      document.getElementById('mainScreen').classList.add('active');
+      cargarAutoridades();
+    } else {
+      localStorage.removeItem('cgv_pin');
+    }
+  });
 });
 
 function toggleInstrucciones() {
