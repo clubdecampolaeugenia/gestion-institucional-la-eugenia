@@ -375,9 +375,6 @@ function generarDocumentos() {
 
   const params = new URLSearchParams({
     action: 'generarConvocatoriaYDocumentos',
-    fechaAsamblea: DATOS_ASAMBLEA_REAL.fecha,
-    horaAsamblea: DATOS_ASAMBLEA_REAL.hora,
-    lugarAsamblea: DATOS_ASAMBLEA_REAL.lugar,
     fechaReunionCD: obtenerValorFechaDDMM('fFechaReunionCD'),
     horaReunionCD: obtenerValorHora('fHoraReunionCD'),
     horaFinReunionCD: obtenerValorHora('fHoraFinReunionCD'),

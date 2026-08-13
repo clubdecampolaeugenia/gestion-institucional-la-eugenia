@@ -34,6 +34,9 @@
 
   .instr-box { background: var(--petroleo); border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; font-size: 13px; color: var(--hueso); line-height: 1.5; }
   .bloqueo-box { background: #e8e8e8; border-radius: 16px; padding: 16px; margin-bottom: 16px; color: #888; font-size: 13px; font-weight: 700; text-align: center; }
+  .progreso-barra-fondo { background: rgba(255,255,255,0.15); border-radius: 20px; height: 10px; overflow: hidden; }
+  .progreso-barra-fill { height: 100%; border-radius: 20px; transition: width .4s ease; }
+  .progreso-pct { text-align: right; font-size: 11px; font-weight: 900; margin-top: 4px; }
   #contenidoDisponible.modo-bloqueado { filter: grayscale(1); opacity: .55; pointer-events: none; user-select: none; }
 
   .btn-solid { display: block; width: 100%; padding: 14px; border-radius: 24px; border: 2px solid var(--petroleo); background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
@@ -76,6 +79,11 @@
   </div>
 
   <div id="mainScreen">
+    <div style="font-size:11px; font-weight:900; text-transform:uppercase; color:var(--petroleo); margin-bottom:6px;">Resultado de la Asamblea Ordinaria</div>
+    <div class="progreso-barra-fondo"><div class="progreso-barra-fill" id="progresoAsambleaFill" style="width:0%; background:var(--naranja);"></div></div>
+    <div class="progreso-pct" id="progresoAsambleaPct" style="color:var(--petroleo);">calculando...</div>
+    <div style="margin-bottom:14px;"></div>
+
     <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
     <div id="instrBox" class="instr-box" style="display:none;">
       Este módulo se usa <strong>el día de la Asamblea</strong>, para registrar lo que va pasando durante el evento. Tiene 3 pasos, en orden:<br><br>
@@ -194,7 +202,39 @@ function entrarApp() {
   document.getElementById('mainScreen').style.display = 'block';
   document.getElementById('mainScreen').classList.add('active');
   chequearFechaYHabilitar();
+  actualizarProgresoAsamblea();
 }
+// Mismos 4 chequeos que antes vivían en el Home: celebrada, autoridades,
+// Balance aprobado por Asamblea, Acta firmada. Acá sí tiene sentido que
+// tenga protagonismo, es la página donde efectivamente se completan.
+function actualizarProgresoAsamblea() {
+  jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(resAsam) {
+    if (!resAsam || !resAsam.ok) {
+      document.getElementById('progresoAsambleaFill').style.width = '0%';
+      document.getElementById('progresoAsambleaPct').textContent = '0%';
+      return;
+    }
+    let completados = 0;
+    if (resAsam.estado === 'CELEBRADA') completados++;
+    if (resAsam.autoridadesRegistradas) completados++;
+
+    jsonp(EXEC_URL_GI + '?action=listarBalances', function(resBal) {
+      if (resBal && resBal.ok && resBal.balances.length > 0 && resBal.balances[0].estado === 'APROBADO_ASAMBLEA') completados++;
+
+      jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(resEj) {
+        if (resEj && resEj.ok) {
+          jsonp(EXEC_URL_GI + '?action=listarDocumentos&tipo=ACTA_ASAMBLEA&idEjercicio=' + encodeURIComponent(resEj.ejercicio.idEjercicio), function(resDoc) {
+            if (resDoc && resDoc.ok && resDoc.documentos.length > 0 && resDoc.documentos[0].estado === 'FIRMADA') completados++;
+            const pct = Math.round((completados / 4) * 100);
+            document.getElementById('progresoAsambleaFill').style.width = pct + '%';
+            document.getElementById('progresoAsambleaPct').textContent = pct + '%';
+          });
+        }
+      });
+    });
+  });
+}
+
 function chequearFechaYHabilitar() {
   jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(res) {
     const cont = document.getElementById('contenidoDisponible');

@@ -143,10 +143,6 @@
         <button type="button" style="width:100%; padding:10px; border-radius:18px; border:2px solid var(--naranja); background:var(--naranja); color:var(--petroleo); font-weight:900; text-transform:uppercase; font-size:12px; cursor:pointer; margin-top:6px;" onclick="guardarAsamblea()">Guardar</button>
         <div style="color:var(--hueso); opacity:.7; font-size:10px; margin-top:10px; text-align:center;">Este es el único lugar donde se define la fecha — Convocatoria solo la muestra.</div>
       </div>
-
-      <div style="margin-top:14px; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--naranja);">Resultado de la Asamblea Ordinaria</div>
-      <div class="progreso-barra-fondo" style="margin-top:6px;"><div class="progreso-barra-fill" id="progresoCierreFill" style="width:0%; background:var(--naranja);"></div></div>
-      <div class="progreso-pct" id="progresoCierrePct" style="color:var(--naranja);">calculando...</div>
     </div>
 
     <div class="proxima-accion">
@@ -476,38 +472,7 @@ function actualizarProgreso() {
   document.getElementById('progresoFill').style.width = pct + '%';
   document.getElementById('progresoPct').textContent = pct + '%';
 
-  actualizarProgresoResultadoAsamblea();
   actualizarProximaAccion();
-}
-
-// La barra de Resultado se calcula con 4 chequeos reales (celebrada, Balance, autoridades, acta firmada),
-// aunque en el Home solo se muestre 1 card -- así el % no salta de 0 a 100% de un solo paso.
-function actualizarProgresoResultadoAsamblea() {
-  jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(resAsam) {
-    if (!resAsam || !resAsam.ok) {
-      document.getElementById('progresoCierreFill').style.width = '0%';
-      document.getElementById('progresoCierrePct').textContent = '0%';
-      return;
-    }
-    let completados = 0;
-    if (resAsam.estado === 'CELEBRADA') completados++;
-    if (resAsam.autoridadesRegistradas) completados++;
-
-    jsonp(EXEC_URL_GI + '?action=listarBalances', function(resBal) {
-      if (resBal && resBal.ok && resBal.balances.length > 0 && resBal.balances[0].estado === 'APROBADO_ASAMBLEA') completados++;
-
-      jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(resEj) {
-        if (resEj && resEj.ok) {
-          jsonp(EXEC_URL_GI + '?action=listarDocumentos&tipo=ACTA_ASAMBLEA&idEjercicio=' + encodeURIComponent(resEj.ejercicio.idEjercicio), function(resDoc) {
-            if (resDoc && resDoc.ok && resDoc.documentos.length > 0 && resDoc.documentos[0].estado === 'FIRMADA') completados++;
-            const pctC = Math.round((completados / 4) * 100);
-            document.getElementById('progresoCierreFill').style.width = pctC + '%';
-            document.getElementById('progresoCierrePct').textContent = pctC + '%';
-          });
-        }
-      });
-    });
-  });
 }
 
 function actualizarProximaAccion() {
