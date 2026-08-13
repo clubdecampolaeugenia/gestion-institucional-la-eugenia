@@ -47,7 +47,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -91,7 +91,7 @@ function doGet(e) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(e.parameter);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v48-seguridad-bloque1-13ago-0900' };
+      resultado = { ok: true, version: 'v49-integridad-bloque2-13ago-1200' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -122,6 +122,10 @@ function doGet(e) {
       resultado = corregirFechaAsambleaExistente();
     } else if (action === 'limpiarDuplicadosAsambleas') {
       resultado = limpiarDuplicadosAsambleas();
+    } else if (action === 'backupAsambleas') {
+      resultado = backupAsambleas();
+    } else if (action === 'insertarEncabezadoAsambleas') {
+      resultado = insertarEncabezadoAsambleas();
     } else if (action === 'marcarAsambleaCelebrada') {
       resultado = marcarAsambleaCelebrada(e.parameter);
     } else if (action === 'registrarAutoridadesElectas') {
@@ -222,7 +226,7 @@ const GRUPO_POR_CARGO = {
 };
 
 function calcularFechaFinMandato(organo, cargo, fechaInicio) {
-  const inicio = new Date(fechaInicio);
+  const inicio = parsearFechaSegura(fechaInicio);
   if (organo === 'REVISORA_CUENTAS') {
     // Renovación anual (Art. 35)
     return new Date(inicio.getFullYear() + 1, inicio.getMonth(), inicio.getDate());
@@ -256,7 +260,7 @@ function guardarAutoridad(params) {
   const fechaFin = calcularFechaFinMandato(organo, cargo, fechaInicio);
   const nuevoId = 'AUT-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
 
-  hoja.appendRow([nuevoId, organo, cargo, grupo, nombre, dni, new Date(fechaInicio), fechaFin, 'VIGENTE', '']);
+  hoja.appendRow([nuevoId, organo, cargo, grupo, nombre, dni, parsearFechaSegura(fechaInicio), fechaFin, 'VIGENTE', '']);
 
   return { ok: true, idAutoridad: nuevoId };
 }
@@ -430,7 +434,7 @@ function generarBorradorActa(params) {
   hojaActas.appendRow([
     nuevoNumero,
     (function() { const e = obtenerEjercicioActivo(); return e.ok ? e.ejercicio.idEjercicio : (params.idEjercicio || ''); })(),
-    new Date(params.fechaReunion),
+    parsearFechaSegura(params.fechaReunion),
     params.horaInicio || '',
     '',
     params.presentes || '',
@@ -454,7 +458,7 @@ function guardarActaHistorica(params) {
   hoja.appendRow([
     params.idActa,
     params.idEjercicio,
-    new Date(params.fechaReunion),
+    parsearFechaSegura(params.fechaReunion),
     params.horaInicio,
     params.horaFin,
     params.presentes,
@@ -1310,6 +1314,41 @@ function getHojaAsambleas() {
   return hoja;
 }
 
+// ── Bloque 2: fix estructural de ASAMBLEAS (fila de encabezado faltante) ──
+// Correr en este orden exacto, uno por vez, verificando entre cada paso:
+//   1) backupAsambleas()
+//   2) insertarEncabezadoAsambleas()
+//   3) verificar manualmente que las 2 filas sigan intactas debajo del encabezado
+//   4) limpiarDuplicadosAsambleas() (ya existe, va a funcionar recién ahora)
+//   5) verificar que quedó 1 sola fila, la del 24/10 con Orden del Día completo
+
+function backupAsambleas() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const original = ss.getSheetByName(HOJA_ASAMBLEAS);
+  if (!original) return { ok: false, error: 'No existe la hoja ASAMBLEAS' };
+  const nombreBackup = 'ASAMBLEAS_BACKUP_' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd_HHmmss');
+  const yaExiste = ss.getSheetByName(nombreBackup);
+  if (yaExiste) return { ok: false, error: 'Ya existe un backup con ese nombre, esperá un segundo y reintentá' };
+  const copia = original.copyTo(ss);
+  copia.setName(nombreBackup);
+  return { ok: true, mensaje: 'Backup creado como pestaña: ' + nombreBackup };
+}
+
+function insertarEncabezadoAsambleas() {
+  const hoja = getHojaAsambleas();
+  const primeraFila = hoja.getRange(1, 1, 1, 1).getValue();
+  if (primeraFila === 'ID_ASAMBLEA') {
+    return { ok: false, error: 'Ya existe un encabezado (la fila 1 ya dice ID_ASAMBLEA). No se insertó nada, para no duplicarlo.' };
+  }
+  hoja.insertRowBefore(1);
+  hoja.getRange(1, 1, 1, 10).setValues([[
+    'ID_ASAMBLEA', 'ID_EJERCICIO', 'FECHA', 'HORA', 'LUGAR', 'ORDEN_DIA', 'ESTADO',
+    'SOCIOS_PRESENTES', 'QUORUM_ALCANZADO', 'AUTORIDADES_REGISTRADAS'
+  ]]);
+  hoja.getRange(1, 1, 1, 10).setFontWeight('bold').setBackground('#135457').setFontColor('#c4df57');
+  return { ok: true, mensaje: 'Encabezado insertado como fila 1. Las filas de datos que había se corrieron una posición hacia abajo, sin modificarse.' };
+}
+
 // La app SIEMPRE debe leer la fecha de acá, nunca tenerla escrita fija en el código del front-end.
 // Si Sheets convirtió el texto "16:00" en un objeto de hora, lo devuelve al formato HH:mm; si ya es texto, lo deja igual
 function formatearHoraSegura(valor) {
@@ -1337,7 +1376,7 @@ function obtenerAsambleaEjercicio() {
         lugar: datos[i][4],
         estado: datos[i][6],
         ordenDelDia: ordenDelDia,
-        autoridadesRegistradas: datos[i][7] === 'SI'
+        autoridadesRegistradas: datos[i][9] === 'SI'
       };
     }
   }
@@ -1485,7 +1524,7 @@ function registrarAutoridadesElectas(params) {
     const datosAsam = hojaAsam.getDataRange().getValues();
     for (let i = 1; i < datosAsam.length; i++) {
       if (datosAsam[i][1] === ejercicioActivo.ejercicio.idEjercicio) {
-        hojaAsam.getRange(i + 1, 8).setValue('SI'); // columna 8 = AUTORIDADES_REGISTRADAS
+        hojaAsam.getRange(i + 1, 10).setValue('SI'); // columna 10 = AUTORIDADES_REGISTRADAS
         break;
       }
     }
