@@ -121,7 +121,7 @@ function doGet(e) {
     } else if (action === 'debugPin') {
       resultado = debugPin(e.parameter.pin);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v44-doble-destino-bitacora-novedades-11ago-1500' };
+      resultado = { ok: true, version: 'v45-fuente-unica-fecha-asamblea-12ago-2000' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -1598,8 +1598,25 @@ function generarConvocatoriaYDocumentos(params) {
   if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
   const ej = ejercicioActivo.ejercicio;
 
+  // Fuente única de verdad: fecha/hora/lugar se LEEN de ASAMBLEAS, nunca se
+  // aceptan desde el frontend. El único lugar que puede escribirlos es la
+  // píldora del Home (guardarAsambleaEjercicio). Si no hay fila todavía,
+  // no se genera nada -- hay que cargar la fecha primero.
+  const hojaAsam = getHojaAsambleas();
+  const datosAsam = hojaAsam.getDataRange().getValues();
+  let filaExistente = -1;
+  for (let i = 1; i < datosAsam.length; i++) {
+    if (datosAsam[i][1] === ej.idEjercicio) { filaExistente = i + 1; break; }
+  }
+  if (filaExistente === -1) {
+    return { ok: false, error: 'Todavía no hay fecha de Asamblea cargada. Cargala primero en la píldora del Home.' };
+  }
+  const filaAsam = datosAsam[filaExistente - 1];
+  const fechaAsamblea = new Date(filaAsam[2]);
+  const horaAsamblea = formatearHoraSegura(filaAsam[3]);
+  const lugarAsamblea = filaAsam[4];
+
   const fechaLimite = calcularFechaLimiteAsamblea(ej.fechaCierre);
-  const fechaAsamblea = parsearFechaSegura(params.fechaAsamblea);
   const fueraDeTermino = fechaAsamblea > fechaLimite;
 
   const autRes = listarAutoridades();
@@ -1629,23 +1646,9 @@ function generarConvocatoriaYDocumentos(params) {
 
   const ordenDelDiaTexto = puntos.join('\n');
 
-  const nuevoIdAsamblea = 'ASM-' + ej.numero;
-  const hojaAsam = getHojaAsambleas();
-  // Upsert: si ya hay una fila para este Ejercicio, la actualiza en vez de duplicarla
-  const datosAsam = hojaAsam.getDataRange().getValues();
-  let filaExistente = -1;
-  for (let i = 1; i < datosAsam.length; i++) {
-    if (datosAsam[i][1] === ej.idEjercicio) { filaExistente = i + 1; break; }
-  }
-  if (filaExistente > -1) {
-    hojaAsam.getRange(filaExistente, 3).setValue(parsearFechaSegura(params.fechaAsamblea));
-    hojaAsam.getRange(filaExistente, 4).setNumberFormat('@').setValue(params.horaAsamblea);
-    hojaAsam.getRange(filaExistente, 5).setValue(params.lugarAsamblea);
-    hojaAsam.getRange(filaExistente, 6).setValue(JSON.stringify(puntos));
-  } else {
-    hojaAsam.appendRow([nuevoIdAsamblea, ej.idEjercicio, parsearFechaSegura(params.fechaAsamblea), params.horaAsamblea, params.lugarAsamblea, JSON.stringify(puntos), 'CONVOCADA', '', '', '']);
-    hojaAsam.getRange(hojaAsam.getLastRow(), 4).setNumberFormat('@').setValue(params.horaAsamblea);
-  }
+  // Solo actualiza el Orden del Día (columna 6) -- fecha/hora/lugar (columnas 3,4,5)
+  // quedan intactas, esta función nunca las toca.
+  hojaAsam.getRange(filaExistente, 6).setValue(JSON.stringify(puntos));
 
   const fechaAsambleaFmt = Utilities.formatDate(fechaAsamblea, Session.getScriptTimeZone(), "dd 'de' MMMM 'de' yyyy");
 
@@ -1653,7 +1656,7 @@ function generarConvocatoriaYDocumentos(params) {
   let actaCD = 'ACTA N.º ' + nuevoNumeroActa + '\n\n';
   actaCD += 'En la sede social del Club de Campo La Eugenia, siendo las ' + params.horaReunionCD + ' hs. del día ' + params.fechaReunionCD + ', se reúnen los siguientes miembros de Comisión Directiva: ' + params.presentesCD + '.\n\n';
   actaCD += 'Como primer punto del orden del día se da lectura al acta N.º ' + ultimoNumero + '. Se aprueba por unanimidad.\n\n';
-  actaCD += 'Como segundo punto del orden del día, la Comisión Directiva resuelve convocar a Asamblea General Ordinaria para el día ' + fechaAsambleaFmt + ', a las ' + params.horaAsamblea + ' horas, en ' + params.lugarAsamblea + '.\n\n';
+  actaCD += 'Como segundo punto del orden del día, la Comisión Directiva resuelve convocar a Asamblea General Ordinaria para el día ' + fechaAsambleaFmt + ', a las ' + horaAsamblea + ' horas, en ' + lugarAsamblea + '.\n\n';
   if (fueraDeTermino) {
     actaCD += 'Se deja constancia de que, conforme al artículo 39 del Estatuto Social, el plazo estatutario para la Asamblea Ordinaria vencía el ' + Utilities.formatDate(fechaLimite, Session.getScriptTimeZone(), 'dd/MM/yyyy') + '. En razón de ' + (params.motivoFueraDeTermino || '[COMPLETAR MOTIVO]') + ', se incluye en el Orden del Día el tratamiento de esta circunstancia.\n\n';
   }
@@ -1662,14 +1665,14 @@ function generarConvocatoriaYDocumentos(params) {
 
   // ---- 2. Edicto diario local ----
   let edictoDiario = 'CLUB DE CAMPO "LA EUGENIA"\nConvocatoria a Asamblea General Ordinaria\n\n';
-  edictoDiario += 'La Comisión Directiva convoca a los señores asociados a la Asamblea General Ordinaria, que se celebrará el día ' + fechaAsambleaFmt + ', a las ' + params.horaAsamblea + ' horas, en ' + params.lugarAsamblea + ', para tratar el siguiente:\n\nORDEN DEL DÍA\n\n' + ordenDelDiaTexto;
+  edictoDiario += 'La Comisión Directiva convoca a los señores asociados a la Asamblea General Ordinaria, que se celebrará el día ' + fechaAsambleaFmt + ', a las ' + horaAsamblea + ' horas, en ' + lugarAsamblea + ', para tratar el siguiente:\n\nORDEN DEL DÍA\n\n' + ordenDelDiaTexto;
   edictoDiario += '\n\nConforme al artículo 44 del Estatuto Social, si a la hora fijada no se reuniera la mayoría absoluta de los asociados con derecho a voto, la Asamblea se celebrará válidamente una hora después.\n\nGarupá, Misiones.';
 
   // ---- 3. Edicto Boletín Oficial ----
   let edictoBoletin = edictoDiario + '\n\n[Publíquese 2 (dos) días en el Boletín Oficial de la Provincia de Misiones. El plazo de 15 días corridos se cuenta desde la última publicación hasta la Asamblea.]';
 
   // ---- 4. Circular a socios ----
-  let circular = 'Señores Socios:\n\nPor medio de la presente, la Comisión Directiva convoca a la Asamblea General Ordinaria, que se celebrará el día ' + fechaAsambleaFmt + ', a las ' + params.horaAsamblea + ' horas, en ' + params.lugarAsamblea + ', para tratar el siguiente:\n\nORDEN DEL DÍA\n\n' + ordenDelDiaTexto;
+  let circular = 'Señores Socios:\n\nPor medio de la presente, la Comisión Directiva convoca a la Asamblea General Ordinaria, que se celebrará el día ' + fechaAsambleaFmt + ', a las ' + horaAsamblea + ' horas, en ' + lugarAsamblea + ', para tratar el siguiente:\n\nORDEN DEL DÍA\n\n' + ordenDelDiaTexto;
   circular += '\n\nRecordamos que, conforme a los artículos 13 y 47 del Estatuto Social, solo podrán participar y votar los socios activos que se encuentren al día con el pago de sus cuotas sociales.\n\nCOMISIÓN DIRECTIVA';
 
   // Guarda los 4 documentos en la tabla única
