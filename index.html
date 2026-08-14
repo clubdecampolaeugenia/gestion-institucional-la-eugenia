@@ -203,6 +203,7 @@ const HITOS = [
   { nombre: 'Balance', detalle: 'Recibido, con errores detectados (entidad y fechas)', estado: 'OBSERVADO', link: 'balance.html', manual: false },
   { nombre: 'Informe Comisión Revisora', detalle: 'cargando...', estado: 'PENDIENTE', link: 'informe-revisor.html', manual: false },
   { nombre: 'Memoria', detalle: 'cargando...', estado: 'PENDIENTE', link: 'memoria.html', manual: false },
+  { nombre: 'Orden del Día', detalle: 'cargando...', estado: 'PENDIENTE', link: 'orden-dia.html', manual: false },
   { nombre: 'Acta CD, Convocatoria y Edictos', detalle: 'cargando...', estado: 'PENDIENTE', link: 'convocatoria.html', manual: false },
   { nombre: 'Autoridades', detalle: 'cargando...', estado: 'PROGRESO', link: 'autoridades.html', manual: false },
   { nombre: 'Padrón de socios', detalle: 'No iniciado — se arma leyendo Base Madre', estado: 'NOINICIADO', link: null, manual: true },
@@ -267,6 +268,7 @@ function entrarApp() {
   cargarEstadoBalance();
   cargarEstadoMemoria();
   cargarEstadoInformeRevisor();
+  cargarEstadoOrdenDia();
   cargarEjercicioActivo();
   cargarFechaAsamblea();
   cargarEstadoConvocatoria();
@@ -637,6 +639,18 @@ function cargarEstadoInformeRevisor() {
       const ultimo = res.documentos[0];
       actualizarHito('Informe Comisión Revisora', 'COMPLETO', 'Versión ' + ultimo.version + ' — recibido y registrado');
     });
+  });
+}
+
+function cargarEstadoOrdenDia() {
+  jsonp(EXEC_URL_GI + '?action=previsualizarOrdenDelDia', function(res) {
+    if (!res || !res.ok) {
+      actualizarHito('Orden del Día', 'PENDIENTE', 'Cargá primero la fecha de Asamblea en este mismo Home');
+      return;
+    }
+    const manuales = res.puntos.filter(p => p.tipo === 'MANUAL').length;
+    const detalle = res.puntos.length + ' punto(s)' + (manuales > 0 ? ' — ' + manuales + ' asunto(s) puntual(es) agregado(s)' : ' — solo lo fijo y automático');
+    actualizarHito('Orden del Día', 'COMPLETO', detalle);
   });
 }
 </script>
