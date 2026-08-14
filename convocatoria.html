@@ -59,6 +59,14 @@
 
   .divider { border: none; border-top: 1.5px solid #9bb583; margin: 16px 0; }
   .loading-text { text-align: center; color: var(--petroleo); font-size: 13px; font-weight: 700; min-height: 20px; }
+
+  .punto-od { border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; font-size: 12.5px; line-height: 1.45; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .punto-od-fijo { background: rgba(19,84,87,0.08); color: var(--petroleo); }
+  .punto-od-automatico { background: rgba(222,175,77,0.18); color: var(--petroleo); }
+  .punto-od-manual { background: var(--blanco); color: var(--petroleo); border: 2px solid var(--petroleo); }
+  .punto-od-tag { font-size: 9px; font-weight: 900; text-transform: uppercase; opacity: .65; display: block; margin-bottom: 2px; }
+  .punto-od-texto { flex: 1; }
+  .btn-quitar-punto { background: var(--error); color: var(--blanco); border: none; border-radius: 10px; padding: 4px 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -79,6 +87,17 @@
     <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
     <div id="instrBox" class="instr-box" style="display:none;">
       Genera de una sola vez los 4 documentos que necesitás para convocar a la Asamblea Ordinaria: Acta de Comisión Directiva, Edicto para diario local, Edicto para Boletín Oficial, y Circular a socios — todos con el <strong>mismo Orden del Día</strong>, para que nunca queden inconsistentes entre sí.
+    </div>
+
+    <div class="form-panel" style="background:var(--verdecl); border:2px solid var(--petroleo);">
+      <span class="seccion-label" style="color:var(--petroleo); border-bottom-color:rgba(19,84,87,0.25);">Orden del Día</span>
+      <div style="font-size:12px; color:var(--petroleo); line-height:1.5; margin-bottom:12px;">
+        Lo <strong>fijo</strong> y lo <strong>automático</strong> no se pueden editar acá — salen directo del Estatuto y de los datos reales del sistema. Si hay un asunto puntual a tratar y votar, se carga como punto propio abajo.
+      </div>
+      <div id="ordenDiaPreview">cargando...</div>
+      <span class="field-label" style="margin-top:14px;">Agregar asunto puntual (opcional)</span>
+      <textarea id="fNuevoPuntoManual" placeholder="Ej: Aprobación del reglamento de uso del quincho, según propuesta presentada por los socios el ..."></textarea>
+      <button type="button" class="btn-small" style="margin-top:8px;" onclick="agregarPuntoManual()">+ Agregar como punto del Orden del Día</button>
     </div>
 
     <div class="form-panel">
@@ -260,6 +279,7 @@ function entrarApp() {
   poblarSelectorFechaDDMM('fFechaReunionCD', new Date().toISOString().split('T')[0]);
   precargarAsambleaReal();
   cargarUltimosDocumentos();
+  cargarOrdenDiaPreview();
 }
 
 function cargarUltimosDocumentos() {
@@ -384,6 +404,73 @@ function escapeHtml(s) {
   const d = document.createElement('div');
   d.textContent = s || '';
   return d.innerHTML;
+}
+
+function cargarOrdenDiaPreview() {
+  const cont = document.getElementById('ordenDiaPreview');
+  cont.innerHTML = '<div class="loading-text">Cargando Orden del Día...</div>';
+  jsonp(EXEC_URL_GI + '?action=previsualizarOrdenDelDia', function(res) {
+    if (!res || !res.ok) {
+      cont.innerHTML = '<div class="loading-text">' + (res && res.error ? res.error : 'No se pudo cargar.') + '</div>';
+      return;
+    }
+    renderOrdenDiaPreview(res.puntos);
+  });
+}
+
+const TAG_TIPO = { FIJO: 'Fijo por Estatuto', AUTOMATICO: 'Automático (sistema)', MANUAL: 'Agregado manualmente' };
+
+function renderOrdenDiaPreview(puntos) {
+  const cont = document.getElementById('ordenDiaPreview');
+  cont.innerHTML = '';
+  puntos.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'punto-od punto-od-' + p.tipo.toLowerCase();
+    const tagTexto = TAG_TIPO[p.tipo] + (p.articulo ? ' — ' + p.articulo : '');
+    let html = '<div class="punto-od-texto"><span class="punto-od-tag">' + tagTexto + '</span>' + p.numero + ' ' + p.texto.replace(/</g,'&lt;') + '</div>';
+    div.innerHTML = html;
+    if (p.tipo === 'MANUAL') {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn-quitar-punto';
+      btn.textContent = 'Quitar';
+      btn.onclick = () => quitarPuntoManual(p.texto);
+      div.appendChild(btn);
+    }
+    cont.appendChild(div);
+  });
+}
+
+function agregarPuntoManual() {
+  const texto = document.getElementById('fNuevoPuntoManual').value.trim();
+  if (!texto) { mostrarAviso('Escribí el asunto a agregar.'); return; }
+  jsonp(EXEC_URL_GI + '?action=previsualizarOrdenDelDia', function(res) {
+    if (!res || !res.ok) { mostrarAviso('No se pudo leer el Orden del Día actual.'); return; }
+    const manualesActuales = res.puntos.filter(p => p.tipo === 'MANUAL').map(p => p.texto);
+    manualesActuales.push(texto);
+    guardarPuntosManuales(manualesActuales, function() {
+      document.getElementById('fNuevoPuntoManual').value = '';
+      cargarOrdenDiaPreview();
+    });
+  });
+}
+
+function quitarPuntoManual(textoAQuitar) {
+  jsonp(EXEC_URL_GI + '?action=previsualizarOrdenDelDia', function(res) {
+    if (!res || !res.ok) { mostrarAviso('No se pudo leer el Orden del Día actual.'); return; }
+    const manualesActuales = res.puntos.filter(p => p.tipo === 'MANUAL' && p.texto !== textoAQuitar).map(p => p.texto);
+    guardarPuntosManuales(manualesActuales, cargarOrdenDiaPreview);
+  });
+}
+
+function guardarPuntosManuales(lista, callback) {
+  jsonp(EXEC_URL_GI + '?action=guardarPuntosManualesAsamblea&puntosManuales=' + encodeURIComponent(JSON.stringify(lista)) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    if (res && res.ok) {
+      if (callback) callback();
+    } else {
+      mostrarAviso('Error al guardar: ' + (res && res.error ? res.error : 'desconocido'));
+    }
+  });
 }
 
 function generarDocumentos() {

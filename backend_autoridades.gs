@@ -47,7 +47,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'guardarPuntosManualesAsamblea', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -118,6 +118,12 @@ function doGet(e) {
       resultado = registrarInformeRevisor(e.parameter);
     } else if (action === 'generarConvocatoriaYDocumentos') {
       resultado = generarConvocatoriaYDocumentos(e.parameter);
+    } else if (action === 'previsualizarOrdenDelDia') {
+      resultado = previsualizarOrdenDelDia();
+    } else if (action === 'guardarPuntosManualesAsamblea') {
+      resultado = guardarPuntosManualesAsamblea(e.parameter);
+    } else if (action === 'migrarColumnaPuntosManuales') {
+      resultado = migrarColumnaPuntosManuales();
     } else if (action === 'obtenerAsambleaEjercicio') {
       resultado = obtenerAsambleaEjercicio();
     } else if (action === 'guardarAsambleaEjercicio') {
@@ -1657,6 +1663,90 @@ function generarActaAsamblea(params) {
   return { ok: true, idDocumento: nuevoId, contenido: bloqueTexto.text, version: version };
 }
 
+// Arma el listado del Orden del Día como objetos con metadata, para que tanto la
+// vista previa (Convocatoria) como la generación final de documentos usen exactamente
+// la misma lógica y nunca queden desalineadas.
+// tipo: 'FIJO' (obligatorio por Estatuto, se da siempre) | 'AUTOMATICO' (lo decide el
+// sistema según datos reales, ej. si hay renovación de cargos) | 'MANUAL' (cargado a mano).
+// Ninguno de FIJO/AUTOMATICO es editable desde la pantalla -- solo MANUAL.
+function construirPuntosOrdenDelDia(ej, fueraDeTermino, vencenEsteAnio, puntosManuales) {
+  const puntos = [];
+  puntos.push({ tipo: 'FIJO', articulo: 'Art. 66', texto: 'Elección del asociado que presidirá la Asamblea y del Secretario de Asamblea, y de dos socios para firmar el Acta, conforme al artículo 66 del Estatuto Social.' });
+  puntos.push({ tipo: 'FIJO', articulo: 'Art. 52.a', texto: 'Lectura y aprobación del Acta de la Asamblea anterior.' });
+  if (fueraDeTermino) {
+    puntos.push({ tipo: 'AUTOMATICO', articulo: 'Art. 39', texto: 'Consideración de las razones por las cuales la Asamblea General Ordinaria correspondiente al Ejercicio Económico N.° ' + ej.numero + ' se celebra fuera del plazo previsto por el artículo 39 del Estatuto Social.' });
+  }
+  puntos.push({ tipo: 'FIJO', articulo: 'Art. 52.b', texto: 'Lectura y aprobación de la Memoria, Balance General, Inventario, Cuenta de Gastos y Recursos e Informe del Revisor de Cuentas correspondientes al Ejercicio Económico N.° ' + ej.numero + ', finalizado el ' + ej.fechaCierre + '.' });
+  puntos.push({ tipo: 'FIJO', articulo: 'Art. 16', texto: 'Aprobación del monto establecido por la Comisión Directiva para la cuota social, de conformidad con lo establecido en el artículo 16 del Estatuto Social.' });
+  if (vencenEsteAnio && vencenEsteAnio.length > 0) {
+    puntos.push({ tipo: 'AUTOMATICO', articulo: 'Arts. 22, 35 y 63', texto: 'Renovación parcial de la Comisión Directiva y/o Comisión Revisora de Cuentas por finalización de mandato: ' + vencenEsteAnio.join(', ') + ', conforme a los artículos 22, 35 y 63 del Estatuto Social.' });
+  }
+  (puntosManuales || []).forEach(texto => {
+    if (texto && texto.trim()) puntos.push({ tipo: 'MANUAL', articulo: '', texto: texto.trim() });
+  });
+  // Numeración final, en orden -- FIJO y AUTOMATICO ya vienen en el orden estatutario correcto,
+  // los MANUAL siempre van al final (ver Art. 46: se incorporan antes de la convocatoria, no
+  // reemplazan ni se mezclan con el temario obligatorio).
+  puntos.forEach((p, i) => { p.numero = (i + 1) + 'º'; });
+  return puntos;
+}
+
+// Vista previa de lectura -- no protegida, no escribe nada. Muestra el Orden del Día completo
+// tal como quedaría, separando qué es fijo por Estatuto, qué decide el sistema solo, y qué
+// fue cargado a mano, para que en la pantalla de Convocatoria se entienda qué se puede tocar.
+function previsualizarOrdenDelDia() {
+  const ejercicioActivo = obtenerEjercicioActivo();
+  if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
+  const ej = ejercicioActivo.ejercicio;
+
+  const hojaAsam = getHojaAsambleas();
+  const datosAsam = hojaAsam.getDataRange().getValues();
+  let filaAsam = null;
+  for (let i = 1; i < datosAsam.length; i++) {
+    if (datosAsam[i][1] === ej.idEjercicio) { filaAsam = datosAsam[i]; break; }
+  }
+  if (!filaAsam) return { ok: false, error: 'Todavía no hay fecha de Asamblea cargada.' };
+
+  const fechaAsamblea = new Date(filaAsam[2]);
+  const fechaLimite = calcularFechaLimiteAsamblea(ej.fechaCierre);
+  const fueraDeTermino = fechaAsamblea > fechaLimite;
+
+  const autRes = listarAutoridades();
+  const vencenEsteAnio = autRes.ok ? autRes.vencenEsteAnio : [];
+
+  const puntosManuales = filaAsam[10] ? JSON.parse(filaAsam[10]) : [];
+
+  const puntos = construirPuntosOrdenDelDia(ej, fueraDeTermino, vencenEsteAnio, puntosManuales);
+  return { ok: true, puntos: puntos };
+}
+
+// Agrega una columna PUNTOS_MANUALES (11ª) a la hoja ASAMBLEAS si todavía no existe.
+// Idempotente -- correrla de nuevo no rompe nada si ya está.
+function migrarColumnaPuntosManuales() {
+  const hoja = getHojaAsambleas();
+  const headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
+  if (headers.indexOf('PUNTOS_MANUALES') !== -1) return { ok: true, mensaje: 'Ya existía.' };
+  const nuevaCol = hoja.getLastColumn() + 1;
+  hoja.getRange(1, nuevaCol).setValue('PUNTOS_MANUALES').setFontWeight('bold').setBackground('#135457').setFontColor('#c4df57');
+  return { ok: true, mensaje: 'Columna agregada en la posición ' + nuevaCol + '.' };
+}
+
+// Guarda el listado completo de puntos manuales (reemplaza el anterior) para el Ejercicio activo.
+function guardarPuntosManualesAsamblea(params) {
+  const ejercicioActivo = obtenerEjercicioActivo();
+  if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
+  const hoja = getHojaAsambleas();
+  const datos = hoja.getDataRange().getValues();
+  const puntosManuales = params.puntosManuales ? JSON.parse(params.puntosManuales) : [];
+  for (let i = 1; i < datos.length; i++) {
+    if (datos[i][1] === ejercicioActivo.ejercicio.idEjercicio) {
+      hoja.getRange(i + 1, 11).setValue(JSON.stringify(puntosManuales));
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'No hay Asamblea registrada para este Ejercicio. Cargá la fecha primero en el Home.' };
+}
+
 function generarConvocatoriaYDocumentos(params) {
   const ejercicioActivo = obtenerEjercicioActivo();
   if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
@@ -1690,23 +1780,9 @@ function generarConvocatoriaYDocumentos(params) {
   const nuevoNumeroActa = ultimoNumero + 1;
 
   // Orden del Día -- objeto único, todos los documentos lo citan literal, nunca se retipea
-  const puntos = [];
-  puntos.push('1º Elección del asociado que presidirá la Asamblea y del Secretario de Asamblea, y de dos socios para firmar el Acta, conforme al artículo 66 del Estatuto Social.');
-  puntos.push('2º Lectura y aprobación del Acta de la Asamblea anterior.');
-  let n = 3;
-  if (fueraDeTermino) {
-    puntos.push(n + 'º Consideración de las razones por las cuales la Asamblea General Ordinaria correspondiente al Ejercicio Económico N.° ' + ej.numero + ' se celebra fuera del plazo previsto por el artículo 39 del Estatuto Social.');
-    n++;
-  }
-  puntos.push(n + 'º Lectura y aprobación de la Memoria, Balance General, Inventario, Cuenta de Gastos y Recursos e Informe del Revisor de Cuentas correspondientes al Ejercicio Económico N.° ' + ej.numero + ', finalizado el ' + ej.fechaCierre + '.');
-  n++;
-  puntos.push(n + 'º Aprobación del monto establecido por la Comisión Directiva para la cuota social, de conformidad con lo establecido en el artículo 16 del Estatuto Social.');
-  n++;
-  if (vencenEsteAnio.length > 0) {
-    puntos.push(n + 'º Renovación parcial de la Comisión Directiva y/o Comisión Revisora de Cuentas por finalización de mandato: ' + vencenEsteAnio.join(', ') + ', conforme a los artículos 22, 35 y 63 del Estatuto Social.');
-    n++;
-  }
-  puntos.push(n + 'º Cualquier otro asunto incluido regularmente en la convocatoria.');
+  const puntosManuales = filaAsam[10] ? JSON.parse(filaAsam[10]) : [];
+  const puntosObj = construirPuntosOrdenDelDia(ej, fueraDeTermino, vencenEsteAnio, puntosManuales);
+  const puntos = puntosObj.map(p => p.numero + ' ' + p.texto);
 
   const ordenDelDiaTexto = puntos.join('\n');
 
