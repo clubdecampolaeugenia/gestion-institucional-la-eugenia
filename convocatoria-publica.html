@@ -82,11 +82,32 @@ jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(res) {
     return;
   }
 
+  jsonp(EXEC_URL_GI + '?action=obtenerTextosConvocatoria', function(textos) {
+    renderConvocatoria(res, textos && textos.ok ? textos : null);
+  });
+});
+
+function renderConvocatoria(res, textos) {
+  const cuerpo = document.getElementById('cuerpo');
+  // Fallback si por algún motivo no se pudo traer el texto canónico -- no debería pasar nunca,
+  // pero mejor mostrar algo razonable que romper la página.
+  if (!textos) {
+    textos = {
+      saludo: 'Estimados socios:',
+      intro: 'La Comisión Directiva convoca a la Asamblea General Ordinaria, que se realizará según los siguientes datos:',
+      avisoQuorum: 'Conforme al Estatuto Social, si a la hora fijada no se reuniera la mayoría absoluta de los asociados con derecho a voto, la Asamblea se celebrará válidamente una hora después, con los socios presentes.',
+      avisoCuotas: 'Solo pueden participar y votar los socios activos que se encuentren al día con el pago de sus cuotas sociales.',
+      firmaLinea1: 'Comisión Directiva',
+      firmaLinea2: 'Asociación Civil La Eugenia',
+      sinOrdenDelDia: 'Todavía no se cargó el Orden del Día.'
+    };
+  }
+
   const fecha = new Date(res.fecha);
   const fechaLegible = fecha.toLocaleDateString('es-AR', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-  let html = '<p class="saludo">Estimados socios:</p>';
-  html += '<p class="saludo" style="margin-top:8px;">La Comisión Directiva convoca a la Asamblea General Ordinaria, que se realizará según los siguientes datos:</p>';
+  let html = '<p class="saludo">' + escapeHtml(textos.saludo) + '</p>';
+  html += '<p class="saludo" style="margin-top:8px;">' + escapeHtml(textos.intro) + '</p>';
 
   html += '<div class="datos-box">';
   html += '<div class="dato-fila"><span class="dato-icono">📅</span><div><span class="dato-label">Fecha</span><span class="dato-valor">' + fechaLegible + '</span></div></div>';
@@ -100,17 +121,17 @@ jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(res) {
       html += '<div class="orden-item"><div>' + escapeHtml(punto) + '</div></div>';
     });
   } else {
-    html += '<div class="orden-item"><div style="opacity:.6;">Todavía no se cargó el Orden del Día.</div></div>';
+    html += '<div class="orden-item"><div style="opacity:.6;">' + escapeHtml(textos.sinOrdenDelDia) + '</div></div>';
   }
 
-  html += '<div class="aviso-box"><p>Conforme al Estatuto Social, si a la hora fijada no se reuniera la mayoría absoluta de los asociados con derecho a voto, la Asamblea se celebrará válidamente una hora después, con los socios presentes.</p><p>Solo pueden participar y votar los socios activos que se encuentren al día con el pago de sus cuotas sociales.</p><a href="https://drive.google.com/file/d/1snLbDhjf8ZypCF_ZWUf7NaGiHlXvU-W5/view" target="_blank">Ver Estatuto Social</a></div>';
+  html += '<div class="aviso-box"><p>' + escapeHtml(textos.avisoQuorum) + '</p><p>' + escapeHtml(textos.avisoCuotas) + '</p><a href="https://drive.google.com/file/d/1snLbDhjf8ZypCF_ZWUf7NaGiHlXvU-W5/view" target="_blank">Ver Estatuto Social</a></div>';
 
-  html += '<div class="firma">Comisión Directiva<br>Asociación Civil La Eugenia</div>';
+  html += '<div class="firma">' + escapeHtml(textos.firmaLinea1) + '<br>' + escapeHtml(textos.firmaLinea2) + '</div>';
 
   html += '<div class="cta"><div class="label">Para más información sobre trámites y servicios</div><a href="https://clubdecampolaeugenia.taplink.site/" target="_blank">Ir al Centro de Gestión Vecinal</a></div>';
 
   cuerpo.innerHTML = html;
-});
+}
 </script>
 <div class="wrap" style="margin-top:0; border-radius:0 0 12px 12px;">
   <div class="footer-note"><div>Este es un documento informativo de la Convocatoria — el texto formal de la citación y los edictos se gestionan por Secretaría.</div></div>
