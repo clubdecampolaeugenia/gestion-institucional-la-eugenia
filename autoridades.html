@@ -72,6 +72,9 @@
   .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 12px 32px rgba(0,0,0,0.35); text-align: center; }
   .aviso-texto { color: var(--petroleo); font-size: 14px; line-height: 1.5; margin-bottom: 18px; white-space: pre-wrap; }
   .aviso-btn { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .confirm-btns { display: flex; gap: 10px; justify-content: center; }
+  .confirm-btn-aceptar { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .confirm-btn-cancelar { background: transparent; color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -141,6 +144,15 @@ function mostrarAviso(mensaje, callback) {
     document.body.removeChild(overlay);
     if (callback) callback();
   };
+}
+
+function mostrarConfirmacion(mensaje, callbackAceptar) {
+  const overlay = document.createElement('div');
+  overlay.className = 'aviso-overlay';
+  overlay.innerHTML = '<div class="aviso-card"><div class="aviso-texto">' + mensaje.replace(/</g,'&lt;') + '</div><div class="confirm-btns"><button type="button" class="confirm-btn-cancelar">Cancelar</button><button type="button" class="confirm-btn-aceptar">Aceptar</button></div></div>';
+  document.body.appendChild(overlay);
+  overlay.querySelector('.confirm-btn-cancelar').onclick = function() { document.body.removeChild(overlay); };
+  overlay.querySelector('.confirm-btn-aceptar').onclick = function() { document.body.removeChild(overlay); callbackAceptar(); };
 }
 
 // ⚠️ Completar con la URL /exec del backend de Gestión Institucional una vez desplegado
@@ -257,7 +269,8 @@ function renderAutoridades(autoridades, vencenEsteAnio) {
         const div = document.createElement('div');
         div.className = 'cargo-card';
         const clase = aut.vence === 'este_anio' ? 'vence-este-anio' : (aut.vence === 'proximo_anio' ? 'vence-pronto' : 'vence-ok');
-        const texto = aut.vence === 'este_anio' ? 'Renueva este año' : ('Vence ' + aut.fechaFinMandato);
+        const anioVencimiento = aut.fechaFinMandato ? aut.fechaFinMandato.split('/')[2] : '';
+        const texto = aut.vence === 'este_anio' ? 'Renueva este año' : ('Vence en ' + anioVencimiento);
         div.innerHTML = `<div class="cargo-info"><div class="cargo-nombre">${aut.nombre}</div><div class="cargo-tipo">${cargo}</div></div><span class="vence-badge ${clase}">${texto}</span>`;
         cont.appendChild(div);
       } else {
@@ -361,14 +374,15 @@ function renderHistorial(autoridades) {
 }
 
 function eliminarAutoridadUI(idAutoridad, nombre, cargo) {
-  if (!confirm('¿Eliminar definitivamente el registro de "' + nombre + '" (' + cargo + ')? Esto borra la fila del historial, no se puede deshacer.')) return;
-  jsonp(EXEC_URL_GI + '?action=eliminarAutoridad&idAutoridad=' + encodeURIComponent(idAutoridad) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
-    if (res && res.ok) {
-      cargarHistorialCompleto();
-      cargarAutoridades();
-    } else {
-      mostrarAviso('Error al eliminar: ' + (res && res.error ? res.error : 'desconocido'));
-    }
+  mostrarConfirmacion('¿Eliminar definitivamente el registro de "' + nombre + '" (' + cargo + ')? Esto borra la fila del historial, no se puede deshacer.', function() {
+    jsonp(EXEC_URL_GI + '?action=eliminarAutoridad&idAutoridad=' + encodeURIComponent(idAutoridad) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      if (res && res.ok) {
+        cargarHistorialCompleto();
+        cargarAutoridades();
+      } else {
+        mostrarAviso('Error al eliminar: ' + (res && res.error ? res.error : 'desconocido'));
+      }
+    });
   });
 }
 </script>
