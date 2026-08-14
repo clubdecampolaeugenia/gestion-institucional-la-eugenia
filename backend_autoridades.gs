@@ -126,6 +126,8 @@ function doGet(e) {
       resultado = migrarColumnaPuntosManuales();
     } else if (action === 'obtenerAsambleaEjercicio') {
       resultado = obtenerAsambleaEjercicio();
+    } else if (action === 'obtenerTextosConvocatoria') {
+      resultado = textosConvocatoria();
     } else if (action === 'guardarAsambleaEjercicio') {
       resultado = guardarAsambleaEjercicio(e.parameter);
     } else if (action === 'corregirFechaAsambleaExistente') {
@@ -1440,6 +1442,25 @@ function obtenerAsambleaEjercicio() {
     }
   }
   return { ok: false, error: 'Todavía no hay fecha de Asamblea registrada para este Ejercicio' };
+}
+
+// FUENTE ÚNICA DE TEXTO para la Convocatoria. La página pública (convocatoria-publica.html)
+// y el mail del Boletín (armarHTMLConvocatoria en el Código.gs del Boletín) tienen que verse
+// distintos porque uno es una web y el otro un mail sin JS -- pero las FRASES tienen que ser
+// las mismas siempre. Antes cada uno tenía su propia copia del texto y se desincronizaban
+// (pasó el 14/08/2026). Ahora las dos piden esto acá -- para cambiar una palabra del texto de
+// la Convocatoria, se edita UNA SOLA VEZ, en esta función.
+function textosConvocatoria() {
+  return {
+    ok: true,
+    saludo: 'Estimados socios:',
+    intro: 'La Comisión Directiva convoca a la Asamblea General Ordinaria, que se realizará según los siguientes datos:',
+    avisoQuorum: 'Conforme al Estatuto Social, si a la hora fijada no se reuniera la mayoría absoluta de los asociados con derecho a voto, la Asamblea se celebrará válidamente una hora después, con los socios presentes.',
+    avisoCuotas: 'Solo pueden participar y votar los socios activos que se encuentren al día con el pago de sus cuotas sociales.',
+    firmaLinea1: 'Comisión Directiva',
+    firmaLinea2: 'Asociación Civil La Eugenia',
+    sinOrdenDelDia: 'Todavía no se cargó el Orden del Día.'
+  };
 }
 
 // Guarda o actualiza fecha/hora/lugar de la Asamblea del Ejercicio activo -- editable desde el Dashboard, dato de primera clase
