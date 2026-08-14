@@ -1454,7 +1454,7 @@ function textosConvocatoria() {
   return {
     ok: true,
     saludo: 'Estimados socios:',
-    intro: 'La Comisión Directiva convoca a la Asamblea General Ordinaria, que se realizará según los siguientes datos:',
+    intro: 'Por medio de la presente circular, conforme al artículo 41 del Estatuto Social, la Comisión Directiva convoca a la Asamblea General Ordinaria, que se realizará según los siguientes datos:',
     avisoQuorum: 'Conforme al Estatuto Social, si a la hora fijada no se reuniera la mayoría absoluta de los asociados con derecho a voto, la Asamblea se celebrará válidamente una hora después, con los socios presentes.',
     avisoCuotas: 'Solo pueden participar y votar los socios activos que se encuentren al día con el pago de sus cuotas sociales.',
     firmaLinea1: 'Comisión Directiva',
