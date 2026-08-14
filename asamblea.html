@@ -25,7 +25,9 @@
   .subtitle { text-align: center; color: var(--petroleo); font-size: 13px; margin-bottom: 18px; text-transform: uppercase; letter-spacing: .5px; }
 
   #pinScreen { display: none; animation: fadeInScreen .3s ease-out; }
-  #checkingSession { text-align: center; color: var(--petroleo); font-weight: 700; font-size: 13px; padding: 60px 0; }
+  #checkingSession { text-align: center; padding: 60px 0; }
+  .session-spinner { width: 30px; height: 30px; margin: 0 auto 12px; border: 3px solid rgba(19,84,87,0.2); border-top-color: var(--petroleo); border-radius: 50%; animation: spin .7s linear infinite; }
+  .session-spinner-label { color: var(--petroleo); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
   #mainScreen { display: none; }
   #mainScreen.active { animation: fadeInScreen .3s ease-out; }
   .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
@@ -72,7 +74,7 @@
   <h1>Gestión Institucional</h1>
   <div class="subtitle"><strong style="color:var(--negro); text-transform:uppercase;">Asamblea Ordinaria</strong></div>
 
-  <div id="checkingSession">Verificando sesión...</div>
+  <div id="checkingSession"><div class="session-spinner"></div><div class="session-spinner-label">Verificando sesión...</div></div>
   <div id="pinScreen">
     <div class="pin-label">Ingresá el PIN</div>
     <input class="pin-input" type="password" inputmode="numeric" maxlength="4" id="pinInput" placeholder="····">
@@ -158,7 +160,11 @@ const EXEC_URL_GI = 'https://script.google.com/macros/s/AKfycbyBxlDAteVncpf2hyQ-
 
 let PIN_SESION = '';
 
-document.addEventListener('DOMContentLoaded', function() {
+function verificarSesionGuardada_() {
+  document.getElementById('checkingSession').style.display = 'block';
+  document.getElementById('pinScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'none';
+  document.getElementById('mainScreen').classList.remove('active');
   const savedPin = localStorage.getItem('cgv_pin');
   if (!savedPin) {
     document.getElementById('checkingSession').style.display = 'none';
@@ -175,6 +181,15 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('pinScreen').style.display = 'block';
     }
   });
+}
+
+document.addEventListener('DOMContentLoaded', verificarSesionGuardada_);
+
+// Cuando se vuelve con el botón "atrás" del navegador, algunos navegadores restauran la
+// página desde su caché (bfcache) sin volver a correr DOMContentLoaded -- quedaría congelada
+// en el estado de un instante anterior. Si eso pasa, se vuelve a verificar la sesión.
+window.addEventListener('pageshow', function(event) {
+  if (event.persisted) verificarSesionGuardada_();
 });
 
 function toggleInstrucciones() {
