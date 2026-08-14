@@ -1837,8 +1837,20 @@ function generarConvocatoriaYDocumentos(params) {
   let circular = 'CIRCULAR\n\nSeñores Socios:\n\nPor medio de la presente circular, conforme al artículo 41 del Estatuto Social, la Comisión Directiva convoca a la Asamblea General Ordinaria, que se celebrará el día ' + fechaAsambleaFmt + ', a las ' + horaAsamblea + ' horas, en ' + lugarAsamblea + ', para tratar el siguiente:\n\nORDEN DEL DÍA\n\n' + ordenDelDiaTexto;
   circular += '\n\nRecordamos que, conforme a los artículos 13 y 47 del Estatuto Social, solo podrán participar y votar los socios activos que se encuentren al día con el pago de sus cuotas sociales.\n\nCOMISIÓN DIRECTIVA';
 
-  // Guarda los 4 documentos en la tabla única
+  // Guarda los 4 documentos en la tabla única. La versión se calcula por tipo (no fija en 1)
+  // para que, al volver a generar después de una aprobación, quede claro cuál es la vigente
+  // -- listarDocumentos ordena por versión descendente para decidir "la última".
   const hoja = getHojaDocumentos();
+  const datosDocsExistentes = hoja.getDataRange().getValues();
+  function proximaVersionDoc_(tipo) {
+    let v = 0;
+    for (let i = 1; i < datosDocsExistentes.length; i++) {
+      if (datosDocsExistentes[i][0] && datosDocsExistentes[i][2] === tipo && datosDocsExistentes[i][1] === ej.idEjercicio) {
+        v = Math.max(v, Number(datosDocsExistentes[i][3]) || 0);
+      }
+    }
+    return v + 1;
+  }
   const docs = [
     { tipo: 'ACTA_CD_CONVOCATORIA', contenido: actaCD },
     { tipo: 'EDICTO_DIARIO', contenido: edictoDiario },
@@ -1847,9 +1859,10 @@ function generarConvocatoriaYDocumentos(params) {
   ];
   const resultado = [];
   docs.forEach(doc => {
+    const version = proximaVersionDoc_(doc.tipo);
     const nuevoId = 'DOC-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss') + '-' + doc.tipo;
-    hoja.appendRow([nuevoId, ej.idEjercicio, doc.tipo, 1, 'BORRADOR', doc.contenido, 'IA', new Date()]);
-    resultado.push({ tipo: doc.tipo, idDocumento: nuevoId, contenido: doc.contenido, estado: 'BORRADOR' });
+    hoja.appendRow([nuevoId, ej.idEjercicio, doc.tipo, version, 'BORRADOR', doc.contenido, 'IA', new Date()]);
+    resultado.push({ tipo: doc.tipo, idDocumento: nuevoId, contenido: doc.contenido, estado: 'BORRADOR', version: version });
   });
 
   return { ok: true, documentos: resultado, fueraDeTermino: fueraDeTermino, fechaLimite: Utilities.formatDate(fechaLimite, Session.getScriptTimeZone(), 'dd/MM/yyyy'), numeroActa: nuevoNumeroActa };
