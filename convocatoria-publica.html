@@ -110,9 +110,9 @@ function renderConvocatoria(res, textos) {
   html += '<p class="saludo" style="margin-top:8px;">' + escapeHtml(textos.intro) + '</p>';
 
   html += '<div class="datos-box">';
-  html += '<div class="dato-fila"><span class="dato-icono">📅</span><div><span class="dato-label">Fecha</span><span class="dato-valor">' + fechaLegible + '</span></div></div>';
-  html += '<div class="dato-fila"><span class="dato-icono">🕓</span><div><span class="dato-label">Hora</span><span class="dato-valor">' + res.hora + ' hs</span></div></div>';
-  html += '<div class="dato-fila"><span class="dato-icono">📍</span><div><span class="dato-label">Lugar</span><span class="dato-valor">' + escapeHtml(res.lugar) + '</span></div></div>';
+  html += '<div class="dato-fila"><div><span class="dato-label">Fecha</span><span class="dato-valor">' + fechaLegible + '</span></div></div>';
+  html += '<div class="dato-fila"><div><span class="dato-label">Hora</span><span class="dato-valor">' + res.hora + ' hs</span></div></div>';
+  html += '<div class="dato-fila"><div><span class="dato-label">Lugar</span><span class="dato-valor">' + escapeHtml(res.lugar) + '</span></div></div>';
   html += '</div>';
 
   html += '<div class="seccion-titulo">Orden del Día</div>';
