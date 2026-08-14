@@ -23,7 +23,8 @@
   h1 { margin: 2px 0 4px; color: var(--negro); font-family: Impact, sans-serif; font-size: 26px; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
   .subtitle { text-align: center; color: var(--petroleo); font-size: 14px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: .5px; }
 
-  #pinScreen { display: block; animation: fadeInScreen .3s ease-out; }
+  #pinScreen { display: none; animation: fadeInScreen .3s ease-out; }
+  #checkingSession { text-align: center; color: var(--petroleo); font-weight: 700; font-size: 13px; padding: 60px 0; }
   #mainScreen { display: none; }
   #mainScreen.active { animation: fadeInScreen .3s ease-out; }
   .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
@@ -92,6 +93,7 @@
   <h1>Gestión Institucional</h1>
   <div class="subtitle"><strong style="color:var(--negro); text-transform:uppercase;">Bitácora y Actas</strong></div>
 
+  <div id="checkingSession">Verificando sesión...</div>
   <div id="pinScreen">
     <div class="pin-label">Ingresá el PIN</div>
     <input class="pin-input" type="password" inputmode="numeric" maxlength="4" id="pinInput" placeholder="····">
@@ -240,13 +242,19 @@ let ACTA_ACTUAL = null;
 
 document.addEventListener('DOMContentLoaded', function() {
   const savedPin = localStorage.getItem('cgv_pin');
-  if (!savedPin) return;
+  if (!savedPin) {
+    document.getElementById('checkingSession').style.display = 'none';
+    document.getElementById('pinScreen').style.display = 'block';
+    return;
+  }
   jsonp(EXEC_URL_PINES_CGV_CHECK + '?action=validarPin&pin=' + encodeURIComponent(savedPin) + '&modulo=gestion-institucional', function(res) {
+    document.getElementById('checkingSession').style.display = 'none';
     if (res && res.ok && res.valido) {
       PIN_SESION = savedPin;
       entrarApp();
     } else {
       localStorage.removeItem('cgv_pin');
+      document.getElementById('pinScreen').style.display = 'block';
     }
   });
 });
