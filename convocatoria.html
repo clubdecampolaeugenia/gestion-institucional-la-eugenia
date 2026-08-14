@@ -122,6 +122,8 @@
       </div>
 
       <button type="button" class="btn-solid" style="margin-top:14px; margin-bottom:0;" id="btnGenerar" onclick="generarDocumentos()">Generar los 4 documentos</button>
+      <button type="button" class="btn-outline" style="margin-top:8px; margin-bottom:0;" id="btnActualizarOD" onclick="actualizarOrdenDia()">Actualizar Orden del Día en los documentos ya generados</button>
+      <div style="font-size:11px; color:var(--petroleo); opacity:.75; text-align:center; margin-top:6px;">Usá esto si solo cambió el Orden del Día (agregaste/sacaste un punto) y los datos de la reunión de CD siguen siendo los mismos. Si algún documento ya estaba aprobado, vuelve a borrador.</div>
     </div>
 
     <div style="background:var(--petroleo); border-radius:16px; padding:16px; margin-bottom:14px; text-align:center;">
@@ -389,6 +391,41 @@ function escapeHtml(s) {
   const d = document.createElement('div');
   d.textContent = s || '';
   return d.innerHTML;
+}
+
+function actualizarOrdenDia() {
+  if (!DATOS_ASAMBLEA_REAL) {
+    mostrarAviso('No hay fecha de Asamblea cargada. Andá al Home a cargarla primero.');
+    return;
+  }
+  const btn = document.getElementById('btnActualizarOD');
+  btn.disabled = true;
+  document.getElementById('loadingText').innerHTML = '<span class="spinner"></span> Actualizando el Orden del Día en los documentos...';
+  document.getElementById('resultadoContainer').innerHTML = '';
+
+  const params = new URLSearchParams({
+    action: 'actualizarOrdenDelDiaEnDocumentos',
+    fechaReunionCD: obtenerValorFechaDDMM('fFechaReunionCD'),
+    horaReunionCD: obtenerValorHora('fHoraReunionCD'),
+    horaFinReunionCD: obtenerValorHora('fHoraFinReunionCD'),
+    presentesCD: obtenerPresentesSeleccionados(),
+    motivoFueraDeTermino: document.getElementById('fMotivoFueraTermino').value,
+    pin: PIN_SESION
+  });
+
+  jsonp(EXEC_URL_GI + '?' + params.toString(), function(res) {
+    btn.disabled = false;
+    document.getElementById('loadingText').textContent = '';
+    if (!res || !res.ok) {
+      mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+      return;
+    }
+    const reabiertos = res.documentos.filter(d => d.reabierto).length;
+    mostrarResultado(res);
+    if (reabiertos > 0) {
+      mostrarAviso('Listo. ' + reabiertos + ' documento(s) que ya estaban aprobados volvieron a borrador porque cambió el contenido -- revisalos y aprobalos de nuevo antes de enviar.');
+    }
+  });
 }
 
 function generarDocumentos() {

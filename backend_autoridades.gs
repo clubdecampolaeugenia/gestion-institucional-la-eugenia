@@ -47,7 +47,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'guardarPuntosManualesAsamblea', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarOrdenDelDiaEnDocumentos', 'guardarPuntosManualesAsamblea', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -118,6 +118,8 @@ function doGet(e) {
       resultado = registrarInformeRevisor(e.parameter);
     } else if (action === 'generarConvocatoriaYDocumentos') {
       resultado = generarConvocatoriaYDocumentos(e.parameter);
+    } else if (action === 'actualizarOrdenDelDiaEnDocumentos') {
+      resultado = actualizarOrdenDelDiaEnDocumentos(e.parameter);
     } else if (action === 'previsualizarOrdenDelDia') {
       resultado = previsualizarOrdenDelDia();
     } else if (action === 'guardarPuntosManualesAsamblea') {
@@ -1768,15 +1770,11 @@ function guardarPuntosManualesAsamblea(params) {
   return { ok: false, error: 'No hay Asamblea registrada para este Ejercicio. Cargá la fecha primero en el Home.' };
 }
 
-function generarConvocatoriaYDocumentos(params) {
-  const ejercicioActivo = obtenerEjercicioActivo();
-  if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
-  const ej = ejercicioActivo.ejercicio;
-
-  // Fuente única de verdad: fecha/hora/lugar se LEEN de ASAMBLEAS, nunca se
-  // aceptan desde el frontend. El único lugar que puede escribirlos es la
-  // píldora del Home (guardarAsambleaEjercicio). Si no hay fila todavía,
-  // no se genera nada -- hay que cargar la fecha primero.
+// Arma los 4 textos (Acta CD, Edicto Diario, Edicto Boletín, Circular) a partir del Orden del
+// Día recalculado en el momento. Compartida por generarConvocatoriaYDocumentos (crea versión
+// nueva) y actualizarOrdenDelDiaEnDocumentos (sobrescribe en el lugar) -- así nunca hay dos
+// copias de esta plantilla que se puedan desincronizar entre sí.
+function armarTextosConvocatoria_(ej, params, numeroActaUsar) {
   const hojaAsam = getHojaAsambleas();
   const datosAsam = hojaAsam.getDataRange().getValues();
   let filaExistente = -1;
@@ -1798,24 +1796,22 @@ function generarConvocatoriaYDocumentos(params) {
   const vencenEsteAnio = autRes.ok ? autRes.vencenEsteAnio : [];
 
   const ultimoNumero = obtenerUltimoNumeroActa();
-  const nuevoNumeroActa = ultimoNumero + 1;
 
   // Orden del Día -- objeto único, todos los documentos lo citan literal, nunca se retipea
   const puntosManuales = filaAsam[10] ? JSON.parse(filaAsam[10]) : [];
   const puntosObj = construirPuntosOrdenDelDia(ej, fueraDeTermino, vencenEsteAnio, puntosManuales);
   const puntos = puntosObj.map(p => p.numero + ' ' + p.texto);
-
   const ordenDelDiaTexto = puntos.join('\n');
 
-  // Solo actualiza el Orden del Día (columna 6) -- fecha/hora/lugar (columnas 3,4,5)
-  // quedan intactas, esta función nunca las toca.
+  // Mantiene ASAMBLEAS.ORDEN_DIA sincronizado con lo último calculado, tanto al generar
+  // como al actualizar -- la página pública y el mail del Boletín leen de acá.
   hojaAsam.getRange(filaExistente, 6).setValue(JSON.stringify(puntos));
 
   const MESES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const fechaAsambleaFmt = Utilities.formatDate(fechaAsamblea, Session.getScriptTimeZone(), 'dd') + ' de ' + MESES_ES[fechaAsamblea.getMonth()] + ' de ' + Utilities.formatDate(fechaAsamblea, Session.getScriptTimeZone(), 'yyyy');
 
   // ---- 1. Acta de Comisión Directiva ----
-  let actaCD = 'ACTA N.º ' + nuevoNumeroActa + '\n\n';
+  let actaCD = 'ACTA N.º ' + numeroActaUsar + '\n\n';
   actaCD += 'En la sede social del Club de Campo La Eugenia, siendo las ' + params.horaReunionCD + ' hs. del día ' + params.fechaReunionCD + ', se reúnen los siguientes miembros de Comisión Directiva: ' + params.presentesCD + '.\n\n';
   actaCD += 'Como primer punto del orden del día se da lectura al acta N.º ' + ultimoNumero + '. Se aprueba por unanimidad.\n\n';
   actaCD += 'Como segundo punto del orden del día, la Comisión Directiva resuelve convocar a Asamblea General Ordinaria para el día ' + fechaAsambleaFmt + ', a las ' + horaAsamblea + ' horas, en ' + lugarAsamblea + '.\n\n';
@@ -1837,6 +1833,30 @@ function generarConvocatoriaYDocumentos(params) {
   let circular = 'CIRCULAR\n\nSeñores Socios:\n\nPor medio de la presente circular, conforme al artículo 41 del Estatuto Social, la Comisión Directiva convoca a la Asamblea General Ordinaria, que se celebrará el día ' + fechaAsambleaFmt + ', a las ' + horaAsamblea + ' horas, en ' + lugarAsamblea + ', para tratar el siguiente:\n\nORDEN DEL DÍA\n\n' + ordenDelDiaTexto;
   circular += '\n\nRecordamos que, conforme a los artículos 13 y 47 del Estatuto Social, solo podrán participar y votar los socios activos que se encuentren al día con el pago de sus cuotas sociales.\n\nCOMISIÓN DIRECTIVA';
 
+  return {
+    ok: true,
+    fueraDeTermino: fueraDeTermino,
+    fechaLimite: fechaLimite,
+    documentos: [
+      { tipo: 'ACTA_CD_CONVOCATORIA', contenido: actaCD },
+      { tipo: 'EDICTO_DIARIO', contenido: edictoDiario },
+      { tipo: 'EDICTO_BOLETIN', contenido: edictoBoletin },
+      { tipo: 'CIRCULAR', contenido: circular }
+    ]
+  };
+}
+
+function generarConvocatoriaYDocumentos(params) {
+  const ejercicioActivo = obtenerEjercicioActivo();
+  if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
+  const ej = ejercicioActivo.ejercicio;
+
+  const ultimoNumero = obtenerUltimoNumeroActa();
+  const nuevoNumeroActa = ultimoNumero + 1;
+
+  const armado = armarTextosConvocatoria_(ej, params, nuevoNumeroActa);
+  if (!armado.ok) return armado;
+
   // Guarda los 4 documentos en la tabla única. La versión se calcula por tipo (no fija en 1)
   // para que, al volver a generar después de una aprobación, quede claro cuál es la vigente
   // -- listarDocumentos ordena por versión descendente para decidir "la última".
@@ -1851,21 +1871,71 @@ function generarConvocatoriaYDocumentos(params) {
     }
     return v + 1;
   }
-  const docs = [
-    { tipo: 'ACTA_CD_CONVOCATORIA', contenido: actaCD },
-    { tipo: 'EDICTO_DIARIO', contenido: edictoDiario },
-    { tipo: 'EDICTO_BOLETIN', contenido: edictoBoletin },
-    { tipo: 'CIRCULAR', contenido: circular }
-  ];
   const resultado = [];
-  docs.forEach(doc => {
+  armado.documentos.forEach(doc => {
     const version = proximaVersionDoc_(doc.tipo);
     const nuevoId = 'DOC-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss') + '-' + doc.tipo;
     hoja.appendRow([nuevoId, ej.idEjercicio, doc.tipo, version, 'BORRADOR', doc.contenido, 'IA', new Date()]);
     resultado.push({ tipo: doc.tipo, idDocumento: nuevoId, contenido: doc.contenido, estado: 'BORRADOR', version: version });
   });
 
-  return { ok: true, documentos: resultado, fueraDeTermino: fueraDeTermino, fechaLimite: Utilities.formatDate(fechaLimite, Session.getScriptTimeZone(), 'dd/MM/yyyy'), numeroActa: nuevoNumeroActa };
+  return { ok: true, documentos: resultado, fueraDeTermino: armado.fueraDeTermino, fechaLimite: Utilities.formatDate(armado.fechaLimite, Session.getScriptTimeZone(), 'dd/MM/yyyy'), numeroActa: nuevoNumeroActa };
+}
+
+// "Actualizar" en vez de "Generar de nuevo": sobrescribe el CONTENIDO de la versión vigente de
+// cada uno de los 4 documentos con el Orden del Día recalculado, sin crear una versión nueva ni
+// cambiar el número de Acta. Si alguno estaba APROBADO, vuelve a BORRADOR -- cambió el contenido,
+// tiene que revisarse de nuevo antes de mandarse. Pensada para cuando solo cambió el Orden del
+// Día (agregaste/sacaste un punto manual) y no hace falta repetir toda la carga de la reunión de CD.
+function actualizarOrdenDelDiaEnDocumentos(params) {
+  const ejercicioActivo = obtenerEjercicioActivo();
+  if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
+  const ej = ejercicioActivo.ejercicio;
+
+  const hoja = getHojaDocumentos();
+  const datos = hoja.getDataRange().getValues();
+  const idx = {}; // ID_DOCUMENTO, ID_EJERCICIO, TIPO, VERSION, ESTADO, CONTENIDO, ORIGEN, FECHA
+  ['ID_DOCUMENTO','ID_EJERCICIO','TIPO','VERSION','ESTADO','CONTENIDO','ORIGEN','FECHA'].forEach((h, i) => idx[h] = i);
+
+  const tipos = ['ACTA_CD_CONVOCATORIA', 'EDICTO_DIARIO', 'EDICTO_BOLETIN', 'CIRCULAR'];
+  const filaVigentePorTipo = {};
+  tipos.forEach(t => {
+    let mejorFila = -1, mejorVersion = -1;
+    for (let i = 1; i < datos.length; i++) {
+      if (datos[i][idx.TIPO] === t && datos[i][idx.ID_EJERCICIO] === ej.idEjercicio) {
+        const v = Number(datos[i][idx.VERSION]) || 0;
+        if (v > mejorVersion) { mejorVersion = v; mejorFila = i + 1; }
+      }
+    }
+    filaVigentePorTipo[t] = mejorFila;
+  });
+
+  if (tipos.some(t => filaVigentePorTipo[t] === -1)) {
+    return { ok: false, error: 'Todavía no generaste los 4 documentos. Usá "Generar los 4 documentos" primero -- "Actualizar" solo refresca lo que ya existe.' };
+  }
+
+  // El número de Acta CD no cambia por actualizar el Orden del Día -- se extrae del documento existente.
+  const filaActaExistente = filaVigentePorTipo['ACTA_CD_CONVOCATORIA'];
+  const contenidoActaExistente = String(hoja.getRange(filaActaExistente, idx.CONTENIDO + 1).getValue());
+  const matchNumero = contenidoActaExistente.match(/^ACTA N\.º (\d+)/);
+  const numeroActaUsar = matchNumero ? matchNumero[1] : obtenerUltimoNumeroActa();
+
+  const armado = armarTextosConvocatoria_(ej, params, numeroActaUsar);
+  if (!armado.ok) return armado;
+
+  const resultado = [];
+  armado.documentos.forEach(doc => {
+    const fila = filaVigentePorTipo[doc.tipo];
+    const estadoAnterior = hoja.getRange(fila, idx.ESTADO + 1).getValue();
+    const estadoNuevo = estadoAnterior === 'APROBADO' ? 'BORRADOR' : estadoAnterior;
+    hoja.getRange(fila, idx.CONTENIDO + 1).setValue(doc.contenido);
+    hoja.getRange(fila, idx.ESTADO + 1).setValue(estadoNuevo);
+    hoja.getRange(fila, idx.FECHA + 1).setValue(new Date());
+    const idDocumento = hoja.getRange(fila, idx.ID_DOCUMENTO + 1).getValue();
+    resultado.push({ tipo: doc.tipo, idDocumento: idDocumento, contenido: doc.contenido, estado: estadoNuevo, reabierto: estadoAnterior === 'APROBADO' });
+  });
+
+  return { ok: true, documentos: resultado, fueraDeTermino: armado.fueraDeTermino, fechaLimite: Utilities.formatDate(armado.fechaLimite, Session.getScriptTimeZone(), 'dd/MM/yyyy'), numeroActa: numeroActaUsar };
 }
 
 function registrarInformeRevisor(params) {
