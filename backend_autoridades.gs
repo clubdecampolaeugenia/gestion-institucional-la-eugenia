@@ -95,7 +95,7 @@ function doGet(e) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(e.parameter);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v49-integridad-bloque2-13ago-1200' };
+      resultado = { ok: true, version: 'v50-sync-post-hilo-paralelo-13ago-1600' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
