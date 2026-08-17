@@ -47,7 +47,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarOrdenDelDiaEnDocumentos', 'guardarPuntosManualesAsamblea', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'guardarActaHistorica', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarOrdenDelDiaEnDocumentos', 'guardarPuntosManualesAsamblea', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'backupDocumentos', 'diagnosticoDuplicadosDocumentos', 'limpiarDocumentosConvocatoriaViejos', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -95,7 +95,7 @@ function doGet(e) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(e.parameter);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v54-bloque4-lock-actas-15ago-1300' };
+      resultado = { ok: true, version: 'v55-saneamiento-cierre-15ago-1500' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -138,6 +138,12 @@ function doGet(e) {
       resultado = limpiarDuplicadosAsambleas();
     } else if (action === 'backupAsambleas') {
       resultado = backupAsambleas();
+    } else if (action === 'backupDocumentos') {
+      resultado = backupDocumentos();
+    } else if (action === 'diagnosticoDuplicadosDocumentos') {
+      resultado = diagnosticoDuplicadosDocumentos();
+    } else if (action === 'limpiarDocumentosConvocatoriaViejos') {
+      resultado = limpiarDocumentosConvocatoriaViejos();
     } else if (action === 'insertarEncabezadoAsambleas') {
       resultado = insertarEncabezadoAsambleas();
     } else if (action === 'marcarAsambleaCelebrada') {
@@ -890,7 +896,7 @@ function obtenerResumenDashboard() {
 
   // Progreso: mismos 10 hitos y pesos que usa el Dashboard de la app (3 calculados en vivo, 7 con el estado real conocido hoy)
   const pesoEstado = { COMPLETO: 1, PROGRESO: 0.5, OBSERVADO: 0.25, PENDIENTE: 0, NOINICIADO: 0 };
-  const estadoBalance = !balanceDelEjercicio ? 'NOINICIADO' : (balanceDelEjercicio.estado === 'APROBADO_ASAMBLEA' ? 'COMPLETO' : (balanceDelEjercicio.estado === 'OBSERVADO' ? 'OBSERVADO' : 'PROGRESO'));
+  const estadoBalance = !balanceDelEjercicio ? 'NOINICIADO' : ((balanceDelEjercicio.estado === 'APROBADO_ASAMBLEA' || balanceDelEjercicio.estado === 'LEGALIZADO') ? 'COMPLETO' : (balanceDelEjercicio.estado === 'OBSERVADO' ? 'OBSERVADO' : 'PROGRESO'));
   const estadoAutoridades = vacantesAutoridades === 0 ? 'COMPLETO' : 'PROGRESO';
   const estadoActas = actasTotal === 0 ? 'NOINICIADO' : (actasBorrador > 0 ? 'PROGRESO' : 'COMPLETO');
   const hitosFijos = ['COMPLETO', 'PENDIENTE', ultimaMemoria ? 'PROGRESO' : 'PENDIENTE', 'PROGRESO', 'PROGRESO', 'NOINICIADO', 'PROGRESO'];
@@ -1459,6 +1465,58 @@ function backupAsambleas() {
   const copia = original.copyTo(ss);
   copia.setName(nombreBackup);
   return { ok: true, mensaje: 'Backup creado como pestaña: ' + nombreBackup };
+}
+
+function backupDocumentos() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const original = ss.getSheetByName(HOJA_DOCUMENTOS);
+  if (!original) return { ok: false, error: 'No existe la hoja DOCUMENTOS' };
+  const nombreBackup = 'DOCUMENTOS_BACKUP_' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd_HHmmss');
+  const yaExiste = ss.getSheetByName(nombreBackup);
+  if (yaExiste) return { ok: false, error: 'Ya existe un backup con ese nombre, esperá un segundo y reintentá' };
+  const copia = original.copyTo(ss);
+  copia.setName(nombreBackup);
+  return { ok: true, mensaje: 'Backup creado como pestaña: ' + nombreBackup };
+}
+
+// Solo diagnóstico -- NO borra ni modifica nada. Lista los duplicados
+// tipo+idEjercicio+version encontrados en DOCUMENTOS para EJ-037.
+function diagnosticoDuplicadosDocumentos() {
+  const hoja = getHojaDocumentos();
+  const datos = hoja.getDataRange().getValues();
+  const tiposRelevantes = ['ACTA_CD_CONVOCATORIA', 'EDICTO_DIARIO', 'EDICTO_BOLETIN', 'CIRCULAR'];
+  const filas = [];
+  for (let i = 1; i < datos.length; i++) {
+    const fila = datos[i];
+    if (!fila[0]) continue;
+    if (tiposRelevantes.indexOf(fila[2]) === -1) continue;
+    filas.push({ fila: i + 1, idDocumento: fila[0], idEjercicio: fila[1], tipo: fila[2], version: fila[3], estado: fila[4], generadoPor: fila[6], fechaGeneracion: fila[7] });
+  }
+  return { ok: true, filas: filas };
+}
+
+// Saneamiento puntual (Bloque de cierre): borra los 4 documentos de Convocatoria
+// generados el 11/08, ANTES de que existiera el fix de versionado -- confirmados como
+// erróneos (mes en inglés, sin 2 autoridades que se cargaron después) y nunca aprobados.
+// IDs hardcodeados a propósito, no lógica genérica -- acción quirúrgica, no automática.
+function limpiarDocumentosConvocatoriaViejos() {
+  const idsABorrar = [
+    'DOC-20260811110603-ACTA_CD_CONVOCATORIA',
+    'DOC-20260811110603-EDICTO_DIARIO',
+    'DOC-20260811110604-EDICTO_BOLETIN',
+    'DOC-20260811110605-CIRCULAR'
+  ];
+  const hoja = getHojaDocumentos();
+  const datos = hoja.getDataRange().getValues();
+  const borrados = [];
+  // De abajo hacia arriba, para no correr los índices al borrar
+  for (let i = datos.length - 1; i >= 1; i--) {
+    if (idsABorrar.indexOf(datos[i][0]) !== -1) {
+      borrados.push({ idDocumento: datos[i][0], tipo: datos[i][2], version: datos[i][3] });
+      hoja.deleteRow(i + 1);
+    }
+  }
+  return { ok: true, borrados: borrados, cantidadBorrada: borrados.length, cantidadEsperada: idsABorrar.length };
 }
 
 function insertarEncabezadoAsambleas() {
