@@ -59,10 +59,15 @@
 
   .acta-card { background: var(--blanco); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
   .acta-num { font-weight: 900; color: var(--petroleo); }
+  .acta-origen-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; opacity: .55; margin-left: 6px; }
   .estado-badge { font-size: 11px; font-weight: 900; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; }
   .estado-BORRADOR { background: var(--naranja); color: var(--petroleo); }
   .estado-REVISADA { background: var(--lima); color: var(--petroleo); }
-  .estado-APROBADA, .estado-FIRMADA { background: var(--petroleo); color: var(--lima); }
+  .estado-APROBADA, .estado-FIRMADA, .estado-ASENTADA { background: var(--petroleo); color: var(--lima); }
+  .estado-ANULADA { background: var(--error); color: var(--blanco); text-decoration: line-through; }
+
+  .btn-peligro { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 2px solid var(--error); background: transparent; color: var(--error); font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
+  .btn-asentar { display: block; width: 100%; padding: 14px; border-radius: 24px; border: 2px solid var(--petroleo); background: var(--lima); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
 
   .punto-item { background: var(--blanco); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; }
   .punto-item textarea { border: none; padding: 4px; min-height: 60px; }
@@ -152,6 +157,7 @@
     <!-- ACTAS -->
     <div class="tab-panel" id="panelActas">
       <button type="button" class="btn-outline" onclick="toggleFormNuevaActa()">➕ Generar nuevo borrador de Acta</button>
+      <button type="button" class="btn-outline" onclick="toggleFormActaManual()">📋 Registrar Acta manual / externa</button>
 
       <div class="form-panel" id="formNuevaActa" style="display:none; background: var(--petroleo); border-radius: 16px; padding: 14px; margin-bottom: 14px;">
         <span class="field-label" style="color:var(--lima);">Fecha de la reunión</span>
@@ -164,7 +170,33 @@
         </div>
         <span class="field-label" style="color:var(--lima);">Presentes (tildá quiénes asistieron)</span>
         <div id="listaPresentesActa" style="background:var(--blanco); border-radius:12px; padding:12px; max-height:220px; overflow-y:auto; margin-bottom:8px;">cargando autoridades...</div>
+        <div style="font-size:11px; color:var(--lima); opacity:.85; margin-bottom:8px;">Este borrador todavía NO tiene número de Acta. El número real se asigna recién cuando lo asientes en el Libro.</div>
         <button type="button" class="btn-solid" id="btnGenerarBorrador" style="margin-top:12px;" onclick="generarBorrador()">Generar borrador</button>
+      </div>
+
+      <div class="form-panel" id="formActaManual" style="display:none; background: var(--petroleo); border-radius: 16px; padding: 14px; margin-bottom: 14px;">
+        <div style="font-size:11px; color:var(--lima); opacity:.85; margin-bottom:10px;">Para un acta confeccionada fuera de la app (en papel). Podés indicar cualquier número libre -- no tiene que ser necesariamente el siguiente, sirve también para completar un número que quedó pendiente.</div>
+        <span class="field-label" style="color:var(--lima);">Número de Acta</span>
+        <input type="number" id="mNumeroActa" placeholder="Ej: 570">
+        <span class="field-label" style="color:var(--lima);">Fecha de la reunión</span>
+        <input type="date" id="mFechaReunion">
+        <span class="field-label" style="color:var(--lima);">Hora de inicio (24 hs)</span>
+        <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
+          <select id="mHoraInicio_h" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <span style="font-weight:900;">:</span>
+          <select id="mHoraInicio_m" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+        </div>
+        <span class="field-label" style="color:var(--lima);">Hora de cierre (24 hs)</span>
+        <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
+          <select id="mHoraFin_h" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <span style="font-weight:900;">:</span>
+          <select id="mHoraFin_m" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+        </div>
+        <span class="field-label" style="color:var(--lima);">Presentes</span>
+        <div id="listaPresentesActaManual" style="background:var(--blanco); border-radius:12px; padding:12px; max-height:220px; overflow-y:auto; margin-bottom:8px;">cargando autoridades...</div>
+        <span class="field-label" style="color:var(--lima);">Puntos tratados (uno por línea)</span>
+        <textarea id="mPuntos" style="width:100%; min-height:100px; border-radius:10px; padding:10px; border:none;" placeholder="Se da lectura al acta N.º ...&#10;Se resuelve..."></textarea>
+        <button type="button" class="btn-solid" id="btnRegistrarManual" style="margin-top:12px;" onclick="registrarActaManualUI()">Registrar como Asentada</button>
       </div>
 
       <div id="listaActas"></div>
@@ -172,8 +204,12 @@
       <div id="previewActa" style="display:none;">
         <hr class="divider">
         <div class="field-label" id="previewActaTitulo"></div>
+        <div id="previewActaMotivoAnulacion" style="display:none; background:rgba(192,57,43,0.12); border:2px solid var(--error); border-radius:12px; padding:10px 12px; margin-bottom:12px; color:var(--error); font-size:12px; font-weight:700;"></div>
         <div class="texto-final-box" id="previewTextoBox" style="display:block; margin-bottom:16px;"></div>
-        <button type="button" style="display:block; width:100%; padding:14px; border-radius:24px; border:2px solid var(--lima); background:var(--petroleo); color:var(--lima); font-family:'Roboto'; font-size:15px; font-weight:900; text-transform:uppercase; cursor:pointer; margin-bottom:10px;" onclick="pasarAEditar()">✏️ Editar</button>
+        <button type="button" class="btn-asentar" id="btnAsentarActa" style="display:none;" onclick="asentarActaUI()">✔️ Asentar en el Libro (asigna número definitivo)</button>
+        <button type="button" style="display:block; width:100%; padding:14px; border-radius:24px; border:2px solid var(--lima); background:var(--petroleo); color:var(--lima); font-family:'Roboto'; font-size:15px; font-weight:900; text-transform:uppercase; cursor:pointer; margin-bottom:10px;" id="btnEditarActa" onclick="pasarAEditar()">✏️ Editar</button>
+        <button type="button" class="btn-peligro" id="btnEliminarBorrador" style="display:none;" onclick="eliminarBorradorUI()">🗑️ Eliminar borrador</button>
+        <button type="button" class="btn-peligro" id="btnAnularActa" style="display:none;" onclick="anularActaUI()">⚠️ Anular Acta</button>
         <button type="button" class="btn-ghost" onclick="cerrarPreview()">← Volver a la lista de actas</button>
       </div>
 
@@ -315,7 +351,74 @@ function entrarApp() {
   cargarActas();
   poblarSelectorHora('fHoraInicio', '20:30');
   poblarSelectorHora('eHoraFin', '21:15');
+  poblarSelectorHora('mHoraInicio', '20:30');
+  poblarSelectorHora('mHoraFin', '21:15');
   precargarPresentesActa();
+  precargarPresentesActaManual();
+}
+
+function precargarPresentesActaManual() {
+  jsonp(EXEC_URL_GI + '?action=listarAutoridades', function(res) {
+    const cont = document.getElementById('listaPresentesActaManual');
+    if (!res || !res.ok) { cont.textContent = 'No se pudo cargar Autoridades.'; return; }
+    const orden = ['Presidente','Vicepresidente','Secretario','Prosecretario','Tesorero','Protesorero','Vocal Titular 1°','Vocal Titular 2°','Vocal Titular 3°','Vocal Suplente 1°','Vocal Suplente 2°','Vocal Suplente 3°'];
+    const porCargo = {};
+    res.autoridades.forEach(a => { porCargo[a.cargo] = a.nombre; });
+    cont.innerHTML = orden.filter(c => porCargo[c]).map(c =>
+      '<label style="display:flex; align-items:center; gap:8px; padding:6px 0; font-size:13px; color:var(--petroleo); border-bottom:1px solid #eee;">' +
+      '<input type="checkbox" class="chk-presente-acta-manual" value="' + escapeHtml(porCargo[c]) + ', ' + c + '">' +
+      '<span>' + escapeHtml(porCargo[c]) + ' — ' + c + '</span></label>'
+    ).join('');
+  });
+}
+
+function obtenerPresentesActaManualSeleccionados() {
+  return Array.from(document.querySelectorAll('.chk-presente-acta-manual:checked')).map(c => c.value).join('; ');
+}
+
+function toggleFormActaManual() {
+  const f = document.getElementById('formActaManual');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  if (!document.getElementById('mFechaReunion').value) {
+    document.getElementById('mFechaReunion').value = new Date().toISOString().split('T')[0];
+  }
+}
+
+function registrarActaManualUI() {
+  const numero = document.getElementById('mNumeroActa').value;
+  const fecha = document.getElementById('mFechaReunion').value;
+  const presentes = obtenerPresentesActaManualSeleccionados();
+  if (!numero || !fecha || !presentes) { mostrarAviso('Completá número, fecha y presentes.'); return; }
+
+  const puntosTexto = document.getElementById('mPuntos').value.split('\n').map(l => l.trim()).filter(l => l);
+  if (puntosTexto.length === 0) { mostrarAviso('Cargá al menos un punto tratado.'); return; }
+  const puntos = puntosTexto.map((texto, i) => ({ orden: i + 1, texto: texto }));
+
+  mostrarConfirmacion('¿Registrar el Acta N.º ' + numero + ' como ASENTADA? Esta acción no se puede deshacer -- si hay un error después, hay que anularla, no se puede editar ni borrar.', function() {
+    const btn = document.getElementById('btnRegistrarManual');
+    btn.disabled = true;
+    document.getElementById('loadingText').textContent = 'Registrando...';
+    const params = 'action=registrarActaManual&numeroActa=' + encodeURIComponent(numero) +
+      '&fechaReunion=' + encodeURIComponent(fecha) +
+      '&horaInicio=' + encodeURIComponent(obtenerValorHora('mHoraInicio')) +
+      '&horaFin=' + encodeURIComponent(obtenerValorHora('mHoraFin')) +
+      '&presentes=' + encodeURIComponent(presentes) +
+      '&puntos=' + encodeURIComponent(JSON.stringify(puntos)) +
+      '&pin=' + encodeURIComponent(PIN_SESION);
+    jsonp(EXEC_URL_GI + '?' + params, function(res) {
+      btn.disabled = false;
+      document.getElementById('loadingText').textContent = '';
+      if (res && res.ok) {
+        toggleFormActaManual();
+        document.getElementById('mNumeroActa').value = '';
+        document.getElementById('mPuntos').value = '';
+        document.querySelectorAll('.chk-presente-acta-manual:checked').forEach(c => c.checked = false);
+        cargarActas();
+      } else {
+        mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+      }
+    });
+  });
 }
 
 function precargarPresentesActa() {
@@ -592,7 +695,7 @@ function generarBorrador() {
       document.querySelectorAll('.chk-presente-acta:checked').forEach(c => c.checked = false);
       cargarActas();
       cargarNotas();
-      abrirEditor(res.idActa);
+      abrirEditor(res.idRegistro);
     } else {
       mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
     }
@@ -610,20 +713,37 @@ function cargarActas() {
     res.actas.forEach(a => {
       const div = document.createElement('div');
       div.className = 'acta-card';
-      div.onclick = () => abrirPreview(a.idActa);
-      div.innerHTML = '<span class="acta-num">Acta N.º ' + a.idActa + ' — ' + a.fechaReunion + ' <small style="opacity:.6; font-weight:400;">(' + a.idEjercicio + ')</small></span><span class="estado-badge estado-' + a.estado + '">' + a.estado + '</span>';
+      div.onclick = () => abrirPreview(a.idRegistro);
+      const numeroTexto = a.estado === 'BORRADOR' ? ('Previsto: ' + a.numeroPrevisto) : ('Acta N.º ' + a.numeroActa);
+      const origenTag = a.origen === 'MANUAL' ? '<span class="acta-origen-tag">MANUAL</span>' : (a.origen === 'MIGRADO' ? '<span class="acta-origen-tag">MIGRADO</span>' : '');
+      div.innerHTML = '<span class="acta-num">' + numeroTexto + origenTag + ' — ' + a.fechaReunion + ' <small style="opacity:.6; font-weight:400;">(' + a.idEjercicio + ')</small></span><span class="estado-badge estado-' + a.estado + '">' + a.estado + '</span>';
       cont.appendChild(div);
     });
   });
 }
 
-function abrirPreview(idActa) {
-  jsonp(EXEC_URL_GI + '?action=obtenerActa&idActa=' + idActa, function(res) {
+function abrirPreview(idRegistro) {
+  jsonp(EXEC_URL_GI + '?action=obtenerActa&idRegistro=' + idRegistro, function(res) {
     if (!res || !res.ok) { mostrarAviso('No se pudo abrir el acta'); return; }
     ACTA_ACTUAL = res.acta;
     document.getElementById('previewActa').style.display = 'block';
-    document.getElementById('previewActaTitulo').textContent = 'Acta N.º ' + ACTA_ACTUAL.idActa + ' — ' + ACTA_ACTUAL.estado;
+    const titulo = ACTA_ACTUAL.estado === 'BORRADOR' ? ('Borrador (N.º previsto informativo)') : ('Acta N.º ' + ACTA_ACTUAL.numeroActa + ' — ' + ACTA_ACTUAL.estado);
+    document.getElementById('previewActaTitulo').textContent = titulo;
     document.getElementById('previewTextoBox').textContent = construirTextoFinalActa(ACTA_ACTUAL);
+
+    const motivoBox = document.getElementById('previewActaMotivoAnulacion');
+    if (ACTA_ACTUAL.estado === 'ANULADA') {
+      motivoBox.style.display = 'block';
+      motivoBox.textContent = 'ANULADA — Motivo: ' + ACTA_ACTUAL.motivoAnulacion;
+    } else {
+      motivoBox.style.display = 'none';
+    }
+
+    document.getElementById('btnAsentarActa').style.display = ACTA_ACTUAL.estado === 'BORRADOR' ? 'block' : 'none';
+    document.getElementById('btnEditarActa').style.display = ACTA_ACTUAL.estado === 'BORRADOR' ? 'block' : 'none';
+    document.getElementById('btnEliminarBorrador').style.display = ACTA_ACTUAL.estado === 'BORRADOR' ? 'block' : 'none';
+    document.getElementById('btnAnularActa').style.display = ACTA_ACTUAL.estado === 'ASENTADA' ? 'block' : 'none';
+
     document.getElementById('editorActa').style.display = 'none';
     document.getElementById('previewActa').scrollIntoView({ behavior: 'smooth' });
   });
@@ -637,18 +757,18 @@ function cerrarPreview() {
 function pasarAEditar() {
   document.getElementById('previewActa').style.display = 'none';
   document.getElementById('editorActa').style.display = 'block';
-  document.getElementById('editorActaTitulo').textContent = 'Editando Acta N.º ' + ACTA_ACTUAL.idActa + ' (' + ACTA_ACTUAL.estado + ')';
+  document.getElementById('editorActaTitulo').textContent = 'Editando borrador (previsto)';
   renderPuntos();
   document.getElementById('textoFinalBox').style.display = 'none';
   document.getElementById('editorActa').scrollIntoView({ behavior: 'smooth' });
 }
 
-function abrirEditor(idActa) {
-  jsonp(EXEC_URL_GI + '?action=obtenerActa&idActa=' + idActa, function(res) {
+function abrirEditor(idRegistro) {
+  jsonp(EXEC_URL_GI + '?action=obtenerActa&idRegistro=' + idRegistro, function(res) {
     if (!res || !res.ok) { mostrarAviso('No se pudo abrir el acta'); return; }
     ACTA_ACTUAL = res.acta;
     document.getElementById('editorActa').style.display = 'block';
-    document.getElementById('editorActaTitulo').textContent = 'Editando Acta N.º ' + ACTA_ACTUAL.idActa + ' (' + ACTA_ACTUAL.estado + ')';
+    document.getElementById('editorActaTitulo').textContent = 'Editando borrador (previsto)';
     renderPuntos();
     document.getElementById('textoFinalBox').style.display = 'none';
     document.getElementById('editorActa').scrollIntoView({ behavior: 'smooth' });
@@ -678,7 +798,7 @@ function agregarPuntoVacio() {
 function guardarCambiosActa() {
   const horaFin = obtenerValorHora('eHoraFin');
   document.getElementById('loadingText').textContent = 'Guardando...';
-  const params = 'action=actualizarActa&idActa=' + ACTA_ACTUAL.idActa + '&puntos=' + encodeURIComponent(JSON.stringify(ACTA_ACTUAL.puntos)) + '&horaFin=' + encodeURIComponent(horaFin) + '&pin=' + encodeURIComponent(PIN_SESION);
+  const params = 'action=actualizarActa&idRegistro=' + ACTA_ACTUAL.idRegistro + '&puntos=' + encodeURIComponent(JSON.stringify(ACTA_ACTUAL.puntos)) + '&horaFin=' + encodeURIComponent(horaFin) + '&pin=' + encodeURIComponent(PIN_SESION);
   jsonp(EXEC_URL_GI + '?' + params, function(res) {
     document.getElementById('loadingText').textContent = '';
     if (res && res.ok) {
@@ -689,9 +809,58 @@ function guardarCambiosActa() {
   });
 }
 
+function asentarActaUI() {
+  mostrarConfirmacion('¿Asentar esta acta en el Libro? Recién en este momento se le asigna el número definitivo -- no se puede deshacer. Si hay un error después, hay que anularla, no se puede volver a Borrador.', function() {
+    document.getElementById('loadingText').textContent = 'Asentando...';
+    jsonp(EXEC_URL_GI + '?action=asentarActa&idRegistro=' + ACTA_ACTUAL.idRegistro + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      document.getElementById('loadingText').textContent = '';
+      if (res && res.ok) {
+        mostrarAviso('Asentada como Acta N.º ' + res.numeroActa + '.', function() { cerrarPreview(); cargarActas(); });
+      } else {
+        mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+      }
+    });
+  });
+}
+
+function eliminarBorradorUI() {
+  const motivo = prompt('Motivo para eliminar este borrador (obligatorio):');
+  if (motivo === null) return;
+  if (!motivo.trim()) { mostrarAviso('El motivo es obligatorio.'); return; }
+  mostrarConfirmacion('¿Eliminar este borrador? Se libera cualquier nota de Bitácora que había tomado. No se puede deshacer.', function() {
+    document.getElementById('loadingText').textContent = 'Eliminando...';
+    jsonp(EXEC_URL_GI + '?action=eliminarBorradorActa&idRegistro=' + ACTA_ACTUAL.idRegistro + '&motivo=' + encodeURIComponent(motivo) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      document.getElementById('loadingText').textContent = '';
+      if (res && res.ok) {
+        mostrarAviso('Borrador eliminado. ' + res.notasLiberadas + ' nota(s) de Bitácora liberada(s).', function() { cerrarPreview(); cargarActas(); cargarNotas(); });
+      } else {
+        mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+      }
+    });
+  });
+}
+
+function anularActaUI() {
+  const motivo = prompt('Motivo para anular el Acta N.º ' + ACTA_ACTUAL.numeroActa + ' (obligatorio):');
+  if (motivo === null) return;
+  if (!motivo.trim()) { mostrarAviso('El motivo es obligatorio.'); return; }
+  mostrarConfirmacion('¿Anular el Acta N.º ' + ACTA_ACTUAL.numeroActa + '? El número queda quemado para siempre -- no se reutiliza ni se puede deshacer.', function() {
+    document.getElementById('loadingText').textContent = 'Anulando...';
+    jsonp(EXEC_URL_GI + '?action=anularActa&idRegistro=' + ACTA_ACTUAL.idRegistro + '&motivo=' + encodeURIComponent(motivo) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+      document.getElementById('loadingText').textContent = '';
+      if (res && res.ok) {
+        mostrarAviso('Acta anulada.', function() { cerrarPreview(); cargarActas(); });
+      } else {
+        mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+      }
+    });
+  });
+}
+
 function construirTextoFinalActa(acta, horaFin) {
   const ordinales = ['primer','segundo','tercer','cuarto','quinto','sexto','séptimo','octavo','noveno','décimo'];
-  let texto = 'ACTA N.º ' + acta.idActa + ':\n\n';
+  const encabezado = acta.estado === 'BORRADOR' ? 'ACTA (BORRADOR -- sin número definitivo):' : ('ACTA N.º ' + acta.numeroActa + ':');
+  let texto = encabezado + '\n\n';
   texto += 'En la sede social del Club de Campo La Eugenia, siendo las ' + acta.horaInicio + ' hs. del día ' + acta.fechaReunion + ', se reúnen los siguientes miembros de Comisión Directiva: ' + acta.presentes + '.\n\n';
 
   acta.puntos.forEach((p, i) => {
@@ -735,23 +904,29 @@ function cargarConsolidado() {
       cont.innerHTML = '<div class="empty-msg">Todavía no hay actas para mostrar.</div>';
       return;
     }
+    // El libro consolidado solo muestra actas con número definitivo (ASENTADA o ANULADA) --
+    // un BORRADOR todavía no tiene lugar real en el Libro.
+    const definitivas = res.actas.filter(a => a.estado === 'ASENTADA' || a.estado === 'ANULADA');
+    if (definitivas.length === 0) {
+      cont.innerHTML = '<div class="empty-msg">Todavía no hay actas asentadas para mostrar.</div>';
+      return;
+    }
     // Orden cronológico (más vieja primero, como un libro)
-    const ordenadas = res.actas.slice().sort((a, b) => Number(a.idActa) - Number(b.idActa));
+    const ordenadas = definitivas.slice().sort((a, b) => Number(a.numeroActa) - Number(b.numeroActa));
     cont.innerHTML = '';
-    let pendientes = ordenadas.length;
 
     ordenadas.forEach(a => {
-      jsonp(EXEC_URL_GI + '?action=obtenerActa&idActa=' + a.idActa, function(detalle) {
-        pendientes--;
+      jsonp(EXEC_URL_GI + '?action=obtenerActa&idRegistro=' + a.idRegistro, function(detalle) {
         if (!detalle || !detalle.ok) return;
         const div = document.createElement('div');
         div.className = 'texto-final-box';
         div.style.display = 'block';
         div.style.marginBottom = '14px';
-        div.innerHTML = '<div style="font-weight:900; color:var(--petroleo); margin-bottom:8px; text-transform:uppercase; font-size:12px;">Acta N.º ' + a.idActa + ' — ' + a.estado + '</div>' +
+        const anuladaTag = a.estado === 'ANULADA' ? ' — ANULADA (' + escapeHtml(a.motivoAnulacion) + ')' : '';
+        div.innerHTML = '<div style="font-weight:900; color:var(--petroleo); margin-bottom:8px; text-transform:uppercase; font-size:12px;">Acta N.º ' + a.numeroActa + anuladaTag + '</div>' +
           escapeHtml(construirTextoFinalActa(detalle.acta));
         // Inserta en orden aunque las respuestas lleguen desordenadas
-        div.dataset.orden = a.idActa;
+        div.dataset.orden = a.numeroActa;
         insertarEnOrden(cont, div);
       });
     });
