@@ -204,7 +204,7 @@ let PIN_SESION = '';
 // Los marcados "manual: true" reflejan el estado real conocido hoy; pasarán a calcularse solos
 // cuando esos módulos (Balance, Memoria, Asamblea, Padrón) tengan su propio backend.
 const HITOS = [
-  { nombre: 'Ejercicio cerrado', detalle: 'Cierre del período contable (30/04/2026) — distinto del cierre institucional que se hace con la Asamblea', estado: 'COMPLETO', link: null, manual: true },
+  { nombre: 'Ejercicio cerrado', detalle: 'Cierre del período contable — distinto del cierre institucional que se hace con la Asamblea', estado: 'PROGRESO', link: null },
   { nombre: 'Balance', detalle: 'Recibido, con errores detectados (entidad y fechas)', estado: 'OBSERVADO', link: 'balance.html', manual: false },
   { nombre: 'Informe Comisión Revisora', detalle: 'cargando...', estado: 'PENDIENTE', link: 'informe-revisor.html', manual: false },
   { nombre: 'Memoria', detalle: 'cargando...', estado: 'PENDIENTE', link: 'memoria.html', manual: false },
@@ -308,6 +308,17 @@ function cargarEjercicioActivo() {
     }
     EJERCICIO_ACTIVO = res.ejercicio;
     document.getElementById('ejercicioTituloTexto').textContent = 'Ejercicio N.º ' + res.ejercicio.numero + ' — ' + res.ejercicio.fechaInicio + ' a ' + res.ejercicio.fechaCierre;
+
+    // "Ejercicio cerrado" (Bloque 3): ya no es un valor fijo -- compara hoy contra la
+    // fecha real de cierre del período contable del Ejercicio activo.
+    const partes = res.ejercicio.fechaCierre.split('/');
+    const fechaCierre = new Date(Number(partes[2]), Number(partes[1]) - 1, Number(partes[0]));
+    const hoy = new Date();
+    if (hoy >= fechaCierre) {
+      actualizarHito('Ejercicio cerrado', 'COMPLETO', 'Período contable finalizado el ' + res.ejercicio.fechaCierre);
+    } else {
+      actualizarHito('Ejercicio cerrado', 'PROGRESO', 'Período contable en curso, cierra el ' + res.ejercicio.fechaCierre);
+    }
   });
 }
 

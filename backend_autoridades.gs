@@ -95,7 +95,7 @@ function doGet(e) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(e.parameter);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v50-sync-post-hilo-paralelo-13ago-1600' };
+      resultado = { ok: true, version: 'v53-bloque3-prerrequisitos-cierre-15ago-1100' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -952,6 +952,59 @@ function cerrarYAbrirNuevoEjercicio(params) {
   }
   if (!activo) return { ok: false, error: 'No hay Ejercicio activo para cerrar' };
 
+  const idEjercicioActivo = activo[idx.ID_EJERCICIO];
+
+  // ── Prerrequisitos de cierre (Bloque 3) ──
+  // BLOQUEA: sin esto, cerrar sería fabricar un cierre institucional que no ocurrió.
+  const bloqueos = [];
+
+  const hojaAsam = getHojaAsambleas();
+  const datosAsam = hojaAsam.getDataRange().getValues();
+  let filaAsambleaActiva = -1;
+  for (let i = 1; i < datosAsam.length; i++) {
+    if (datosAsam[i][1] === idEjercicioActivo) { filaAsambleaActiva = i; break; }
+  }
+  const asambleaCelebrada = filaAsambleaActiva !== -1 && datosAsam[filaAsambleaActiva][6] === 'CELEBRADA';
+  if (!asambleaCelebrada) bloqueos.push('La Asamblea todavía no fue marcada como celebrada.');
+
+  const resBalances = listarBalances();
+  const balanceAprobado = resBalances.balances.some(b => b.idEjercicio === idEjercicioActivo && b.estado === 'APROBADO_ASAMBLEA');
+  if (!balanceAprobado) bloqueos.push('El Balance todavía no tiene un registro con estado APROBADO_ASAMBLEA.');
+
+  if (bloqueos.length > 0) {
+    return { ok: false, error: 'No se puede cerrar el Ejercicio todavía.', bloqueos: bloqueos };
+  }
+
+  // ADVIERTE: se puede continuar si params.confirmarConAdvertencias === true.
+  const advertencias = [];
+
+  const resMemoria = listarDocumentos({ tipo: 'MEMORIA', idEjercicio: idEjercicioActivo });
+  if (!resMemoria.documentos.length || resMemoria.documentos[0].estado !== 'APROBADA') {
+    advertencias.push('La Memoria no está aprobada.');
+  }
+
+  const resInforme = listarDocumentos({ tipo: 'INFORME_REVISOR', idEjercicio: idEjercicioActivo });
+  if (!resInforme.documentos.length) {
+    advertencias.push('No se cargó el Informe del Revisor.');
+  }
+
+  const resActaAsam = listarDocumentos({ tipo: 'ACTA_ASAMBLEA', idEjercicio: idEjercicioActivo });
+  if (!resActaAsam.documentos.length || resActaAsam.documentos[0].estado !== 'FIRMADA') {
+    advertencias.push('El Acta de Asamblea no está firmada.');
+  }
+
+  const resAut = listarAutoridades();
+  if (resAut.ok && resAut.vencenEsteAnio && resAut.vencenEsteAnio.length > 0) {
+    const autoridadesRegistradas = filaAsambleaActiva !== -1 && datosAsam[filaAsambleaActiva][9] === 'SI';
+    if (!autoridadesRegistradas) advertencias.push('Había autoridades por renovar este año y no fueron registradas.');
+  }
+
+  if (advertencias.length > 0 && !(params && params.confirmarConAdvertencias === 'true')) {
+    return { ok: false, requiereConfirmacion: true, advertencias: advertencias, mensaje: 'Hay advertencias pendientes. Si querés cerrar de todas formas, volvé a llamar con confirmarConAdvertencias=true.' };
+  }
+
+  // ── A partir de acá, el cierre real (sin cambios respecto a la lógica anterior) ──
+
   // Cierra el actual
   hoja.getRange(filaActiva + 1, idx.ESTADO + 1).setValue('PRESENTADO');
 
@@ -970,7 +1023,7 @@ function cerrarYAbrirNuevoEjercicio(params) {
 
   hoja.appendRow([nuevoId, nuevoNumero, nuevoInicio, nuevoCierre, 'ABIERTO', nuevoLimiteAsamblea]);
 
-  return { ok: true, ejercicioAnteriorCerrado: activo[idx.ID_EJERCICIO], nuevoEjercicio: nuevoId, nuevoNumero: nuevoNumero };
+  return { ok: true, ejercicioAnteriorCerrado: activo[idx.ID_EJERCICIO], nuevoEjercicio: nuevoId, nuevoNumero: nuevoNumero, advertenciasIgnoradas: advertencias };
 }
 
 // ============ NOVEDADES ============
