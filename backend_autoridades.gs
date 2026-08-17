@@ -95,7 +95,7 @@ function doGet(e) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(e.parameter);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v53-bloque3-prerrequisitos-cierre-15ago-1100' };
+      resultado = { ok: true, version: 'v54-bloque4-lock-actas-15ago-1300' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -466,54 +466,65 @@ function obtenerActa(idActa) {
 }
 
 function generarBorradorActa(params) {
-  const hojaActas = getHojaActas();
-  const hojaBitacora = getHojaBitacora();
+  const lock = LockService.getScriptLock();
+  let conseguido = false;
+  try {
+    conseguido = lock.tryLock(10000); // 10 segundos de timeout
+    if (!conseguido) {
+      return { ok: false, error: 'Otra generación de Acta está en curso ahora mismo. Esperá unos segundos y reintentá.' };
+    }
 
-  const ultimoNumero = obtenerUltimoNumeroActa();
-  const nuevoNumero = ultimoNumero + 1;
+    const hojaActas = getHojaActas();
+    const hojaBitacora = getHojaBitacora();
 
-  // Punto 1 siempre fijo, encadenado al acta anterior
-  const puntos = [
-    { orden: 1, texto: 'Se da lectura al acta N.º ' + ultimoNumero + '. Se aprueba por unanimidad.' }
-  ];
+    const ultimoNumero = obtenerUltimoNumeroActa();
+    const nuevoNumero = ultimoNumero + 1;
 
-  // Trae notas pendientes de la Bitácora como puntos en borrador (texto crudo, a editar)
-  const datosBit = hojaBitacora.getDataRange().getValues();
-  const headersBit = datosBit[0];
-  const idxBit = {};
-  headersBit.forEach((h, i) => idxBit[h] = i);
+    // Punto 1 siempre fijo, encadenado al acta anterior
+    const puntos = [
+      { orden: 1, texto: 'Se da lectura al acta N.º ' + ultimoNumero + '. Se aprueba por unanimidad.' }
+    ];
 
-  const idsNotasUsadas = [];
-  for (let i = 1; i < datosBit.length; i++) {
-    const fila = datosBit[i];
-    if (!fila[idxBit.ID_NOTA]) continue;
-    if (fila[idxBit.PROCESADA] === true || fila[idxBit.PROCESADA] === 'TRUE') continue;
-    // Las notas marcadas para un Ejercicio futuro no se usan en actas del Ejercicio actual
-    if (String(fila[idxBit.TEXTO]).indexOf('PENDIENTE EJERCICIO') === 0) continue;
-    puntos.push({ orden: puntos.length + 1, texto: fila[idxBit.TEXTO] });
-    idsNotasUsadas.push({ row: i + 1, id: fila[idxBit.ID_NOTA] });
+    // Trae notas pendientes de la Bitácora como puntos en borrador (texto crudo, a editar)
+    const datosBit = hojaBitacora.getDataRange().getValues();
+    const headersBit = datosBit[0];
+    const idxBit = {};
+    headersBit.forEach((h, i) => idxBit[h] = i);
+
+    const idsNotasUsadas = [];
+    for (let i = 1; i < datosBit.length; i++) {
+      const fila = datosBit[i];
+      if (!fila[idxBit.ID_NOTA]) continue;
+      if (fila[idxBit.PROCESADA] === true || fila[idxBit.PROCESADA] === 'TRUE') continue;
+      // Las notas marcadas para un Ejercicio futuro no se usan en actas del Ejercicio actual
+      if (String(fila[idxBit.TEXTO]).indexOf('PENDIENTE EJERCICIO') === 0) continue;
+      puntos.push({ orden: puntos.length + 1, texto: fila[idxBit.TEXTO] });
+      idsNotasUsadas.push({ row: i + 1, id: fila[idxBit.ID_NOTA] });
+    }
+
+    hojaActas.appendRow([
+      nuevoNumero,
+      (function() { const e = obtenerEjercicioActivo(); return e.ok ? e.ejercicio.idEjercicio : (params.idEjercicio || ''); })(),
+      parsearFechaSegura(params.fechaReunion),
+      params.horaInicio || '',
+      '',
+      params.presentes || '',
+      JSON.stringify(puntos),
+      'BORRADOR',
+      ultimoNumero
+    ]);
+    hojaActas.getRange(hojaActas.getLastRow(), 4).setNumberFormat('@').setValue(params.horaInicio || ''); // refuerza texto
+
+    // Marca las notas usadas como procesadas
+    idsNotasUsadas.forEach(n => {
+      hojaBitacora.getRange(n.row, idxBit.PROCESADA + 1).setValue(true);
+      hojaBitacora.getRange(n.row, idxBit.ID_ACTA_DESTINO + 1).setValue(nuevoNumero);
+    });
+
+    return { ok: true, idActa: nuevoNumero, puntos: puntos };
+  } finally {
+    if (conseguido) lock.releaseLock();
   }
-
-  hojaActas.appendRow([
-    nuevoNumero,
-    (function() { const e = obtenerEjercicioActivo(); return e.ok ? e.ejercicio.idEjercicio : (params.idEjercicio || ''); })(),
-    parsearFechaSegura(params.fechaReunion),
-    params.horaInicio || '',
-    '',
-    params.presentes || '',
-    JSON.stringify(puntos),
-    'BORRADOR',
-    ultimoNumero
-  ]);
-  hojaActas.getRange(hojaActas.getLastRow(), 4).setNumberFormat('@').setValue(params.horaInicio || ''); // refuerza texto
-
-  // Marca las notas usadas como procesadas
-  idsNotasUsadas.forEach(n => {
-    hojaBitacora.getRange(n.row, idxBit.PROCESADA + 1).setValue(true);
-    hojaBitacora.getRange(n.row, idxBit.ID_ACTA_DESTINO + 1).setValue(nuevoNumero);
-  });
-
-  return { ok: true, idActa: nuevoNumero, puntos: puntos };
 }
 
 function guardarActaHistorica(params) {

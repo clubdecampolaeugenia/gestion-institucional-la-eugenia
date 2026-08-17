@@ -164,7 +164,7 @@
         </div>
         <span class="field-label" style="color:var(--lima);">Presentes (tildá quiénes asistieron)</span>
         <div id="listaPresentesActa" style="background:var(--blanco); border-radius:12px; padding:12px; max-height:220px; overflow-y:auto; margin-bottom:8px;">cargando autoridades...</div>
-        <button type="button" class="btn-solid" style="margin-top:12px;" onclick="generarBorrador()">Generar borrador</button>
+        <button type="button" class="btn-solid" id="btnGenerarBorrador" style="margin-top:12px;" onclick="generarBorrador()">Generar borrador</button>
       </div>
 
       <div id="listaActas"></div>
@@ -577,10 +577,16 @@ function generarBorrador() {
   const hora = obtenerValorHora('fHoraInicio');
   const presentes = obtenerPresentesActaSeleccionados();
   if (!fecha || !presentes) { mostrarAviso('Completá fecha y presentes'); return; }
+
+  const btn = document.getElementById('btnGenerarBorrador');
+  btn.disabled = true;
+  btn.textContent = 'Generando...';
   document.getElementById('loadingText').textContent = 'Generando borrador...';
   const params = 'action=generarBorradorActa&fechaReunion=' + encodeURIComponent(fecha) + '&horaInicio=' + encodeURIComponent(hora) + '&presentes=' + encodeURIComponent(presentes) + '&pin=' + encodeURIComponent(PIN_SESION);
   jsonp(EXEC_URL_GI + '?' + params, function(res) {
     document.getElementById('loadingText').textContent = '';
+    btn.disabled = false;
+    btn.textContent = 'Generar borrador';
     if (res && res.ok) {
       toggleFormNuevaActa();
       document.querySelectorAll('.chk-presente-acta:checked').forEach(c => c.checked = false);
