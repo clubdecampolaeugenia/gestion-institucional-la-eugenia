@@ -47,6 +47,7 @@
   .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; text-align: center; }
   .btn-solid:active, .btn-outline:active { transform: scale(.96); box-shadow: 0 2px 6px rgba(0,0,0,.25); }
   .btn-small { padding: 8px 12px; font-size: 12px; border-radius: 16px; border: 2px solid var(--petroleo); background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .btn-modo-activo { background: var(--lima) !important; }
 
   .field-label { color: var(--petroleo); font-size: 11px; font-weight: 900; text-transform: uppercase; margin: 10px 0 4px; display: block; }
   .field-label:first-child { margin-top: 0; }
@@ -194,8 +195,24 @@
         </div>
         <span class="field-label" style="color:var(--lima);">Presentes</span>
         <div id="listaPresentesActaManual" style="background:var(--blanco); border-radius:12px; padding:12px; max-height:220px; overflow-y:auto; margin-bottom:8px;">cargando autoridades...</div>
-        <span class="field-label" style="color:var(--lima);">Puntos tratados (uno por línea)</span>
-        <textarea id="mPuntos" style="width:100%; min-height:100px; border-radius:10px; padding:10px; border:none;" placeholder="Se da lectura al acta N.º ...&#10;Se resuelve..."></textarea>
+
+        <span class="field-label" style="color:var(--lima);">Tipo de contenido</span>
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+          <button type="button" class="btn-small" id="mModoEstructuradoBtn" style="flex:1;" onclick="cambiarModoManual('ESTRUCTURADO')">Puntos por separado</button>
+          <button type="button" class="btn-small" id="mModoTextoLibreBtn" style="flex:1;" onclick="cambiarModoManual('TEXTO_LIBRE')">Texto libre (pegar completo)</button>
+        </div>
+
+        <div id="mBloqueEstructurado">
+          <span class="field-label" style="color:var(--lima);">Puntos tratados</span>
+          <div id="mPuntosContainer"></div>
+          <button type="button" class="btn-outline" style="background:var(--blanco); margin-top:4px;" onclick="rmAgregarPunto()">➕ Agregar punto</button>
+        </div>
+        <div id="mBloqueTextoLibre" style="display:none;">
+          <span class="field-label" style="color:var(--lima);">Texto completo del Acta</span>
+          <div style="font-size:11px; color:var(--lima); opacity:.8; margin-bottom:6px;">Pegá el acta tal cual la confeccionaste -- se guarda exactamente así, sin numerar ni dividir en puntos.</div>
+          <textarea id="mTextoLibre" style="width:100%; min-height:220px; border-radius:10px; padding:10px; border:none; font-family:monospace; font-size:12.5px;"></textarea>
+        </div>
+
         <button type="button" class="btn-solid" id="btnRegistrarManual" style="margin-top:12px;" onclick="registrarActaManualUI()">Registrar como Asentada</button>
       </div>
 
@@ -239,8 +256,23 @@
         </div>
         <span class="field-label">Presentes</span>
         <textarea id="efPresentes" style="width:100%; min-height:60px; border-radius:10px; padding:10px; border:2px solid var(--petroleo);"></textarea>
-        <span class="field-label">Puntos tratados (uno por línea)</span>
-        <textarea id="efPuntos" style="width:100%; min-height:100px; border-radius:10px; padding:10px; border:2px solid var(--petroleo);"></textarea>
+
+        <span class="field-label">Tipo de contenido</span>
+        <div id="efModoActualLabel" style="font-size:12px; color:var(--petroleo); font-weight:900; margin-bottom:6px;"></div>
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+          <button type="button" class="btn-small" id="efModoEstructuradoBtn" style="flex:1;" onclick="cambiarModoFormal('ESTRUCTURADO')">Puntos por separado</button>
+          <button type="button" class="btn-small" id="efModoTextoLibreBtn" style="flex:1;" onclick="cambiarModoFormal('TEXTO_LIBRE')">Texto libre</button>
+        </div>
+        <div id="efAvisoConversion" style="display:none; background:rgba(222,175,77,0.25); border:2px solid var(--naranja); border-radius:10px; padding:10px 12px; margin-bottom:10px; color:var(--petroleo); font-size:11.5px; font-weight:700;"></div>
+
+        <div id="efBloqueEstructurado">
+          <div id="efPuntosContainer"></div>
+          <button type="button" class="btn-outline" style="background:var(--blanco); margin-top:4px;" onclick="efAgregarPunto()">➕ Agregar punto</button>
+        </div>
+        <div id="efBloqueTextoLibre" style="display:none;">
+          <textarea id="efTextoLibre" style="width:100%; min-height:260px; border-radius:10px; padding:10px; border:2px solid var(--petroleo); font-family:monospace; font-size:12.5px;"></textarea>
+        </div>
+
         <span class="field-label">PIN (volvé a ingresarlo para confirmar)</span>
         <input type="password" id="efPin" inputmode="numeric" maxlength="4" placeholder="····">
         <span class="field-label">Motivo del cambio (obligatorio)</span>
@@ -363,6 +395,21 @@ function jsonp(url, cb) {
   document.body.appendChild(script);
 }
 
+// Para acciones de escritura que pueden mandar contenido largo (actas completas, texto libre,
+// etc.) -- POST real, sin límite de longitud de URL, y con respuesta garantizada al callback
+// (a diferencia de JSONP, acá no hay riesgo de que el navegador trunque la URL y el callback
+// nunca se dispare, dejando la UI colgada en "Guardando...").
+function postAction(payload, cb) {
+  fetch(EXEC_URL_GI, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight OPTIONS, Apps Script no lo maneja
+    body: JSON.stringify(payload)
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(res) { cb(res); })
+    .catch(function(err) { cb({ ok: false, error: 'Error de red: ' + err.message }); });
+}
+
 function verificarPin() {
   const pin = document.getElementById('pinInput').value;
   jsonp(EXEC_URL_PINES_CGV_CHECK + '?action=validarPin&pin=' + encodeURIComponent(pin) + '&modulo=gestion-institucional', function(res) {
@@ -418,6 +465,43 @@ function toggleFormActaManual() {
   if (!document.getElementById('mFechaReunion').value) {
     document.getElementById('mFechaReunion').value = new Date().toISOString().split('T')[0];
   }
+  if (f.style.display === 'block' && RM_PUNTOS.length === 0) {
+    RM_PUNTOS.push({ orden: 1, texto: '' });
+    renderRMPuntos();
+  }
+  cambiarModoManual(RM_MODO);
+}
+
+// ===== Editor multi-punto para "Registrar Acta manual" (modo ESTRUCTURADO) =====
+let RM_PUNTOS = [{ orden: 1, texto: '' }];
+let RM_MODO = 'ESTRUCTURADO';
+
+function renderRMPuntos() {
+  const cont = document.getElementById('mPuntosContainer');
+  cont.innerHTML = '';
+  RM_PUNTOS.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'punto-item';
+    div.innerHTML = '<div class="punto-label">Punto ' + (i + 1) + '</div><textarea data-idx="' + i + '" oninput="rmActualizarPunto(' + i + ', this.value)">' + escapeHtml(p.texto) + '</textarea>';
+    cont.appendChild(div);
+  });
+}
+
+function rmActualizarPunto(idx, valor) {
+  RM_PUNTOS[idx].texto = valor;
+}
+
+function rmAgregarPunto() {
+  RM_PUNTOS.push({ orden: RM_PUNTOS.length + 1, texto: '' });
+  renderRMPuntos();
+}
+
+function cambiarModoManual(modo) {
+  RM_MODO = modo;
+  document.getElementById('mModoEstructuradoBtn').classList.toggle('btn-modo-activo', modo === 'ESTRUCTURADO');
+  document.getElementById('mModoTextoLibreBtn').classList.toggle('btn-modo-activo', modo === 'TEXTO_LIBRE');
+  document.getElementById('mBloqueEstructurado').style.display = modo === 'ESTRUCTURADO' ? 'block' : 'none';
+  document.getElementById('mBloqueTextoLibre').style.display = modo === 'TEXTO_LIBRE' ? 'block' : 'none';
 }
 
 function registrarActaManualUI() {
@@ -426,28 +510,41 @@ function registrarActaManualUI() {
   const presentes = obtenerPresentesActaManualSeleccionados();
   if (!numero || !fecha || !presentes) { mostrarAviso('Completá número, fecha y presentes.'); return; }
 
-  const puntosTexto = document.getElementById('mPuntos').value.split('\n').map(l => l.trim()).filter(l => l);
-  if (puntosTexto.length === 0) { mostrarAviso('Cargá al menos un punto tratado.'); return; }
-  const puntos = puntosTexto.map((texto, i) => ({ orden: i + 1, texto: texto }));
+  let puntosJSON = '[]';
+  let textoLibre = '';
+  if (RM_MODO === 'ESTRUCTURADO') {
+    const puntosValidos = RM_PUNTOS.filter(p => p.texto && p.texto.trim());
+    if (puntosValidos.length === 0) { mostrarAviso('Cargá al menos un punto tratado.'); return; }
+    puntosJSON = JSON.stringify(puntosValidos.map((p, i) => ({ orden: i + 1, texto: p.texto })));
+  } else {
+    textoLibre = document.getElementById('mTextoLibre').value;
+    if (!textoLibre.trim()) { mostrarAviso('Pegá el texto completo del acta.'); return; }
+  }
 
   mostrarConfirmacion('¿Registrar el Acta N.º ' + numero + ' como ASENTADA? Esta acción no se puede deshacer -- si hay un error después, hay que anularla, no se puede editar ni borrar.', function() {
     const btn = document.getElementById('btnRegistrarManual');
     btn.disabled = true;
     document.getElementById('loadingText').textContent = 'Registrando...';
-    const params = 'action=registrarActaManual&numeroActa=' + encodeURIComponent(numero) +
-      '&fechaReunion=' + encodeURIComponent(fecha) +
-      '&horaInicio=' + encodeURIComponent(obtenerValorHora('mHoraInicio')) +
-      '&horaFin=' + encodeURIComponent(obtenerValorHora('mHoraFin')) +
-      '&presentes=' + encodeURIComponent(presentes) +
-      '&puntos=' + encodeURIComponent(JSON.stringify(puntos)) +
-      '&pin=' + encodeURIComponent(PIN_SESION);
-    jsonp(EXEC_URL_GI + '?' + params, function(res) {
+    postAction({
+      action: 'registrarActaManual',
+      numeroActa: numero,
+      fechaReunion: fecha,
+      horaInicio: obtenerValorHora('mHoraInicio'),
+      horaFin: obtenerValorHora('mHoraFin'),
+      presentes: presentes,
+      modoContenido: RM_MODO,
+      puntos: puntosJSON,
+      textoLibre: textoLibre,
+      pin: PIN_SESION
+    }, function(res) {
       btn.disabled = false;
       document.getElementById('loadingText').textContent = '';
       if (res && res.ok) {
         toggleFormActaManual();
         document.getElementById('mNumeroActa').value = '';
-        document.getElementById('mPuntos').value = '';
+        document.getElementById('mTextoLibre').value = '';
+        RM_PUNTOS = [{ orden: 1, texto: '' }];
+        renderRMPuntos();
         document.querySelectorAll('.chk-presente-acta-manual:checked').forEach(c => c.checked = false);
         cargarActas();
       } else {
@@ -721,8 +818,7 @@ function generarBorrador() {
   btn.disabled = true;
   btn.textContent = 'Generando...';
   document.getElementById('loadingText').textContent = 'Generando borrador...';
-  const params = 'action=generarBorradorActa&fechaReunion=' + encodeURIComponent(fecha) + '&horaInicio=' + encodeURIComponent(hora) + '&presentes=' + encodeURIComponent(presentes) + '&pin=' + encodeURIComponent(PIN_SESION);
-  jsonp(EXEC_URL_GI + '?' + params, function(res) {
+  postAction({ action: 'generarBorradorActa', fechaReunion: fecha, horaInicio: hora, presentes: presentes, pin: PIN_SESION }, function(res) {
     document.getElementById('loadingText').textContent = '';
     btn.disabled = false;
     btn.textContent = 'Generar borrador';
@@ -752,7 +848,8 @@ function cargarActas() {
       div.onclick = () => abrirPreview(a.idRegistro);
       const numeroTexto = a.estado === 'BORRADOR' ? ('Previsto: ' + a.numeroPrevisto) : ('Acta N.º ' + a.numeroActa);
       const origenTag = a.origen === 'MANUAL' ? '<span class="acta-origen-tag">MANUAL</span>' : (a.origen === 'MIGRADO' ? '<span class="acta-origen-tag">MIGRADO</span>' : '');
-      div.innerHTML = '<span class="acta-num">' + numeroTexto + origenTag + ' — ' + a.fechaReunion + ' <small style="opacity:.6; font-weight:400;">(' + a.idEjercicio + ')</small></span><span class="estado-badge estado-' + a.estado + '">' + a.estado + '</span>';
+      const modoTag = a.modoContenido === 'TEXTO_LIBRE' ? '<span class="acta-origen-tag">TEXTO LIBRE</span>' : '';
+      div.innerHTML = '<span class="acta-num">' + numeroTexto + origenTag + modoTag + ' — ' + a.fechaReunion + ' <small style="opacity:.6; font-weight:400;">(' + a.idEjercicio + ')</small></span><span class="estado-badge estado-' + a.estado + '">' + a.estado + '</span>';
       cont.appendChild(div);
     });
   });
@@ -835,8 +932,7 @@ function agregarPuntoVacio() {
 function guardarCambiosActa() {
   const horaFin = obtenerValorHora('eHoraFin');
   document.getElementById('loadingText').textContent = 'Guardando...';
-  const params = 'action=actualizarActa&idRegistro=' + ACTA_ACTUAL.idRegistro + '&puntos=' + encodeURIComponent(JSON.stringify(ACTA_ACTUAL.puntos)) + '&horaFin=' + encodeURIComponent(horaFin) + '&pin=' + encodeURIComponent(PIN_SESION);
-  jsonp(EXEC_URL_GI + '?' + params, function(res) {
+  postAction({ action: 'actualizarActa', idRegistro: ACTA_ACTUAL.idRegistro, puntos: JSON.stringify(ACTA_ACTUAL.puntos), horaFin: horaFin, pin: PIN_SESION }, function(res) {
     document.getElementById('loadingText').textContent = '';
     if (res && res.ok) {
       cargarActas();
@@ -849,7 +945,7 @@ function guardarCambiosActa() {
 function asentarActaUI() {
   mostrarConfirmacion('¿Asentar esta acta en el Libro? Recién en este momento se le asigna el número definitivo -- no se puede deshacer. Si hay un error después, hay que anularla, no se puede volver a Borrador.', function() {
     document.getElementById('loadingText').textContent = 'Asentando...';
-    jsonp(EXEC_URL_GI + '?action=asentarActa&idRegistro=' + ACTA_ACTUAL.idRegistro + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    postAction({ action: 'asentarActa', idRegistro: ACTA_ACTUAL.idRegistro, pin: PIN_SESION }, function(res) {
       document.getElementById('loadingText').textContent = '';
       if (res && res.ok) {
         mostrarAviso('Asentada como Acta N.º ' + res.numeroActa + '.', function() { cerrarPreview(); cargarActas(); });
@@ -866,7 +962,7 @@ function eliminarBorradorUI() {
   if (!motivo.trim()) { mostrarAviso('El motivo es obligatorio.'); return; }
   mostrarConfirmacion('¿Eliminar este borrador? Se libera cualquier nota de Bitácora que había tomado. No se puede deshacer.', function() {
     document.getElementById('loadingText').textContent = 'Eliminando...';
-    jsonp(EXEC_URL_GI + '?action=eliminarBorradorActa&idRegistro=' + ACTA_ACTUAL.idRegistro + '&motivo=' + encodeURIComponent(motivo) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    postAction({ action: 'eliminarBorradorActa', idRegistro: ACTA_ACTUAL.idRegistro, motivo: motivo, pin: PIN_SESION }, function(res) {
       document.getElementById('loadingText').textContent = '';
       if (res && res.ok) {
         mostrarAviso('Borrador eliminado. ' + res.notasLiberadas + ' nota(s) de Bitácora liberada(s).', function() { cerrarPreview(); cargarActas(); cargarNotas(); });
@@ -883,7 +979,7 @@ function anularActaUI() {
   if (!motivo.trim()) { mostrarAviso('El motivo es obligatorio.'); return; }
   mostrarConfirmacion('¿Anular el Acta N.º ' + ACTA_ACTUAL.numeroActa + '? El número queda quemado para siempre -- no se reutiliza ni se puede deshacer.', function() {
     document.getElementById('loadingText').textContent = 'Anulando...';
-    jsonp(EXEC_URL_GI + '?action=anularActa&idRegistro=' + ACTA_ACTUAL.idRegistro + '&motivo=' + encodeURIComponent(motivo) + '&pin=' + encodeURIComponent(PIN_SESION), function(res) {
+    postAction({ action: 'anularActa', idRegistro: ACTA_ACTUAL.idRegistro, motivo: motivo, pin: PIN_SESION }, function(res) {
       document.getElementById('loadingText').textContent = '';
       if (res && res.ok) {
         mostrarAviso('Acta anulada.', function() { cerrarPreview(); cargarActas(); });
@@ -892,6 +988,47 @@ function anularActaUI() {
       }
     });
   });
+}
+
+// ===== Editor multi-punto para "Editar acta asentada/anulada" (modo ESTRUCTURADO) =====
+let EF_PUNTOS = [];
+let EF_MODO = 'ESTRUCTURADO';
+let EF_MODO_ORIGINAL = 'ESTRUCTURADO'; // para saber si hubo conversión real al guardar
+
+function renderEFPuntos() {
+  const cont = document.getElementById('efPuntosContainer');
+  cont.innerHTML = '';
+  EF_PUNTOS.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'punto-item';
+    div.innerHTML = '<div class="punto-label">Punto ' + (i + 1) + '</div><textarea data-idx="' + i + '" oninput="efActualizarPunto(' + i + ', this.value)">' + escapeHtml(p.texto) + '</textarea>';
+    cont.appendChild(div);
+  });
+}
+
+function efActualizarPunto(idx, valor) {
+  EF_PUNTOS[idx].texto = valor;
+}
+
+function efAgregarPunto() {
+  EF_PUNTOS.push({ orden: EF_PUNTOS.length + 1, texto: '' });
+  renderEFPuntos();
+}
+
+function cambiarModoFormal(modo) {
+  EF_MODO = modo;
+  document.getElementById('efModoEstructuradoBtn').classList.toggle('btn-modo-activo', modo === 'ESTRUCTURADO');
+  document.getElementById('efModoTextoLibreBtn').classList.toggle('btn-modo-activo', modo === 'TEXTO_LIBRE');
+  document.getElementById('efBloqueEstructurado').style.display = modo === 'ESTRUCTURADO' ? 'block' : 'none';
+  document.getElementById('efBloqueTextoLibre').style.display = modo === 'TEXTO_LIBRE' ? 'block' : 'none';
+
+  const aviso = document.getElementById('efAvisoConversion');
+  if (modo !== EF_MODO_ORIGINAL) {
+    aviso.style.display = 'block';
+    aviso.textContent = '⚠️ Vas a convertir esta acta de ' + EF_MODO_ORIGINAL + ' a ' + modo + '. El contenido del modo anterior no se traduce ni se reconstruye -- cargá el contenido correspondiente al modo nuevo antes de guardar.';
+  } else {
+    aviso.style.display = 'none';
+  }
 }
 
 function abrirEditorFormal() {
@@ -909,7 +1046,15 @@ function abrirEditorFormal() {
   poblarSelectorHora('efHoraInicio', ACTA_ACTUAL.horaInicio || '20:30');
   poblarSelectorHora('efHoraFin', ACTA_ACTUAL.horaFin || '21:15');
   document.getElementById('efPresentes').value = ACTA_ACTUAL.presentes || '';
-  document.getElementById('efPuntos').value = (ACTA_ACTUAL.puntos || []).map(p => p.texto).join('\n');
+
+  EF_MODO_ORIGINAL = ACTA_ACTUAL.modoContenido || 'ESTRUCTURADO';
+  EF_PUNTOS = (ACTA_ACTUAL.puntos || []).map(p => ({ orden: p.orden, texto: p.texto }));
+  if (EF_PUNTOS.length === 0) EF_PUNTOS = [{ orden: 1, texto: '' }];
+  renderEFPuntos();
+  document.getElementById('efTextoLibre').value = ACTA_ACTUAL.textoLibre || '';
+  document.getElementById('efModoActualLabel').textContent = 'Modo actual: ' + EF_MODO_ORIGINAL;
+  cambiarModoFormal(EF_MODO_ORIGINAL);
+
   document.getElementById('efPin').value = '';
   document.getElementById('efMotivo').value = '';
   document.getElementById('editorFormal').scrollIntoView({ behavior: 'smooth' });
@@ -926,14 +1071,27 @@ function guardarEdicionFormal() {
   if (!pin) { mostrarAviso('Volvé a ingresar el PIN para confirmar.'); return; }
   if (!motivo.trim()) { mostrarAviso('El motivo es obligatorio.'); return; }
 
-  const puntosTexto = document.getElementById('efPuntos').value.split('\n').map(l => l.trim()).filter(l => l);
-  const puntos = puntosTexto.map((texto, i) => ({ orden: i + 1, texto: texto }));
+  let puntosJSON = '[]';
+  let textoLibre = '';
+  if (EF_MODO === 'ESTRUCTURADO') {
+    const puntosValidos = EF_PUNTOS.filter(p => p.texto && p.texto.trim());
+    if (puntosValidos.length === 0) { mostrarAviso('Cargá al menos un punto.'); return; }
+    puntosJSON = JSON.stringify(puntosValidos.map((p, i) => ({ orden: i + 1, texto: p.texto })));
+  } else {
+    textoLibre = document.getElementById('efTextoLibre').value;
+    if (!textoLibre.trim()) { mostrarAviso('Pegá el texto completo del acta.'); return; }
+  }
 
-  mostrarConfirmacion('¿Confirmás este cambio sobre un acta ya ' + ACTA_ACTUAL.estado + '? Queda registrado en auditoría con tu motivo, fecha y el contenido anterior completo. No hay forma de deshacerlo desde la app.', function() {
+  const huboConversion = EF_MODO !== EF_MODO_ORIGINAL;
+  const mensajeConfirmacion = huboConversion
+    ? '¿Confirmás CONVERTIR esta acta de ' + EF_MODO_ORIGINAL + ' a ' + EF_MODO + ' y guardar los cambios? Queda registrado en auditoría con tu motivo y el contenido anterior completo. No hay forma de deshacerlo desde la app.'
+    : '¿Confirmás este cambio sobre un acta ya ' + ACTA_ACTUAL.estado + '? Queda registrado en auditoría con tu motivo, fecha y el contenido anterior completo. No hay forma de deshacerlo desde la app.';
+
+  mostrarConfirmacion(mensajeConfirmacion, function() {
     const btn = document.getElementById('btnGuardarEdicionFormal');
     btn.disabled = true;
     document.getElementById('loadingText').textContent = 'Guardando con auditoría...';
-    const params = new URLSearchParams({
+    postAction({
       action: 'editarActaFormal',
       idRegistro: ACTA_ACTUAL.idRegistro,
       numeroActa: document.getElementById('efNumeroActa').value,
@@ -942,11 +1100,12 @@ function guardarEdicionFormal() {
       horaInicio: obtenerValorHora('efHoraInicio'),
       horaFin: obtenerValorHora('efHoraFin'),
       presentes: document.getElementById('efPresentes').value,
-      puntos: JSON.stringify(puntos),
+      modoContenido: EF_MODO,
+      puntos: puntosJSON,
+      textoLibre: textoLibre,
       motivo: motivo,
       pin: pin
-    });
-    jsonp(EXEC_URL_GI + '?' + params.toString(), function(res) {
+    }, function(res) {
       btn.disabled = false;
       document.getElementById('loadingText').textContent = '';
       if (res && res.ok) {
@@ -964,6 +1123,11 @@ function guardarEdicionFormal() {
 }
 
 function construirTextoFinalActa(acta, horaFin) {
+  // TEXTO_LIBRE: el sistema no toca nada -- se muestra exactamente lo cargado, sin
+  // encabezado, sin numeración, sin cierre agregado.
+  if (acta.modoContenido === 'TEXTO_LIBRE') {
+    return acta.textoLibre || '';
+  }
   const ordinales = ['primer','segundo','tercer','cuarto','quinto','sexto','séptimo','octavo','noveno','décimo'];
   const encabezado = acta.estado === 'BORRADOR' ? 'ACTA (BORRADOR -- sin número definitivo):' : ('ACTA N.º ' + acta.numeroActa + ':');
   let texto = encabezado + '\n\n';
