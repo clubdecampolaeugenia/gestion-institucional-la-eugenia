@@ -51,6 +51,7 @@ const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNo
 
 function doGet(e) {
   const action = e.parameter.action;
+  let resultado;
 
   if (ACCIONES_PROTEGIDAS.indexOf(action) !== -1) {
     if (!validarPinInterno(e.parameter.pin, 'gestion-institucional')) {
@@ -58,54 +59,97 @@ function doGet(e) {
     }
   }
 
+  try {
+    resultado = manejarAccion(action, e.parameter);
+  } catch (err) {
+    resultado = { ok: false, error: err.message };
+  }
+  return jsonpResponse(resultado, e.parameter.callback);
+}
+
+// CRITERIO TÉCNICO GENERAL DE LA APP: toda acción que envíe contenido textual largo (actas,
+// documentos, texto libre, etc.) debe usar POST, nunca GET/JSONP -- una URL armada con
+// parámetros largos puede truncarse en el camino (navegador, Apps Script, proxies intermedios),
+// y la escritura puede completarse en el servidor mientras la respuesta nunca vuelve al
+// cliente (quedando la UI "colgada"), o peor, el contenido puede llegar cortado sin que nada lo
+// avise. Ver el módulo de Actas (editarActaFormal, registrarActaManual, generarBorradorActa,
+// etc.) para el patrón de referencia.
+function doPost(e) {
   let resultado;
   try {
+    const body = JSON.parse(e.postData.contents);
+    const action = body.action;
+
+    if (ACCIONES_PROTEGIDAS.indexOf(action) !== -1) {
+      if (!validarPinInterno(body.pin, 'gestion-institucional')) {
+        return jsonpResponsePost({ ok: false, error: 'PIN inválido o sin permiso para este módulo' });
+      }
+    }
+
+    resultado = manejarAccion(action, body);
+  } catch (err) {
+    resultado = { ok: false, error: 'Error interno: ' + err.message };
+  }
+  return jsonpResponsePost(resultado);
+}
+
+function jsonpResponsePost(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+// Router único, compartido por doGet (lectura y compatibilidad hacia atrás) y doPost (escritura
+// de contenido largo). "params" reemplaza a "e.parameter" -- mismo objeto de claves/valores
+// venga de donde venga.
+function manejarAccion(action, params) {
+  let resultado;
     if (action === 'listarAutoridades') {
       resultado = listarAutoridades();
     } else if (action === 'listarAutoridadesTodas') {
       resultado = listarAutoridadesTodas();
     } else if (action === 'eliminarAutoridad') {
-      resultado = eliminarAutoridad(e.parameter);
+      resultado = eliminarAutoridad(params);
     } else if (action === 'guardarAutoridad') {
-      resultado = guardarAutoridad(e.parameter);
+      resultado = guardarAutoridad(params);
     } else if (action === 'guardarNota') {
-      resultado = guardarNota(e.parameter);
+      resultado = guardarNota(params);
     } else if (action === 'guardarNotasSeleccionadas') {
-      resultado = guardarNotasSeleccionadas(e.parameter);
+      resultado = guardarNotasSeleccionadas(params);
     } else if (action === 'eliminarNota') {
-      resultado = eliminarNota(e.parameter);
+      resultado = eliminarNota(params);
     } else if (action === 'listarNotasPendientes') {
       resultado = listarNotasPendientes();
     } else if (action === 'listarActas') {
       resultado = listarActas();
     } else if (action === 'obtenerActa') {
-      resultado = obtenerActa(e.parameter.idRegistro);
+      resultado = obtenerActa(params.idRegistro);
     } else if (action === 'generarBorradorActa') {
-      resultado = generarBorradorActa(e.parameter);
+      resultado = generarBorradorActa(params);
     } else if (action === 'actualizarActa') {
-      resultado = actualizarActa(e.parameter);
+      resultado = actualizarActa(params);
     } else if (action === 'editarActaFormal') {
-      resultado = editarActaFormal(e.parameter);
+      resultado = editarActaFormal(params);
     } else if (action === 'asentarActa') {
-      resultado = asentarActa(e.parameter);
+      resultado = asentarActa(params);
     } else if (action === 'eliminarBorradorActa') {
-      resultado = eliminarBorradorActa(e.parameter);
+      resultado = eliminarBorradorActa(params);
     } else if (action === 'anularActa') {
-      resultado = anularActa(e.parameter);
+      resultado = anularActa(params);
     } else if (action === 'registrarActaManual') {
-      resultado = registrarActaManual(e.parameter);
+      resultado = registrarActaManual(params);
     } else if (action === 'migrarActasV2') {
       resultado = migrarActasV2();
+    } else if (action === 'migrarActasV3ModoContenido') {
+      resultado = migrarActasV3ModoContenido();
     } else if (action === 'procesarBalance') {
       resultado = procesarBalance();
     } else if (action === 'listarBalances') {
       resultado = listarBalances();
     } else if (action === 'obtenerBalance') {
-      resultado = obtenerBalance(e.parameter.idBalance);
+      resultado = obtenerBalance(params.idBalance);
     } else if (action === 'actualizarEstadoBalance') {
-      resultado = actualizarEstadoBalance(e.parameter);
+      resultado = actualizarEstadoBalance(params);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v57d-punto1-texto-modelo-18ago' };
+      resultado = { ok: true, version: 'v58-actas-modo-dual-post-18ago' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -113,27 +157,27 @@ function doGet(e) {
     } else if (action === 'listarEjercicios') {
       resultado = listarEjercicios();
     } else if (action === 'cerrarYAbrirNuevoEjercicio') {
-      resultado = cerrarYAbrirNuevoEjercicio(e.parameter);
+      resultado = cerrarYAbrirNuevoEjercicio(params);
     } else if (action === 'actualizarObservacionBalance') {
-      resultado = actualizarObservacionBalance(e.parameter);
+      resultado = actualizarObservacionBalance(params);
     } else if (action === 'guardarNovedad') {
-      resultado = guardarNovedad(e.parameter);
+      resultado = guardarNovedad(params);
     } else if (action === 'listarNovedades') {
-      resultado = listarNovedades(e.parameter);
+      resultado = listarNovedades(params);
     } else if (action === 'actualizarNovedad') {
-      resultado = actualizarNovedad(e.parameter);
+      resultado = actualizarNovedad(params);
     } else if (action === 'generarBorradorMemoria') {
-      resultado = generarBorradorMemoria(e.parameter);
+      resultado = generarBorradorMemoria(params);
     } else if (action === 'registrarInformeRevisor') {
-      resultado = registrarInformeRevisor(e.parameter);
+      resultado = registrarInformeRevisor(params);
     } else if (action === 'generarConvocatoriaYDocumentos') {
-      resultado = generarConvocatoriaYDocumentos(e.parameter);
+      resultado = generarConvocatoriaYDocumentos(params);
     } else if (action === 'actualizarOrdenDelDiaEnDocumentos') {
-      resultado = actualizarOrdenDelDiaEnDocumentos(e.parameter);
+      resultado = actualizarOrdenDelDiaEnDocumentos(params);
     } else if (action === 'previsualizarOrdenDelDia') {
       resultado = previsualizarOrdenDelDia();
     } else if (action === 'guardarPuntosManualesAsamblea') {
-      resultado = guardarPuntosManualesAsamblea(e.parameter);
+      resultado = guardarPuntosManualesAsamblea(params);
     } else if (action === 'migrarColumnaPuntosManuales') {
       resultado = migrarColumnaPuntosManuales();
     } else if (action === 'obtenerAsambleaEjercicio') {
@@ -141,7 +185,7 @@ function doGet(e) {
     } else if (action === 'obtenerTextosConvocatoria') {
       resultado = textosConvocatoria();
     } else if (action === 'guardarAsambleaEjercicio') {
-      resultado = guardarAsambleaEjercicio(e.parameter);
+      resultado = guardarAsambleaEjercicio(params);
     } else if (action === 'corregirFechaAsambleaExistente') {
       resultado = corregirFechaAsambleaExistente();
     } else if (action === 'limpiarDuplicadosAsambleas') {
@@ -157,11 +201,11 @@ function doGet(e) {
     } else if (action === 'insertarEncabezadoAsambleas') {
       resultado = insertarEncabezadoAsambleas();
     } else if (action === 'marcarAsambleaCelebrada') {
-      resultado = marcarAsambleaCelebrada(e.parameter);
+      resultado = marcarAsambleaCelebrada(params);
     } else if (action === 'registrarAutoridadesElectas') {
-      resultado = registrarAutoridadesElectas(e.parameter);
+      resultado = registrarAutoridadesElectas(params);
     } else if (action === 'generarActaAsamblea') {
-      resultado = generarActaAsamblea(e.parameter);
+      resultado = generarActaAsamblea(params);
     } else if (action === 'diagnosticoAsambleas') {
       resultado = diagnosticoAsambleas();
     } else if (action === 'sembrarAsambleaReal') {
@@ -169,31 +213,29 @@ function doGet(e) {
     } else if (action === 'obtenerConfigMemoria') {
       resultado = obtenerConfigMemoria();
     } else if (action === 'guardarConfigMemoria') {
-      resultado = guardarConfigMemoria(e.parameter);
+      resultado = guardarConfigMemoria(params);
     } else if (action === 'obtenerUltimosSocios') {
-      resultado = obtenerUltimosSocios(e.parameter);
+      resultado = obtenerUltimosSocios(params);
     } else if (action === 'listarDocumentos') {
-      resultado = listarDocumentos(e.parameter);
+      resultado = listarDocumentos(params);
     } else if (action === 'eliminarDocumento') {
-      resultado = eliminarDocumento(e.parameter);
+      resultado = eliminarDocumento(params);
     } else if (action === 'actualizarDocumento') {
-      resultado = actualizarDocumento(e.parameter);
+      resultado = actualizarDocumento(params);
     } else if (action === 'extraerNovedadesDeChat') {
-      resultado = extraerNovedadesDeChat(e.parameter);
+      resultado = extraerNovedadesDeChat(params);
     } else if (action === 'listarNovedadesDesdeBoletin') {
       resultado = listarNovedadesDesdeBoletin();
     } else if (action === 'guardarNovedadesSeleccionadas') {
-      resultado = guardarNovedadesSeleccionadas(e.parameter);
+      resultado = guardarNovedadesSeleccionadas(params);
     } else if (action === 'eliminarNovedad') {
-      resultado = eliminarNovedad(e.parameter);
+      resultado = eliminarNovedad(params);
     } else {
       resultado = { ok: false, error: 'Acción no reconocida' };
     }
-  } catch (err) {
-    resultado = { ok: false, error: err.message };
-  }
-  return jsonpResponse(resultado, e.parameter.callback);
+  return resultado;
 }
+
 
 function jsonpResponse(obj, callback) {
   const json = JSON.stringify(obj);
@@ -481,7 +523,8 @@ function listarActas() {
       fechaReunion: fila[idx.FECHA_REUNION] ? Utilities.formatDate(new Date(fila[idx.FECHA_REUNION]), Session.getScriptTimeZone(), 'dd/MM/yyyy') : '',
       estado: estado,
       origen: fila[idx.ORIGEN] || '',
-      motivoAnulacion: fila[idx.MOTIVO_ANULACION] || ''
+      motivoAnulacion: fila[idx.MOTIVO_ANULACION] || '',
+      modoContenido: fila[idx.MODO_CONTENIDO] || 'ESTRUCTURADO'
     });
   }
   // Ordena: primero por número definitivo descendente, los BORRADOR (sin número) van arriba de todo
@@ -536,7 +579,9 @@ function obtenerActa(idRegistro) {
           puntos: fila[idx.PUNTOS] ? JSON.parse(fila[idx.PUNTOS]) : [],
           estado: fila[idx.ESTADO],
           origen: fila[idx.ORIGEN] || '',
-          motivoAnulacion: fila[idx.MOTIVO_ANULACION] || ''
+          motivoAnulacion: fila[idx.MOTIVO_ANULACION] || '',
+          modoContenido: fila[idx.MODO_CONTENIDO] || 'ESTRUCTURADO',
+          textoLibre: fila[idx.TEXTO_LIBRE] || ''
         }
       };
     }
@@ -594,7 +639,9 @@ function generarBorradorActa(params) {
       ID_REGISTRO: idRegistro,
       ORIGEN: 'APP',
       FECHA_ASENTAMIENTO: '',
-      MOTIVO_ANULACION: ''
+      MOTIVO_ANULACION: '',
+      MODO_CONTENIDO: 'ESTRUCTURADO', // los borradores generados por el sistema siempre parten de puntos
+      TEXTO_LIBRE: ''
     });
     const filaNueva = hojaActas.getLastRow();
     hojaActas.getRange(filaNueva, colDeHoja_(hojaActas, 'HORA_INICIO')).setNumberFormat('@').setValue(params.horaInicio || ''); // refuerza texto
@@ -739,6 +786,14 @@ function registrarActaManual(params) {
     return { ok: false, error: 'Número de Acta inválido (tiene que ser mayor a ' + ULTIMA_ACTA_HISTORICA + ').' };
   }
 
+  const modoContenido = params.modoContenido === 'TEXTO_LIBRE' ? 'TEXTO_LIBRE' : 'ESTRUCTURADO';
+  if (modoContenido === 'TEXTO_LIBRE' && (!params.textoLibre || !params.textoLibre.trim())) {
+    return { ok: false, error: 'Falta el texto completo del acta.' };
+  }
+  if (modoContenido === 'ESTRUCTURADO' && (!params.puntos || params.puntos === '[]')) {
+    return { ok: false, error: 'Cargá al menos un punto tratado.' };
+  }
+
   const hoja = getHojaActas();
   const datos = hoja.getDataRange().getValues();
   const idx = {};
@@ -757,20 +812,22 @@ function registrarActaManual(params) {
     HORA_INICIO: params.horaInicio || '',
     HORA_FIN: params.horaFin || '',
     PRESENTES: params.presentes || '',
-    PUNTOS: params.puntos || '[]',
+    PUNTOS: modoContenido === 'ESTRUCTURADO' ? (params.puntos || '[]') : '[]',
     ESTADO: 'ASENTADA',
     NUMERO_ACTA_ANTERIOR: params.numeroActaAnterior || String(numero - 1),
     NUMERO_ACTA: numero,
     ID_REGISTRO: idRegistro,
     ORIGEN: 'MANUAL',
     FECHA_ASENTAMIENTO: params.fechaAsentamiento ? parsearFechaSegura(params.fechaAsentamiento) : new Date(),
-    MOTIVO_ANULACION: ''
+    MOTIVO_ANULACION: '',
+    MODO_CONTENIDO: modoContenido,
+    TEXTO_LIBRE: modoContenido === 'TEXTO_LIBRE' ? params.textoLibre : ''
   });
   const fila = hoja.getLastRow();
   hoja.getRange(fila, colDeHoja_(hoja, 'HORA_INICIO')).setNumberFormat('@').setValue(params.horaInicio || '');
   hoja.getRange(fila, colDeHoja_(hoja, 'HORA_FIN')).setNumberFormat('@').setValue(params.horaFin || '');
 
-  logAuditoriaActa_('REGISTRAR_MANUAL', idRegistro, numero, 'Carga de acta manual/externa', 'MANUAL', null);
+  logAuditoriaActa_('REGISTRAR_MANUAL', idRegistro, numero, 'Carga de acta manual/externa (' + modoContenido + ')', 'MANUAL', null);
 
   return { ok: true, idRegistro: idRegistro };
 }
@@ -849,7 +906,17 @@ function editarActaFormal(params) {
     }
   }
 
-  // Snapshot ANTES de tocar nada
+  // MODO_CONTENIDO: si no viene en params, se conserva el modo actual (una edición de metadata
+  // -- fecha, horarios, número -- no tiene por qué forzar ni tocar el modo de contenido).
+  const modoActual = filaData[idx.MODO_CONTENIDO] || 'ESTRUCTURADO';
+  const modoNuevo = params.modoContenido === 'TEXTO_LIBRE' || params.modoContenido === 'ESTRUCTURADO' ? params.modoContenido : modoActual;
+  const huboConversionModo = modoNuevo !== modoActual;
+
+  if (modoNuevo === 'TEXTO_LIBRE' && params.textoLibre !== undefined && !params.textoLibre.trim() && !huboConversionModo) {
+    // Si ya era TEXTO_LIBRE y viene vacío, no se pisa el contenido existente con nada -- se ignora el campo.
+  }
+
+  // Snapshot ANTES de tocar nada -- incluye modo y contenido de los dos tipos, sin importar cuál esté activo
   const snapshotAntes = {
     numeroActa: filaData[idx.NUMERO_ACTA],
     numeroActaAnterior: filaData[idx.NUMERO_ACTA_ANTERIOR],
@@ -857,7 +924,9 @@ function editarActaFormal(params) {
     horaInicio: filaData[idx.HORA_INICIO],
     horaFin: filaData[idx.HORA_FIN],
     presentes: filaData[idx.PRESENTES],
-    puntos: filaData[idx.PUNTOS]
+    modoContenido: modoActual,
+    puntos: filaData[idx.PUNTOS],
+    textoLibre: filaData[idx.TEXTO_LIBRE] || ''
   };
 
   if (numeroNuevo !== null) hoja.getRange(fila, idx.NUMERO_ACTA + 1).setValue(numeroNuevo);
@@ -866,7 +935,17 @@ function editarActaFormal(params) {
   if (params.horaInicio) hoja.getRange(fila, idx.HORA_INICIO + 1).setNumberFormat('@').setValue(params.horaInicio);
   if (params.horaFin) hoja.getRange(fila, idx.HORA_FIN + 1).setNumberFormat('@').setValue(params.horaFin);
   if (params.presentes) hoja.getRange(fila, idx.PRESENTES + 1).setValue(params.presentes);
-  if (params.puntos) hoja.getRange(fila, idx.PUNTOS + 1).setValue(params.puntos);
+
+  // Contenido: se escribe SOLO lo correspondiente al modo final, nunca los dos a la vez, y NUNCA
+  // se reconstruye ni se traduce entre modos -- lo que venga en params es lo que se guarda, tal cual.
+  hoja.getRange(fila, idx.MODO_CONTENIDO + 1).setValue(modoNuevo);
+  if (modoNuevo === 'ESTRUCTURADO') {
+    if (params.puntos) hoja.getRange(fila, idx.PUNTOS + 1).setValue(params.puntos);
+    if (huboConversionModo) hoja.getRange(fila, idx.TEXTO_LIBRE + 1).setValue(''); // se limpia el otro modo al convertir
+  } else { // TEXTO_LIBRE
+    if (params.textoLibre !== undefined && params.textoLibre.trim()) hoja.getRange(fila, idx.TEXTO_LIBRE + 1).setValue(params.textoLibre);
+    if (huboConversionModo) hoja.getRange(fila, idx.PUNTOS + 1).setValue('[]'); // se limpia el otro modo al convertir
+  }
 
   const filaDataDespues = hoja.getRange(fila, 1, 1, hoja.getLastColumn()).getValues()[0];
   const snapshotDespues = {
@@ -876,10 +955,16 @@ function editarActaFormal(params) {
     horaInicio: filaDataDespues[idx.HORA_INICIO],
     horaFin: filaDataDespues[idx.HORA_FIN],
     presentes: filaDataDespues[idx.PRESENTES],
-    puntos: filaDataDespues[idx.PUNTOS]
+    modoContenido: filaDataDespues[idx.MODO_CONTENIDO],
+    puntos: filaDataDespues[idx.PUNTOS],
+    textoLibre: filaDataDespues[idx.TEXTO_LIBRE] || ''
   };
 
   logAuditoriaActa_('EDITAR_ASENTADA', params.idRegistro, filaDataDespues[idx.NUMERO_ACTA], params.motivo, estadoActual, { antes: snapshotAntes, despues: snapshotDespues });
+
+  if (huboConversionModo) {
+    logAuditoriaActa_('CONVERSION_MODO', params.idRegistro, filaDataDespues[idx.NUMERO_ACTA], params.motivo, estadoActual, { modoAnterior: modoActual, modoNuevo: modoNuevo });
+  }
 
   let advertenciaReferencias = null;
   if (numeroNuevo !== null) {
@@ -902,6 +987,37 @@ function editarActaFormal(params) {
 // MIGRACIÓN ÚNICA -- correr una sola vez para pasar del modelo viejo (ID_ACTA = número
 // definitivo desde el nacimiento) al modelo nuevo (ID_REGISTRO técnico + NUMERO_ACTA diferido).
 // Es idempotente: si detecta que ya migró (existe columna ID_REGISTRO con datos), no hace nada.
+// MIGRACIÓN ADITIVA -- agrega MODO_CONTENIDO y TEXTO_LIBRE a ACTAS sin tocar contenido ni
+// numeración de nada existente. Todo lo migrado (y todo lo previo) queda en ESTRUCTURADO,
+// que es exactamente el comportamiento que ya tenían. Idempotente.
+function migrarActasV3ModoContenido() {
+  const hoja = getHojaActas();
+  const headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
+
+  if (headers.indexOf('MODO_CONTENIDO') !== -1) {
+    return { ok: true, mensaje: 'Ya está migrado (columna MODO_CONTENIDO ya existe). No se hizo nada.' };
+  }
+
+  const colBase = hoja.getLastColumn();
+  hoja.getRange(1, colBase + 1).setValue('MODO_CONTENIDO');
+  hoja.getRange(1, colBase + 2).setValue('TEXTO_LIBRE');
+  hoja.getRange(1, colBase + 1, 1, 2).setFontWeight('bold').setBackground('#135457').setFontColor('#c4df57');
+
+  const datos = hoja.getDataRange().getValues();
+  const idx = {};
+  datos[0].forEach((h, i) => idx[h] = i);
+
+  let marcadas = 0;
+  for (let i = 1; i < datos.length; i++) {
+    if (!datos[i][idx.ID_REGISTRO]) continue;
+    hoja.getRange(i + 1, idx.MODO_CONTENIDO + 1).setValue('ESTRUCTURADO');
+    hoja.getRange(i + 1, idx.TEXTO_LIBRE + 1).setValue('');
+    marcadas++;
+  }
+
+  return { ok: true, mensaje: 'Columnas agregadas. ' + marcadas + ' acta(s) marcada(s) como ESTRUCTURADO (comportamiento sin cambios).' };
+}
+
 function migrarActasV2() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   const hoja = getHojaActas();
