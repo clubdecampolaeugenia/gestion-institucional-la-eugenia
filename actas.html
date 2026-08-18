@@ -229,6 +229,7 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
         <hr class="divider">
         <div class="field-label" id="previewActaTitulo"></div>
         <div id="previewActaMotivoAnulacion" style="display:none; background:rgba(192,57,43,0.12); border:2px solid var(--error); border-radius:12px; padding:10px 12px; margin-bottom:12px; color:var(--error); font-size:12px; font-weight:700;"></div>
+        <div id="previewActaAvisoMetadata" style="display:none; background:rgba(222,175,77,0.2); border:2px solid var(--naranja); border-radius:12px; padding:10px 12px; margin-bottom:12px; color:var(--petroleo); font-size:11.5px; line-height:1.5;"></div>
         <div class="texto-final-box" id="previewTextoBox" style="display:block; margin-bottom:16px;"></div>
         <button type="button" class="btn-asentar" id="btnAsentarActa" style="display:none;" onclick="asentarActaUI()">✔️ Asentar en el Libro (asigna número definitivo)</button>
         <button type="button" style="display:block; width:100%; padding:14px; border-radius:24px; border:2px solid var(--lima); background:var(--petroleo); color:var(--lima); font-family:'Roboto'; font-size:15px; font-weight:900; text-transform:uppercase; cursor:pointer; margin-bottom:10px;" id="btnEditarActa" onclick="pasarAEditar()">✏️ Editar</button>
@@ -248,7 +249,7 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
         <span class="field-label">Número de Acta anterior (referencia)</span>
         <input type="number" id="efNumeroActaAnterior">
         <span class="field-label">Fecha de la reunión</span>
-        <input type="date" id="efFechaReunion">
+        <input type="date" id="efFechaReunion" onchange="if(EF_MODO==='TEXTO_LIBRE') actualizarAvisoMetadataFormal();">
         <span class="field-label">Hora de inicio (24 hs)</span>
         <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
           <select id="efHoraInicio_h" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
@@ -262,11 +263,11 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
           <select id="efHoraFin_m" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
         </div>
         <label style="display:flex; align-items:center; gap:6px; font-size:11px; color:var(--petroleo); margin-bottom:8px;">
-          <input type="checkbox" id="efHoraFinVacia" onchange="document.getElementById('efHoraFin_h').disabled=this.checked; document.getElementById('efHoraFin_m').disabled=this.checked;">
+          <input type="checkbox" id="efHoraFinVacia" onchange="document.getElementById('efHoraFin_h').disabled=this.checked; document.getElementById('efHoraFin_m').disabled=this.checked; if(EF_MODO==='TEXTO_LIBRE') actualizarAvisoMetadataFormal();">
           Dejar sin hora de cierre (vacío)
         </label>
         <span class="field-label">Presentes</span>
-        <textarea id="efPresentes" style="width:100%; min-height:60px; border-radius:10px; padding:10px; border:2px solid var(--petroleo);"></textarea>
+        <textarea id="efPresentes" style="width:100%; min-height:60px; border-radius:10px; padding:10px; border:2px solid var(--petroleo);" oninput="if(EF_MODO==='TEXTO_LIBRE') actualizarAvisoMetadataFormal();"></textarea>
 
         <span class="field-label">Tipo de contenido</span>
         <div id="efModoActualLabel" style="font-size:12px; color:var(--petroleo); font-weight:900; margin-bottom:6px;"></div>
@@ -281,7 +282,7 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
           <button type="button" class="btn-outline" style="background:var(--blanco); margin-top:4px;" onclick="efAgregarPunto()">➕ Agregar punto</button>
         </div>
         <div id="efBloqueTextoLibre" style="display:none;">
-          <div style="font-size:11px; color:var(--error); font-weight:700; margin-bottom:8px;">⚠️ Fecha, horarios y presentes de arriba son datos aparte del texto -- si el texto también los menciona, tienen que decir lo mismo. La app no los sincroniza sola.</div>
+          <div id="efAvisoMetadataTextoLibre" style="font-size:11px; color:var(--error); font-weight:700; margin-bottom:8px;"></div>
           <textarea id="efTextoLibre" style="width:100%; min-height:260px; border-radius:10px; padding:10px; border:2px solid var(--petroleo); font-family:monospace; font-size:12.5px;" placeholder="ACTA N.º 563
 
 En la sede social del Club de Campo La Eugenia, siendo las 21:00 hs. del día 25 de agosto de 2026, se reúnen los siguientes miembros de Comisión Directiva: Javier Stefañuk, Presidente; Augusto Coutada, Vicepresidente...
@@ -890,6 +891,19 @@ function abrirPreview(idRegistro) {
       motivoBox.style.display = 'none';
     }
 
+    const avisoMetadata = document.getElementById('previewActaAvisoMetadata');
+    if (ACTA_ACTUAL.modoContenido === 'TEXTO_LIBRE') {
+      avisoMetadata.style.display = 'block';
+      avisoMetadata.innerHTML = '<strong>⚠️ Metadata registrada (separada del texto):</strong><br>' +
+        'Fecha: ' + (ACTA_ACTUAL.fechaReunion || '(sin dato)') + ' — ' +
+        'Inicio: ' + (ACTA_ACTUAL.horaInicio || '(sin dato)') + ' — ' +
+        'Cierre: ' + (ACTA_ACTUAL.horaFin || '(sin dato)') + '<br>' +
+        'Presentes: ' + (ACTA_ACTUAL.presentes || '(sin dato)') + '<br>' +
+        '<em>Verificá que coincida con lo que dice el texto de abajo -- la app no los sincroniza sola.</em>';
+    } else {
+      avisoMetadata.style.display = 'none';
+    }
+
     document.getElementById('btnAsentarActa').style.display = ACTA_ACTUAL.estado === 'BORRADOR' ? 'block' : 'none';
     document.getElementById('btnEditarActa').style.display = ACTA_ACTUAL.estado === 'BORRADOR' ? 'block' : 'none';
     document.getElementById('btnEliminarBorrador').style.display = ACTA_ACTUAL.estado === 'BORRADOR' ? 'block' : 'none';
@@ -1047,6 +1061,24 @@ function cambiarModoFormal(modo) {
   } else {
     aviso.style.display = 'none';
   }
+
+  if (modo === 'TEXTO_LIBRE') actualizarAvisoMetadataFormal();
+}
+
+// Muestra los valores REALES que están cargados ahora mismo en el formulario (no los guardados
+// antes) -- para que quien pega el texto vea, al lado, qué va a quedar registrado como metadata.
+function actualizarAvisoMetadataFormal() {
+  const fecha = document.getElementById('efFechaReunion').value;
+  const fechaLegible = fecha ? fecha.split('-').reverse().join('/') : '(sin dato)';
+  const horaFinVacia = document.getElementById('efHoraFinVacia').checked;
+  const horaFin = horaFinVacia ? '(vacío)' : obtenerValorHora('efHoraFin');
+  const horaInicio = obtenerValorHora('efHoraInicio');
+  const presentes = document.getElementById('efPresentes').value || '(sin dato)';
+  document.getElementById('efAvisoMetadataTextoLibre').innerHTML =
+    '<strong>⚠️ Metadata que va a quedar registrada (separada del texto):</strong><br>' +
+    'Fecha: ' + fechaLegible + ' — Inicio: ' + horaInicio + ' — Cierre: ' + horaFin + '<br>' +
+    'Presentes: ' + presentes + '<br>' +
+    '<em>Verificá que coincida con lo que vas a pegar abajo -- la app no los sincroniza sola.</em>';
 }
 
 function abrirEditorFormal() {
