@@ -105,7 +105,7 @@ function doGet(e) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(e.parameter);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v57b-orden-dia-cuota-monto-18ago' };
+      resultado = { ok: true, version: 'v57c-jerarquia-vencenesteanio-18ago' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -216,7 +216,7 @@ function listarAutoridades() {
 
   const anioActual = new Date().getFullYear();
   const autoridades = [];
-  const vencenEsteAnio = [];
+  const vencenEsteAnioObjs = [];
 
   filas.forEach(fila => {
     if (!fila[idx.NOMBRE]) return; // fila vacía
@@ -225,7 +225,7 @@ function listarAutoridades() {
     let vence = 'ok';
     if (anioFin === anioActual) {
       vence = 'este_anio';
-      vencenEsteAnio.push(fila[idx.CARGO] + ' (' + fila[idx.NOMBRE] + ')');
+      vencenEsteAnioObjs.push({ cargo: fila[idx.CARGO], nombre: fila[idx.NOMBRE] });
     } else if (anioFin === anioActual + 1) {
       vence = 'proximo_anio';
     }
@@ -243,6 +243,13 @@ function listarAutoridades() {
       vence: vence
     });
   });
+
+  // Orden jerárquico institucional -- no el orden en que se cargaron las filas en la hoja.
+  const ORDEN_CARGOS = ['Presidente','Vicepresidente','Secretario','Prosecretario','Tesorero','Protesorero',
+    'Vocal Titular 1°','Vocal Titular 2°','Vocal Titular 3°','Vocal Suplente 1°','Vocal Suplente 2°','Vocal Suplente 3°',
+    'Revisor Titular','Revisor Suplente'];
+  vencenEsteAnioObjs.sort((a, b) => ORDEN_CARGOS.indexOf(a.cargo) - ORDEN_CARGOS.indexOf(b.cargo));
+  const vencenEsteAnio = vencenEsteAnioObjs.map(v => v.cargo + ' (' + v.nombre + ')');
 
   return { ok: true, autoridades: autoridades.filter(a => a.estado === 'VIGENTE'), vencenEsteAnio: vencenEsteAnio };
 }
