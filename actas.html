@@ -210,7 +210,43 @@
         <button type="button" style="display:block; width:100%; padding:14px; border-radius:24px; border:2px solid var(--lima); background:var(--petroleo); color:var(--lima); font-family:'Roboto'; font-size:15px; font-weight:900; text-transform:uppercase; cursor:pointer; margin-bottom:10px;" id="btnEditarActa" onclick="pasarAEditar()">✏️ Editar</button>
         <button type="button" class="btn-peligro" id="btnEliminarBorrador" style="display:none;" onclick="eliminarBorradorUI()">🗑️ Eliminar borrador</button>
         <button type="button" class="btn-peligro" id="btnAnularActa" style="display:none;" onclick="anularActaUI()">⚠️ Anular Acta</button>
+        <button type="button" class="btn-peligro" id="btnEditarFormal" style="display:none; border-style:dashed;" onclick="abrirEditorFormal()">🔒 Editar acta asentada / anulada</button>
         <button type="button" class="btn-ghost" onclick="cerrarPreview()">← Volver a la lista de actas</button>
+      </div>
+
+      <div id="editorFormal" style="display:none;">
+        <hr class="divider">
+        <div style="background:rgba(192,57,43,0.12); border:2px solid var(--error); border-radius:12px; padding:12px 14px; margin-bottom:14px; color:var(--error); font-size:12px; font-weight:700; line-height:1.5;">
+          ⚠️ Estás editando un registro ya ASENTADO/ANULADO. El Libro físico es la fuente formal definitiva -- esto es para reconciliar la app con lo que finalmente quedó asentado ahí. Cada cambio queda auditado con motivo, fecha y snapshot antes/después.
+        </div>
+        <span class="field-label">Número de Acta</span>
+        <input type="number" id="efNumeroActa">
+        <span class="field-label">Número de Acta anterior (referencia)</span>
+        <input type="number" id="efNumeroActaAnterior">
+        <span class="field-label">Fecha de la reunión</span>
+        <input type="date" id="efFechaReunion">
+        <span class="field-label">Hora de inicio (24 hs)</span>
+        <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
+          <select id="efHoraInicio_h" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <span style="font-weight:900;">:</span>
+          <select id="efHoraInicio_m" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+        </div>
+        <span class="field-label">Hora de cierre (24 hs)</span>
+        <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
+          <select id="efHoraFin_h" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <span style="font-weight:900;">:</span>
+          <select id="efHoraFin_m" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+        </div>
+        <span class="field-label">Presentes</span>
+        <textarea id="efPresentes" style="width:100%; min-height:60px; border-radius:10px; padding:10px; border:2px solid var(--petroleo);"></textarea>
+        <span class="field-label">Puntos tratados (uno por línea)</span>
+        <textarea id="efPuntos" style="width:100%; min-height:100px; border-radius:10px; padding:10px; border:2px solid var(--petroleo);"></textarea>
+        <span class="field-label">PIN (volvé a ingresarlo para confirmar)</span>
+        <input type="password" id="efPin" inputmode="numeric" maxlength="4" placeholder="····">
+        <span class="field-label">Motivo del cambio (obligatorio)</span>
+        <textarea id="efMotivo" style="width:100%; min-height:60px; border-radius:10px; padding:10px; border:2px solid var(--petroleo);" placeholder="Ej: se reordenó al asentar en el Libro físico, correspondía N.º 564 y no 563"></textarea>
+        <button type="button" class="btn-peligro" style="background:var(--error); color:var(--blanco); margin-top:10px;" id="btnGuardarEdicionFormal" onclick="guardarEdicionFormal()">Guardar cambios (con auditoría)</button>
+        <button type="button" class="btn-ghost" onclick="cerrarEditorFormal()">Cancelar</button>
       </div>
 
       <div id="editorActa" style="display:none;">
@@ -743,6 +779,7 @@ function abrirPreview(idRegistro) {
     document.getElementById('btnEditarActa').style.display = ACTA_ACTUAL.estado === 'BORRADOR' ? 'block' : 'none';
     document.getElementById('btnEliminarBorrador').style.display = ACTA_ACTUAL.estado === 'BORRADOR' ? 'block' : 'none';
     document.getElementById('btnAnularActa').style.display = ACTA_ACTUAL.estado === 'ASENTADA' ? 'block' : 'none';
+    document.getElementById('btnEditarFormal').style.display = (ACTA_ACTUAL.estado === 'ASENTADA' || ACTA_ACTUAL.estado === 'ANULADA') ? 'block' : 'none';
 
     document.getElementById('editorActa').style.display = 'none';
     document.getElementById('previewActa').scrollIntoView({ behavior: 'smooth' });
@@ -850,6 +887,75 @@ function anularActaUI() {
       document.getElementById('loadingText').textContent = '';
       if (res && res.ok) {
         mostrarAviso('Acta anulada.', function() { cerrarPreview(); cargarActas(); });
+      } else {
+        mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+      }
+    });
+  });
+}
+
+function abrirEditorFormal() {
+  document.getElementById('previewActa').style.display = 'none';
+  document.getElementById('editorFormal').style.display = 'block';
+  document.getElementById('efNumeroActa').value = ACTA_ACTUAL.numeroActa || '';
+  document.getElementById('efNumeroActaAnterior').value = ACTA_ACTUAL.numeroActaAnterior || '';
+  // fechaReunion viene como dd/MM/yyyy -- el input date necesita yyyy-MM-dd
+  if (ACTA_ACTUAL.fechaReunion) {
+    const partes = ACTA_ACTUAL.fechaReunion.split('/');
+    document.getElementById('efFechaReunion').value = partes[2] + '-' + partes[1] + '-' + partes[0];
+  } else {
+    document.getElementById('efFechaReunion').value = '';
+  }
+  poblarSelectorHora('efHoraInicio', ACTA_ACTUAL.horaInicio || '20:30');
+  poblarSelectorHora('efHoraFin', ACTA_ACTUAL.horaFin || '21:15');
+  document.getElementById('efPresentes').value = ACTA_ACTUAL.presentes || '';
+  document.getElementById('efPuntos').value = (ACTA_ACTUAL.puntos || []).map(p => p.texto).join('\n');
+  document.getElementById('efPin').value = '';
+  document.getElementById('efMotivo').value = '';
+  document.getElementById('editorFormal').scrollIntoView({ behavior: 'smooth' });
+}
+
+function cerrarEditorFormal() {
+  document.getElementById('editorFormal').style.display = 'none';
+  document.getElementById('previewActa').style.display = 'block';
+}
+
+function guardarEdicionFormal() {
+  const pin = document.getElementById('efPin').value;
+  const motivo = document.getElementById('efMotivo').value;
+  if (!pin) { mostrarAviso('Volvé a ingresar el PIN para confirmar.'); return; }
+  if (!motivo.trim()) { mostrarAviso('El motivo es obligatorio.'); return; }
+
+  const puntosTexto = document.getElementById('efPuntos').value.split('\n').map(l => l.trim()).filter(l => l);
+  const puntos = puntosTexto.map((texto, i) => ({ orden: i + 1, texto: texto }));
+
+  mostrarConfirmacion('¿Confirmás este cambio sobre un acta ya ' + ACTA_ACTUAL.estado + '? Queda registrado en auditoría con tu motivo, fecha y el contenido anterior completo. No hay forma de deshacerlo desde la app.', function() {
+    const btn = document.getElementById('btnGuardarEdicionFormal');
+    btn.disabled = true;
+    document.getElementById('loadingText').textContent = 'Guardando con auditoría...';
+    const params = new URLSearchParams({
+      action: 'editarActaFormal',
+      idRegistro: ACTA_ACTUAL.idRegistro,
+      numeroActa: document.getElementById('efNumeroActa').value,
+      numeroActaAnterior: document.getElementById('efNumeroActaAnterior').value,
+      fechaReunion: document.getElementById('efFechaReunion').value,
+      horaInicio: obtenerValorHora('efHoraInicio'),
+      horaFin: obtenerValorHora('efHoraFin'),
+      presentes: document.getElementById('efPresentes').value,
+      puntos: JSON.stringify(puntos),
+      motivo: motivo,
+      pin: pin
+    });
+    jsonp(EXEC_URL_GI + '?' + params.toString(), function(res) {
+      btn.disabled = false;
+      document.getElementById('loadingText').textContent = '';
+      if (res && res.ok) {
+        const extra = res.advertencia ? ('\n\n⚠️ ' + res.advertencia) : '';
+        mostrarAviso('Cambios guardados con auditoría.' + extra, function() {
+          document.getElementById('editorFormal').style.display = 'none';
+          cerrarPreview();
+          cargarActas();
+        });
       } else {
         mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
       }

@@ -47,7 +47,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'asentarActa', 'eliminarBorradorActa', 'anularActa', 'registrarActaManual', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarOrdenDelDiaEnDocumentos', 'guardarPuntosManualesAsamblea', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'backupDocumentos', 'diagnosticoDuplicadosDocumentos', 'limpiarDocumentosConvocatoriaViejos', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'editarActaFormal', 'asentarActa', 'eliminarBorradorActa', 'anularActa', 'registrarActaManual', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarOrdenDelDiaEnDocumentos', 'guardarPuntosManualesAsamblea', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'backupDocumentos', 'diagnosticoDuplicadosDocumentos', 'limpiarDocumentosConvocatoriaViejos', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -84,6 +84,8 @@ function doGet(e) {
       resultado = generarBorradorActa(e.parameter);
     } else if (action === 'actualizarActa') {
       resultado = actualizarActa(e.parameter);
+    } else if (action === 'editarActaFormal') {
+      resultado = editarActaFormal(e.parameter);
     } else if (action === 'asentarActa') {
       resultado = asentarActa(e.parameter);
     } else if (action === 'eliminarBorradorActa') {
@@ -103,7 +105,7 @@ function doGet(e) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(e.parameter);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v56-actas-numeracion-diferida-17ago' };
+      resultado = { ok: true, version: 'v57-actas-edicion-formal-18ago' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -788,6 +790,106 @@ function actualizarActa(params) {
     }
   }
   return { ok: false, error: 'Acta no encontrada' };
+}
+
+// Edita una acta YA ASENTADA o ANULADA (nunca un Borrador -- para eso está actualizarActa).
+// El Libro físico es la fuente formal definitiva; esto existe para reconciliar la app con lo
+// que finalmente quedó asentado ahí (reordenamientos, correcciones de redacción, fecha, etc.).
+// Requiere PIN re-ingresado (no alcanza con la sesión ya abierta) y motivo obligatorio.
+// Nunca cambia el ESTADO -- eso sigue siendo exclusivo de asentarActa/anularActa.
+function editarActaFormal(params) {
+  if (!params.motivo || !params.motivo.trim()) {
+    return { ok: false, error: 'El motivo es obligatorio para editar un acta ya asentada o anulada.' };
+  }
+  // Re-valida el PIN explícitamente en esta acción puntual, además de la protección general
+  // de ACCIONES_PROTEGIDAS -- es la "segunda confirmación consciente" pedida para esta acción sensible.
+  if (!validarPinInterno(params.pin, 'gestion-institucional')) {
+    return { ok: false, error: 'PIN inválido. Volvé a ingresarlo para confirmar esta edición.' };
+  }
+
+  const hoja = getHojaActas();
+  const datos = hoja.getDataRange().getValues();
+  const idx = {};
+  datos[0].forEach((h, i) => idx[h] = i);
+
+  let fila = -1;
+  for (let i = 1; i < datos.length; i++) {
+    if (String(datos[i][idx.ID_REGISTRO]) === String(params.idRegistro)) { fila = i + 1; break; }
+  }
+  if (fila === -1) return { ok: false, error: 'Acta no encontrada' };
+
+  const filaData = hoja.getRange(fila, 1, 1, hoja.getLastColumn()).getValues()[0];
+  const estadoActual = filaData[idx.ESTADO];
+  if (estadoActual === 'BORRADOR') {
+    return { ok: false, error: 'Esta acta está en Borrador -- usá la edición normal, no esta.' };
+  }
+
+  const numeroActual = filaData[idx.NUMERO_ACTA];
+  let numeroNuevo = null;
+
+  // Validación absoluta de duplicados: un número no puede repetirse nunca, sin importar el
+  // estado de quien ya lo tenga (tampoco se libera automáticamente el de una ANULADA).
+  if (params.numeroActa !== undefined && params.numeroActa !== '' && String(params.numeroActa) !== String(numeroActual)) {
+    numeroNuevo = Number(params.numeroActa);
+    if (!numeroNuevo || isNaN(numeroNuevo) || numeroNuevo <= ULTIMA_ACTA_HISTORICA) {
+      return { ok: false, error: 'Número de Acta inválido (tiene que ser mayor a ' + ULTIMA_ACTA_HISTORICA + ').' };
+    }
+    for (let i = 1; i < datos.length; i++) {
+      if (i === fila - 1) continue;
+      if (Number(datos[i][idx.NUMERO_ACTA]) === numeroNuevo) {
+        return { ok: false, error: 'Ya existe un Acta N.º ' + numeroNuevo + ' en el sistema (estado: ' + datos[i][idx.ESTADO] + '). No se hizo ningún cambio.' };
+      }
+    }
+  }
+
+  // Snapshot ANTES de tocar nada
+  const snapshotAntes = {
+    numeroActa: filaData[idx.NUMERO_ACTA],
+    numeroActaAnterior: filaData[idx.NUMERO_ACTA_ANTERIOR],
+    fechaReunion: filaData[idx.FECHA_REUNION] ? Utilities.formatDate(new Date(filaData[idx.FECHA_REUNION]), Session.getScriptTimeZone(), 'dd/MM/yyyy') : '',
+    horaInicio: filaData[idx.HORA_INICIO],
+    horaFin: filaData[idx.HORA_FIN],
+    presentes: filaData[idx.PRESENTES],
+    puntos: filaData[idx.PUNTOS]
+  };
+
+  if (numeroNuevo !== null) hoja.getRange(fila, idx.NUMERO_ACTA + 1).setValue(numeroNuevo);
+  if (params.numeroActaAnterior !== undefined && params.numeroActaAnterior !== '') hoja.getRange(fila, idx.NUMERO_ACTA_ANTERIOR + 1).setValue(params.numeroActaAnterior);
+  if (params.fechaReunion) hoja.getRange(fila, idx.FECHA_REUNION + 1).setValue(parsearFechaSegura(params.fechaReunion));
+  if (params.horaInicio) hoja.getRange(fila, idx.HORA_INICIO + 1).setNumberFormat('@').setValue(params.horaInicio);
+  if (params.horaFin) hoja.getRange(fila, idx.HORA_FIN + 1).setNumberFormat('@').setValue(params.horaFin);
+  if (params.presentes) hoja.getRange(fila, idx.PRESENTES + 1).setValue(params.presentes);
+  if (params.puntos) hoja.getRange(fila, idx.PUNTOS + 1).setValue(params.puntos);
+
+  const filaDataDespues = hoja.getRange(fila, 1, 1, hoja.getLastColumn()).getValues()[0];
+  const snapshotDespues = {
+    numeroActa: filaDataDespues[idx.NUMERO_ACTA],
+    numeroActaAnterior: filaDataDespues[idx.NUMERO_ACTA_ANTERIOR],
+    fechaReunion: filaDataDespues[idx.FECHA_REUNION] ? Utilities.formatDate(new Date(filaDataDespues[idx.FECHA_REUNION]), Session.getScriptTimeZone(), 'dd/MM/yyyy') : '',
+    horaInicio: filaDataDespues[idx.HORA_INICIO],
+    horaFin: filaDataDespues[idx.HORA_FIN],
+    presentes: filaDataDespues[idx.PRESENTES],
+    puntos: filaDataDespues[idx.PUNTOS]
+  };
+
+  logAuditoriaActa_('EDITAR_ASENTADA', params.idRegistro, filaDataDespues[idx.NUMERO_ACTA], params.motivo, estadoActual, { antes: snapshotAntes, despues: snapshotDespues });
+
+  let advertenciaReferencias = null;
+  if (numeroNuevo !== null) {
+    logAuditoriaActa_('CAMBIO_NUMERACION', params.idRegistro, numeroNuevo, params.motivo, estadoActual, { numeroAnterior: numeroActual, numeroNuevo: numeroNuevo });
+
+    // Solo informativo -- detecta pero NO modifica ninguna otra fila
+    let referencias = 0;
+    for (let i = 1; i < datos.length; i++) {
+      if (i === fila - 1) continue;
+      if (String(datos[i][idx.NUMERO_ACTA_ANTERIOR]) === String(numeroActual)) referencias++;
+    }
+    if (referencias > 0) {
+      advertenciaReferencias = 'Hay ' + referencias + ' acta(s) que todavía referencian al Acta N.º ' + numeroActual + ' como acta anterior. Revisalas si corresponde.';
+    }
+  }
+
+  return { ok: true, advertencia: advertenciaReferencias };
 }
 
 // MIGRACIÓN ÚNICA -- correr una sola vez para pasar del modelo viejo (ID_ACTA = número
