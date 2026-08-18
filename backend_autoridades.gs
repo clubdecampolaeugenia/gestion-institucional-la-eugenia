@@ -47,7 +47,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'editarActaFormal', 'asentarActa', 'eliminarBorradorActa', 'anularActa', 'registrarActaManual', 'migrarActasV2', 'migrarActasV3ModoContenido', 'migrarColumnaPuntosManuales', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarOrdenDelDiaEnDocumentos', 'guardarPuntosManualesAsamblea', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'backupDocumentos', 'diagnosticoDuplicadosDocumentos', 'limpiarDocumentosConvocatoriaViejos', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'editarActaFormal', 'asentarActa', 'eliminarBorradorActa', 'anularActa', 'registrarActaManual', 'migrarActasV2', 'migrarActasV3ModoContenido', 'migrarColumnaPuntosManuales', 'restaurarActa563DesdeSnapshot', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarOrdenDelDiaEnDocumentos', 'guardarPuntosManualesAsamblea', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'backupDocumentos', 'diagnosticoDuplicadosDocumentos', 'limpiarDocumentosConvocatoriaViejos', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -140,6 +140,8 @@ function manejarAccion(action, params) {
       resultado = migrarActasV2();
     } else if (action === 'migrarActasV3ModoContenido') {
       resultado = migrarActasV3ModoContenido();
+    } else if (action === 'restaurarActa563DesdeSnapshot') {
+      resultado = restaurarActa563DesdeSnapshot(params);
     } else if (action === 'procesarBalance') {
       resultado = procesarBalance();
     } else if (action === 'listarBalances') {
@@ -1034,6 +1036,87 @@ function editarActaFormal(params) {
 // MIGRACIÓN ADITIVA -- agrega MODO_CONTENIDO y TEXTO_LIBRE a ACTAS sin tocar contenido ni
 // numeración de nada existente. Todo lo migrado (y todo lo previo) queda en ESTRUCTURADO,
 // que es exactamente el comportamiento que ya tenían. Idempotente.
+// ============================================================================
+// ACCIÓN TEMPORAL -- creada exclusivamente para restaurar el Acta 563 tras la
+// corrupción del test de edición formal del 18/08/2026. Hardcodeada a propósito
+// (no acepta ningún dato del request más que el PIN) para que no pueda usarse
+// para nada más que este caso puntual. SACAR del router y de este archivo una
+// vez confirmada la restauración con obtenerActa.
+// ============================================================================
+function restaurarActa563DesdeSnapshot(params) {
+  const ID_OBJETIVO = 'ACTA-20260818081727-MIG563';
+
+  const hoja = getHojaActas();
+  const datos = hoja.getDataRange().getValues();
+  const idx = {};
+  datos[0].forEach((h, i) => idx[h] = i);
+
+  let fila = -1;
+  for (let i = 1; i < datos.length; i++) {
+    if (String(datos[i][idx.ID_REGISTRO]) === ID_OBJETIVO) { fila = i + 1; break; }
+  }
+  if (fila === -1) return { ok: false, error: 'No se encontró ' + ID_OBJETIVO + ' -- no se tocó nada.' };
+
+  const filaData = hoja.getRange(fila, 1, 1, hoja.getLastColumn()).getValues()[0];
+
+  // Verifica que siga siendo el Acta 563 antes de tocar nada -- si algo cambió
+  // (por ejemplo si ya la renumeraron), aborta sin escribir.
+  if (String(filaData[idx.NUMERO_ACTA]) !== '563') {
+    return { ok: false, error: 'El registro ya no tiene NUMERO_ACTA=563 (tiene "' + filaData[idx.NUMERO_ACTA] + '"). Abortado por seguridad, no se tocó nada.' };
+  }
+
+  const snapshotAntes = {
+    numeroActa: filaData[idx.NUMERO_ACTA],
+    numeroActaAnterior: filaData[idx.NUMERO_ACTA_ANTERIOR],
+    fechaReunion: filaData[idx.FECHA_REUNION] ? Utilities.formatDate(new Date(filaData[idx.FECHA_REUNION]), Session.getScriptTimeZone(), 'dd/MM/yyyy') : '',
+    horaInicio: filaData[idx.HORA_INICIO],
+    horaFin: filaData[idx.HORA_FIN],
+    presentes: filaData[idx.PRESENTES],
+    modoContenido: filaData[idx.MODO_CONTENIDO],
+    puntos: filaData[idx.PUNTOS],
+    textoLibre: filaData[idx.TEXTO_LIBRE] || ''
+  };
+
+  const puntosRestaurados = JSON.stringify([
+    { orden: 1, texto: 'Se da lectura al acta N.º 562. Se aprueba por unanimidad.' },
+    { orden: 2, texto: 'Prueba de bitácora' }
+  ]);
+
+  // Solo estas 8 columnas se escriben. NUMERO_ACTA se reafirma en 563 (no cambia, no dispara
+  // renumeración). ID_REGISTRO, ESTADO, ORIGEN, FECHA_ASENTAMIENTO y MOTIVO_ANULACION no se tocan.
+  hoja.getRange(fila, idx.NUMERO_ACTA + 1).setValue(563);
+  hoja.getRange(fila, idx.NUMERO_ACTA_ANTERIOR + 1).setValue('562');
+  hoja.getRange(fila, idx.FECHA_REUNION + 1).setValue(parsearFechaSegura('2026-08-17'));
+  hoja.getRange(fila, idx.HORA_INICIO + 1).setNumberFormat('@').setValue('20:30');
+  hoja.getRange(fila, idx.HORA_FIN + 1).setNumberFormat('@').setValue('');
+  hoja.getRange(fila, idx.PRESENTES + 1).setValue('Javier Stefañuk, Presidente');
+  hoja.getRange(fila, idx.MODO_CONTENIDO + 1).setValue('ESTRUCTURADO');
+  hoja.getRange(fila, idx.PUNTOS + 1).setValue(puntosRestaurados);
+  hoja.getRange(fila, idx.TEXTO_LIBRE + 1).setValue('');
+
+  const filaDataDespues = hoja.getRange(fila, 1, 1, hoja.getLastColumn()).getValues()[0];
+  const snapshotDespues = {
+    numeroActa: filaDataDespues[idx.NUMERO_ACTA],
+    numeroActaAnterior: filaDataDespues[idx.NUMERO_ACTA_ANTERIOR],
+    fechaReunion: filaDataDespues[idx.FECHA_REUNION] ? Utilities.formatDate(new Date(filaDataDespues[idx.FECHA_REUNION]), Session.getScriptTimeZone(), 'dd/MM/yyyy') : '',
+    horaInicio: filaDataDespues[idx.HORA_INICIO],
+    horaFin: filaDataDespues[idx.HORA_FIN],
+    presentes: filaDataDespues[idx.PRESENTES],
+    modoContenido: filaDataDespues[idx.MODO_CONTENIDO],
+    puntos: filaDataDespues[idx.PUNTOS],
+    textoLibre: filaDataDespues[idx.TEXTO_LIBRE] || ''
+  };
+
+  logAuditoriaActa_('RESTAURACION_DESDE_SNAPSHOT_TEST_18AGO', ID_OBJETIVO, 563, 'Restauración manual desde snapshot de auditoría, tras corrupción en test de edición formal del 18/08/2026', filaDataDespues[idx.ESTADO], { antes: snapshotAntes, despues: snapshotDespues });
+
+  return {
+    ok: true,
+    mensaje: 'Acta 563 restaurada desde snapshot.',
+    idRegistro: ID_OBJETIVO,
+    resumen: snapshotDespues
+  };
+}
+
 function migrarActasV3ModoContenido() {
   const hoja = getHojaActas();
   const headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
