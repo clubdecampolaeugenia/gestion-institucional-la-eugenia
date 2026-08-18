@@ -105,7 +105,7 @@ function doGet(e) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(e.parameter);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v57c-jerarquia-vencenesteanio-18ago' };
+      resultado = { ok: true, version: 'v57d-punto1-texto-modelo-18ago' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -2254,7 +2254,7 @@ function generarActaAsamblea(params) {
 // Ninguno de FIJO/AUTOMATICO es editable desde la pantalla -- solo MANUAL.
 function construirPuntosOrdenDelDia(ej, fueraDeTermino, vencenEsteAnio, puntosManuales) {
   const puntos = [];
-  puntos.push({ tipo: 'FIJO', articulo: 'Art. 66', texto: 'Elección del asociado que presidirá la Asamblea y del Secretario de Asamblea, y de dos socios para firmar el Acta, conforme al artículo 66 del Estatuto Social.' });
+  puntos.push({ tipo: 'FIJO', articulo: 'Art. 66', texto: 'Elección de Presidente y Secretario de la Asamblea y de dos Socios para firmar el Acta.' });
   puntos.push({ tipo: 'FIJO', articulo: 'Art. 52.a', texto: 'Lectura y aprobación del Acta de la Asamblea anterior.' });
   if (fueraDeTermino) {
     puntos.push({ tipo: 'AUTOMATICO', articulo: 'Art. 39', texto: 'Consideración de las razones por las cuales la Asamblea General Ordinaria correspondiente al Ejercicio Económico N.° ' + ej.numero + ' se celebra fuera del plazo previsto por el artículo 39 del Estatuto Social.' });
