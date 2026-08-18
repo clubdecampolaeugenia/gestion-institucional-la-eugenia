@@ -249,11 +249,15 @@
           <select id="efHoraInicio_m" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
         </div>
         <span class="field-label">Hora de cierre (24 hs)</span>
-        <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
+        <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
           <select id="efHoraFin_h" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
           <span style="font-weight:900;">:</span>
           <select id="efHoraFin_m" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
         </div>
+        <label style="display:flex; align-items:center; gap:6px; font-size:11px; color:var(--petroleo); margin-bottom:8px;">
+          <input type="checkbox" id="efHoraFinVacia" onchange="document.getElementById('efHoraFin_h').disabled=this.checked; document.getElementById('efHoraFin_m').disabled=this.checked;">
+          Dejar sin hora de cierre (vacío)
+        </label>
         <span class="field-label">Presentes</span>
         <textarea id="efPresentes" style="width:100%; min-height:60px; border-radius:10px; padding:10px; border:2px solid var(--petroleo);"></textarea>
 
@@ -1045,6 +1049,10 @@ function abrirEditorFormal() {
   }
   poblarSelectorHora('efHoraInicio', ACTA_ACTUAL.horaInicio || '20:30');
   poblarSelectorHora('efHoraFin', ACTA_ACTUAL.horaFin || '21:15');
+  const efHoraFinVacia = !ACTA_ACTUAL.horaFin;
+  document.getElementById('efHoraFinVacia').checked = efHoraFinVacia;
+  document.getElementById('efHoraFin_h').disabled = efHoraFinVacia;
+  document.getElementById('efHoraFin_m').disabled = efHoraFinVacia;
   document.getElementById('efPresentes').value = ACTA_ACTUAL.presentes || '';
 
   EF_MODO_ORIGINAL = ACTA_ACTUAL.modoContenido || 'ESTRUCTURADO';
@@ -1098,7 +1106,7 @@ function guardarEdicionFormal() {
       numeroActaAnterior: document.getElementById('efNumeroActaAnterior').value,
       fechaReunion: document.getElementById('efFechaReunion').value,
       horaInicio: obtenerValorHora('efHoraInicio'),
-      horaFin: obtenerValorHora('efHoraFin'),
+      horaFin: document.getElementById('efHoraFinVacia').checked ? '' : obtenerValorHora('efHoraFin'),
       presentes: document.getElementById('efPresentes').value,
       modoContenido: EF_MODO,
       puntos: puntosJSON,

@@ -47,7 +47,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'editarActaFormal', 'asentarActa', 'eliminarBorradorActa', 'anularActa', 'registrarActaManual', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarOrdenDelDiaEnDocumentos', 'guardarPuntosManualesAsamblea', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'backupDocumentos', 'diagnosticoDuplicadosDocumentos', 'limpiarDocumentosConvocatoriaViejos', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'editarActaFormal', 'asentarActa', 'eliminarBorradorActa', 'anularActa', 'registrarActaManual', 'migrarActasV2', 'migrarActasV3ModoContenido', 'migrarColumnaPuntosManuales', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarOrdenDelDiaEnDocumentos', 'guardarPuntosManualesAsamblea', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'backupDocumentos', 'diagnosticoDuplicadosDocumentos', 'limpiarDocumentosConvocatoriaViejos', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -149,7 +149,7 @@ function manejarAccion(action, params) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(params);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v58-actas-modo-dual-post-18ago' };
+      resultado = { ok: true, version: 'v58b-actas-locks-validacion-campos-vacios-18ago' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -794,42 +794,54 @@ function registrarActaManual(params) {
     return { ok: false, error: 'Cargá al menos un punto tratado.' };
   }
 
-  const hoja = getHojaActas();
-  const datos = hoja.getDataRange().getValues();
-  const idx = {};
-  datos[0].forEach((h, i) => idx[h] = i);
+  // Lock compartido con asentarActa/generarBorradorActa: esta función también puede escribir
+  // un NUMERO_ACTA definitivo, y el chequeo de duplicados de abajo tiene que ser atómico con
+  // esa escritura para que dos registros simultáneos no puedan crear el mismo número.
+  const lock = LockService.getScriptLock();
+  let conseguido = false;
+  try {
+    conseguido = lock.tryLock(10000);
+    if (!conseguido) return { ok: false, error: 'Otra operación sobre Actas está en curso. Esperá unos segundos y reintentá.' };
 
-  for (let i = 1; i < datos.length; i++) {
-    if (Number(datos[i][idx.NUMERO_ACTA]) === numero) {
-      return { ok: false, error: 'Ya existe un Acta N.º ' + numero + ' en el sistema (estado: ' + datos[i][idx.ESTADO] + ').' };
+    const hoja = getHojaActas();
+    const datos = hoja.getDataRange().getValues();
+    const idx = {};
+    datos[0].forEach((h, i) => idx[h] = i);
+
+    for (let i = 1; i < datos.length; i++) {
+      if (Number(datos[i][idx.NUMERO_ACTA]) === numero) {
+        return { ok: false, error: 'Ya existe un Acta N.º ' + numero + ' en el sistema (estado: ' + datos[i][idx.ESTADO] + ').' };
+      }
     }
+
+    const idRegistro = 'ACTA-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
+    appendFilaActa_(hoja, {
+      ID_EJERCICIO: params.idEjercicio || (function() { const e = obtenerEjercicioActivo(); return e.ok ? e.ejercicio.idEjercicio : ''; })(),
+      FECHA_REUNION: parsearFechaSegura(params.fechaReunion),
+      HORA_INICIO: params.horaInicio || '',
+      HORA_FIN: params.horaFin || '',
+      PRESENTES: params.presentes || '',
+      PUNTOS: modoContenido === 'ESTRUCTURADO' ? (params.puntos || '[]') : '[]',
+      ESTADO: 'ASENTADA',
+      NUMERO_ACTA_ANTERIOR: params.numeroActaAnterior || String(numero - 1),
+      NUMERO_ACTA: numero,
+      ID_REGISTRO: idRegistro,
+      ORIGEN: 'MANUAL',
+      FECHA_ASENTAMIENTO: params.fechaAsentamiento ? parsearFechaSegura(params.fechaAsentamiento) : new Date(),
+      MOTIVO_ANULACION: '',
+      MODO_CONTENIDO: modoContenido,
+      TEXTO_LIBRE: modoContenido === 'TEXTO_LIBRE' ? params.textoLibre : ''
+    });
+    const fila = hoja.getLastRow();
+    hoja.getRange(fila, colDeHoja_(hoja, 'HORA_INICIO')).setNumberFormat('@').setValue(params.horaInicio || '');
+    hoja.getRange(fila, colDeHoja_(hoja, 'HORA_FIN')).setNumberFormat('@').setValue(params.horaFin || '');
+
+    logAuditoriaActa_('REGISTRAR_MANUAL', idRegistro, numero, 'Carga de acta manual/externa (' + modoContenido + ')', 'MANUAL', null);
+
+    return { ok: true, idRegistro: idRegistro };
+  } finally {
+    if (conseguido) lock.releaseLock();
   }
-
-  const idRegistro = 'ACTA-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
-  appendFilaActa_(hoja, {
-    ID_EJERCICIO: params.idEjercicio || (function() { const e = obtenerEjercicioActivo(); return e.ok ? e.ejercicio.idEjercicio : ''; })(),
-    FECHA_REUNION: parsearFechaSegura(params.fechaReunion),
-    HORA_INICIO: params.horaInicio || '',
-    HORA_FIN: params.horaFin || '',
-    PRESENTES: params.presentes || '',
-    PUNTOS: modoContenido === 'ESTRUCTURADO' ? (params.puntos || '[]') : '[]',
-    ESTADO: 'ASENTADA',
-    NUMERO_ACTA_ANTERIOR: params.numeroActaAnterior || String(numero - 1),
-    NUMERO_ACTA: numero,
-    ID_REGISTRO: idRegistro,
-    ORIGEN: 'MANUAL',
-    FECHA_ASENTAMIENTO: params.fechaAsentamiento ? parsearFechaSegura(params.fechaAsentamiento) : new Date(),
-    MOTIVO_ANULACION: '',
-    MODO_CONTENIDO: modoContenido,
-    TEXTO_LIBRE: modoContenido === 'TEXTO_LIBRE' ? params.textoLibre : ''
-  });
-  const fila = hoja.getLastRow();
-  hoja.getRange(fila, colDeHoja_(hoja, 'HORA_INICIO')).setNumberFormat('@').setValue(params.horaInicio || '');
-  hoja.getRange(fila, colDeHoja_(hoja, 'HORA_FIN')).setNumberFormat('@').setValue(params.horaFin || '');
-
-  logAuditoriaActa_('REGISTRAR_MANUAL', idRegistro, numero, 'Carga de acta manual/externa (' + modoContenido + ')', 'MANUAL', null);
-
-  return { ok: true, idRegistro: idRegistro };
 }
 
 // Solo edita el CONTENIDO de un acta todavía en Borrador. Una vez Asentada o Anulada, el
@@ -871,117 +883,149 @@ function editarActaFormal(params) {
     return { ok: false, error: 'PIN inválido. Volvé a ingresarlo para confirmar esta edición.' };
   }
 
-  const hoja = getHojaActas();
-  const datos = hoja.getDataRange().getValues();
-  const idx = {};
-  datos[0].forEach((h, i) => idx[h] = i);
+  // Lock compartido con asentarActa/registrarActaManual/generarBorradorActa: esta función
+  // también puede escribir un NUMERO_ACTA nuevo (renumeración), y el chequeo de duplicados
+  // tiene que ser atómico con esa escritura.
+  const lock = LockService.getScriptLock();
+  let conseguido = false;
+  try {
+    conseguido = lock.tryLock(10000);
+    if (!conseguido) return { ok: false, error: 'Otra operación sobre Actas está en curso. Esperá unos segundos y reintentá.' };
 
-  let fila = -1;
-  for (let i = 1; i < datos.length; i++) {
-    if (String(datos[i][idx.ID_REGISTRO]) === String(params.idRegistro)) { fila = i + 1; break; }
-  }
-  if (fila === -1) return { ok: false, error: 'Acta no encontrada' };
+    const hoja = getHojaActas();
+    const datos = hoja.getDataRange().getValues();
+    const idx = {};
+    datos[0].forEach((h, i) => idx[h] = i);
 
-  const filaData = hoja.getRange(fila, 1, 1, hoja.getLastColumn()).getValues()[0];
-  const estadoActual = filaData[idx.ESTADO];
-  if (estadoActual === 'BORRADOR') {
-    return { ok: false, error: 'Esta acta está en Borrador -- usá la edición normal, no esta.' };
-  }
-
-  const numeroActual = filaData[idx.NUMERO_ACTA];
-  let numeroNuevo = null;
-
-  // Validación absoluta de duplicados: un número no puede repetirse nunca, sin importar el
-  // estado de quien ya lo tenga (tampoco se libera automáticamente el de una ANULADA).
-  if (params.numeroActa !== undefined && params.numeroActa !== '' && String(params.numeroActa) !== String(numeroActual)) {
-    numeroNuevo = Number(params.numeroActa);
-    if (!numeroNuevo || isNaN(numeroNuevo) || numeroNuevo <= ULTIMA_ACTA_HISTORICA) {
-      return { ok: false, error: 'Número de Acta inválido (tiene que ser mayor a ' + ULTIMA_ACTA_HISTORICA + ').' };
-    }
+    let fila = -1;
     for (let i = 1; i < datos.length; i++) {
-      if (i === fila - 1) continue;
-      if (Number(datos[i][idx.NUMERO_ACTA]) === numeroNuevo) {
-        return { ok: false, error: 'Ya existe un Acta N.º ' + numeroNuevo + ' en el sistema (estado: ' + datos[i][idx.ESTADO] + '). No se hizo ningún cambio.' };
+      if (String(datos[i][idx.ID_REGISTRO]) === String(params.idRegistro)) { fila = i + 1; break; }
+    }
+    if (fila === -1) return { ok: false, error: 'Acta no encontrada' };
+
+    const filaData = hoja.getRange(fila, 1, 1, hoja.getLastColumn()).getValues()[0];
+    const estadoActual = filaData[idx.ESTADO];
+    if (estadoActual === 'BORRADOR') {
+      return { ok: false, error: 'Esta acta está en Borrador -- usá la edición normal, no esta.' };
+    }
+
+    const numeroActual = filaData[idx.NUMERO_ACTA];
+    let numeroNuevo = null;
+
+    // Validación absoluta de duplicados: un número no puede repetirse nunca, sin importar el
+    // estado de quien ya lo tenga (tampoco se libera automáticamente el de una ANULADA).
+    if (params.numeroActa !== undefined && params.numeroActa !== '' && String(params.numeroActa) !== String(numeroActual)) {
+      numeroNuevo = Number(params.numeroActa);
+      if (!numeroNuevo || isNaN(numeroNuevo) || numeroNuevo <= ULTIMA_ACTA_HISTORICA) {
+        return { ok: false, error: 'Número de Acta inválido (tiene que ser mayor a ' + ULTIMA_ACTA_HISTORICA + ').' };
+      }
+      for (let i = 1; i < datos.length; i++) {
+        if (i === fila - 1) continue;
+        if (Number(datos[i][idx.NUMERO_ACTA]) === numeroNuevo) {
+          return { ok: false, error: 'Ya existe un Acta N.º ' + numeroNuevo + ' en el sistema (estado: ' + datos[i][idx.ESTADO] + '). No se hizo ningún cambio.' };
+        }
       }
     }
-  }
 
-  // MODO_CONTENIDO: si no viene en params, se conserva el modo actual (una edición de metadata
-  // -- fecha, horarios, número -- no tiene por qué forzar ni tocar el modo de contenido).
-  const modoActual = filaData[idx.MODO_CONTENIDO] || 'ESTRUCTURADO';
-  const modoNuevo = params.modoContenido === 'TEXTO_LIBRE' || params.modoContenido === 'ESTRUCTURADO' ? params.modoContenido : modoActual;
-  const huboConversionModo = modoNuevo !== modoActual;
+    // MODO_CONTENIDO: si no viene en params, se conserva el modo actual (una edición de metadata
+    // -- fecha, horarios, número -- no tiene por qué forzar ni tocar el modo de contenido).
+    const modoActual = filaData[idx.MODO_CONTENIDO] || 'ESTRUCTURADO';
+    const modoNuevo = params.modoContenido === 'TEXTO_LIBRE' || params.modoContenido === 'ESTRUCTURADO' ? params.modoContenido : modoActual;
+    const huboConversionModo = modoNuevo !== modoActual;
 
-  if (modoNuevo === 'TEXTO_LIBRE' && params.textoLibre !== undefined && !params.textoLibre.trim() && !huboConversionModo) {
-    // Si ya era TEXTO_LIBRE y viene vacío, no se pisa el contenido existente con nada -- se ignora el campo.
-  }
-
-  // Snapshot ANTES de tocar nada -- incluye modo y contenido de los dos tipos, sin importar cuál esté activo
-  const snapshotAntes = {
-    numeroActa: filaData[idx.NUMERO_ACTA],
-    numeroActaAnterior: filaData[idx.NUMERO_ACTA_ANTERIOR],
-    fechaReunion: filaData[idx.FECHA_REUNION] ? Utilities.formatDate(new Date(filaData[idx.FECHA_REUNION]), Session.getScriptTimeZone(), 'dd/MM/yyyy') : '',
-    horaInicio: filaData[idx.HORA_INICIO],
-    horaFin: filaData[idx.HORA_FIN],
-    presentes: filaData[idx.PRESENTES],
-    modoContenido: modoActual,
-    puntos: filaData[idx.PUNTOS],
-    textoLibre: filaData[idx.TEXTO_LIBRE] || ''
-  };
-
-  if (numeroNuevo !== null) hoja.getRange(fila, idx.NUMERO_ACTA + 1).setValue(numeroNuevo);
-  if (params.numeroActaAnterior !== undefined && params.numeroActaAnterior !== '') hoja.getRange(fila, idx.NUMERO_ACTA_ANTERIOR + 1).setValue(params.numeroActaAnterior);
-  if (params.fechaReunion) hoja.getRange(fila, idx.FECHA_REUNION + 1).setValue(parsearFechaSegura(params.fechaReunion));
-  if (params.horaInicio) hoja.getRange(fila, idx.HORA_INICIO + 1).setNumberFormat('@').setValue(params.horaInicio);
-  if (params.horaFin) hoja.getRange(fila, idx.HORA_FIN + 1).setNumberFormat('@').setValue(params.horaFin);
-  if (params.presentes) hoja.getRange(fila, idx.PRESENTES + 1).setValue(params.presentes);
-
-  // Contenido: se escribe SOLO lo correspondiente al modo final, nunca los dos a la vez, y NUNCA
-  // se reconstruye ni se traduce entre modos -- lo que venga en params es lo que se guarda, tal cual.
-  hoja.getRange(fila, idx.MODO_CONTENIDO + 1).setValue(modoNuevo);
-  if (modoNuevo === 'ESTRUCTURADO') {
-    if (params.puntos) hoja.getRange(fila, idx.PUNTOS + 1).setValue(params.puntos);
-    if (huboConversionModo) hoja.getRange(fila, idx.TEXTO_LIBRE + 1).setValue(''); // se limpia el otro modo al convertir
-  } else { // TEXTO_LIBRE
-    if (params.textoLibre !== undefined && params.textoLibre.trim()) hoja.getRange(fila, idx.TEXTO_LIBRE + 1).setValue(params.textoLibre);
-    if (huboConversionModo) hoja.getRange(fila, idx.PUNTOS + 1).setValue('[]'); // se limpia el otro modo al convertir
-  }
-
-  const filaDataDespues = hoja.getRange(fila, 1, 1, hoja.getLastColumn()).getValues()[0];
-  const snapshotDespues = {
-    numeroActa: filaDataDespues[idx.NUMERO_ACTA],
-    numeroActaAnterior: filaDataDespues[idx.NUMERO_ACTA_ANTERIOR],
-    fechaReunion: filaDataDespues[idx.FECHA_REUNION] ? Utilities.formatDate(new Date(filaDataDespues[idx.FECHA_REUNION]), Session.getScriptTimeZone(), 'dd/MM/yyyy') : '',
-    horaInicio: filaDataDespues[idx.HORA_INICIO],
-    horaFin: filaDataDespues[idx.HORA_FIN],
-    presentes: filaDataDespues[idx.PRESENTES],
-    modoContenido: filaDataDespues[idx.MODO_CONTENIDO],
-    puntos: filaDataDespues[idx.PUNTOS],
-    textoLibre: filaDataDespues[idx.TEXTO_LIBRE] || ''
-  };
-
-  logAuditoriaActa_('EDITAR_ASENTADA', params.idRegistro, filaDataDespues[idx.NUMERO_ACTA], params.motivo, estadoActual, { antes: snapshotAntes, despues: snapshotDespues });
-
-  if (huboConversionModo) {
-    logAuditoriaActa_('CONVERSION_MODO', params.idRegistro, filaDataDespues[idx.NUMERO_ACTA], params.motivo, estadoActual, { modoAnterior: modoActual, modoNuevo: modoNuevo });
-  }
-
-  let advertenciaReferencias = null;
-  if (numeroNuevo !== null) {
-    logAuditoriaActa_('CAMBIO_NUMERACION', params.idRegistro, numeroNuevo, params.motivo, estadoActual, { numeroAnterior: numeroActual, numeroNuevo: numeroNuevo });
-
-    // Solo informativo -- detecta pero NO modifica ninguna otra fila
-    let referencias = 0;
-    for (let i = 1; i < datos.length; i++) {
-      if (i === fila - 1) continue;
-      if (String(datos[i][idx.NUMERO_ACTA_ANTERIOR]) === String(numeroActual)) referencias++;
+    // Validación obligatoria de contenido al convertir de modo -- si vas a convertir, tiene que
+    // venir el contenido correspondiente al modo nuevo. Se rechaza TODO el cambio (nada se
+    // escribe) antes que dejar el acta con un modo declarado y sin contenido real adentro.
+    if (huboConversionModo) {
+      if (modoNuevo === 'TEXTO_LIBRE' && (!params.textoLibre || !params.textoLibre.trim())) {
+        return { ok: false, error: 'Para convertir a Texto libre, tenés que pegar el texto completo del acta. No se hizo ningún cambio.' };
+      }
+      if (modoNuevo === 'ESTRUCTURADO') {
+        let puntosValidos = [];
+        try { puntosValidos = params.puntos ? JSON.parse(params.puntos) : []; } catch (e) { puntosValidos = []; }
+        if (!Array.isArray(puntosValidos) || puntosValidos.filter(p => p && p.texto && String(p.texto).trim()).length === 0) {
+          return { ok: false, error: 'Para convertir a Estructurado, tenés que cargar al menos un punto. No se hizo ningún cambio.' };
+        }
+      }
     }
-    if (referencias > 0) {
-      advertenciaReferencias = 'Hay ' + referencias + ' acta(s) que todavía referencian al Acta N.º ' + numeroActual + ' como acta anterior. Revisalas si corresponde.';
+    // Si NO hay conversión y el modo actual es TEXTO_LIBRE, tampoco se puede guardar vacío
+    // por accidente (por ejemplo, si alguien borra todo el texto sin querer).
+    if (!huboConversionModo && modoNuevo === 'TEXTO_LIBRE' && params.textoLibre !== undefined && !params.textoLibre.trim()) {
+      return { ok: false, error: 'El texto del acta no puede quedar vacío. No se hizo ningún cambio.' };
     }
-  }
 
-  return { ok: true, advertencia: advertenciaReferencias };
+    // Snapshot ANTES de tocar nada -- incluye modo y contenido de los dos tipos, sin importar cuál esté activo
+    const snapshotAntes = {
+      numeroActa: filaData[idx.NUMERO_ACTA],
+      numeroActaAnterior: filaData[idx.NUMERO_ACTA_ANTERIOR],
+      fechaReunion: filaData[idx.FECHA_REUNION] ? Utilities.formatDate(new Date(filaData[idx.FECHA_REUNION]), Session.getScriptTimeZone(), 'dd/MM/yyyy') : '',
+      horaInicio: filaData[idx.HORA_INICIO],
+      horaFin: filaData[idx.HORA_FIN],
+      presentes: filaData[idx.PRESENTES],
+      modoContenido: modoActual,
+      puntos: filaData[idx.PUNTOS],
+      textoLibre: filaData[idx.TEXTO_LIBRE] || ''
+    };
+
+    // Campos de metadata: se distingue "no vino en el POST" (undefined -> no tocar) de
+    // "vino explícitamente vacío" (string vacío -> sí escribir el vaciado). El frontend manda
+    // SIEMPRE todas las claves en el body POST, así que un '' real significa "vaciar a propósito".
+    if (numeroNuevo !== null) hoja.getRange(fila, idx.NUMERO_ACTA + 1).setValue(numeroNuevo);
+    if (params.numeroActaAnterior !== undefined) hoja.getRange(fila, idx.NUMERO_ACTA_ANTERIOR + 1).setValue(params.numeroActaAnterior);
+    if (params.fechaReunion !== undefined && params.fechaReunion !== '') hoja.getRange(fila, idx.FECHA_REUNION + 1).setValue(parsearFechaSegura(params.fechaReunion));
+    if (params.horaInicio !== undefined) hoja.getRange(fila, idx.HORA_INICIO + 1).setNumberFormat('@').setValue(params.horaInicio);
+    if (params.horaFin !== undefined) hoja.getRange(fila, idx.HORA_FIN + 1).setNumberFormat('@').setValue(params.horaFin);
+    if (params.presentes !== undefined) hoja.getRange(fila, idx.PRESENTES + 1).setValue(params.presentes);
+
+    // Contenido: se escribe SOLO lo correspondiente al modo final, nunca los dos a la vez, y NUNCA
+    // se reconstruye ni se traduce entre modos -- lo que venga en params es lo que se guarda, tal cual.
+    hoja.getRange(fila, idx.MODO_CONTENIDO + 1).setValue(modoNuevo);
+    if (modoNuevo === 'ESTRUCTURADO') {
+      if (params.puntos !== undefined) hoja.getRange(fila, idx.PUNTOS + 1).setValue(params.puntos);
+      if (huboConversionModo) hoja.getRange(fila, idx.TEXTO_LIBRE + 1).setValue(''); // se limpia el otro modo al convertir
+    } else { // TEXTO_LIBRE
+      if (params.textoLibre !== undefined && params.textoLibre.trim()) hoja.getRange(fila, idx.TEXTO_LIBRE + 1).setValue(params.textoLibre);
+      if (huboConversionModo) hoja.getRange(fila, idx.PUNTOS + 1).setValue('[]'); // se limpia el otro modo al convertir
+    }
+
+    const filaDataDespues = hoja.getRange(fila, 1, 1, hoja.getLastColumn()).getValues()[0];
+    const snapshotDespues = {
+      numeroActa: filaDataDespues[idx.NUMERO_ACTA],
+      numeroActaAnterior: filaDataDespues[idx.NUMERO_ACTA_ANTERIOR],
+      fechaReunion: filaDataDespues[idx.FECHA_REUNION] ? Utilities.formatDate(new Date(filaDataDespues[idx.FECHA_REUNION]), Session.getScriptTimeZone(), 'dd/MM/yyyy') : '',
+      horaInicio: filaDataDespues[idx.HORA_INICIO],
+      horaFin: filaDataDespues[idx.HORA_FIN],
+      presentes: filaDataDespues[idx.PRESENTES],
+      modoContenido: filaDataDespues[idx.MODO_CONTENIDO],
+      puntos: filaDataDespues[idx.PUNTOS],
+      textoLibre: filaDataDespues[idx.TEXTO_LIBRE] || ''
+    };
+
+    logAuditoriaActa_('EDITAR_ASENTADA', params.idRegistro, filaDataDespues[idx.NUMERO_ACTA], params.motivo, estadoActual, { antes: snapshotAntes, despues: snapshotDespues });
+
+    if (huboConversionModo) {
+      logAuditoriaActa_('CONVERSION_MODO', params.idRegistro, filaDataDespues[idx.NUMERO_ACTA], params.motivo, estadoActual, { modoAnterior: modoActual, modoNuevo: modoNuevo });
+    }
+
+    let advertenciaReferencias = null;
+    if (numeroNuevo !== null) {
+      logAuditoriaActa_('CAMBIO_NUMERACION', params.idRegistro, numeroNuevo, params.motivo, estadoActual, { numeroAnterior: numeroActual, numeroNuevo: numeroNuevo });
+
+      // Solo informativo -- detecta pero NO modifica ninguna otra fila
+      let referencias = 0;
+      for (let i = 1; i < datos.length; i++) {
+        if (i === fila - 1) continue;
+        if (String(datos[i][idx.NUMERO_ACTA_ANTERIOR]) === String(numeroActual)) referencias++;
+      }
+      if (referencias > 0) {
+        advertenciaReferencias = 'Hay ' + referencias + ' acta(s) que todavía referencian al Acta N.º ' + numeroActual + ' como acta anterior. Revisalas si corresponde.';
+      }
+    }
+
+    return { ok: true, advertencia: advertenciaReferencias };
+  } finally {
+    if (conseguido) lock.releaseLock();
+  }
 }
 
 // MIGRACIÓN ÚNICA -- correr una sola vez para pasar del modelo viejo (ID_ACTA = número
