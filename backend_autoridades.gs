@@ -105,7 +105,7 @@ function doGet(e) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(e.parameter);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v57-actas-edicion-formal-18ago' };
+      resultado = { ok: true, version: 'v57b-orden-dia-cuota-monto-18ago' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -2253,7 +2253,7 @@ function construirPuntosOrdenDelDia(ej, fueraDeTermino, vencenEsteAnio, puntosMa
     puntos.push({ tipo: 'AUTOMATICO', articulo: 'Art. 39', texto: 'Consideración de las razones por las cuales la Asamblea General Ordinaria correspondiente al Ejercicio Económico N.° ' + ej.numero + ' se celebra fuera del plazo previsto por el artículo 39 del Estatuto Social.' });
   }
   puntos.push({ tipo: 'FIJO', articulo: 'Art. 52.b', texto: 'Lectura y aprobación de la Memoria, Balance General, Inventario, Cuenta de Gastos y Recursos e Informe del Revisor de Cuentas correspondientes al Ejercicio Económico N.° ' + ej.numero + ', finalizado el ' + ej.fechaCierre + '.' });
-  puntos.push({ tipo: 'FIJO', articulo: 'Art. 16', texto: 'Aprobación del monto establecido por la Comisión Directiva para la cuota social, de conformidad con lo establecido en el artículo 16 del Estatuto Social.' });
+  puntos.push({ tipo: 'FIJO', articulo: 'Art. 16', texto: 'Aprobación del monto establecido por la Comisión Directiva para la cuota social, de conformidad con lo establecido en el artículo 16 del Estatuto Social. Definición del nuevo monto.' });
   if (vencenEsteAnio && vencenEsteAnio.length > 0) {
     puntos.push({ tipo: 'AUTOMATICO', articulo: 'Arts. 22, 35 y 63', texto: 'Renovación parcial de la Comisión Directiva y/o Comisión Revisora de Cuentas por finalización de mandato: ' + vencenEsteAnio.join(', ') + ', conforme a los artículos 22, 35 y 63 del Estatuto Social.' });
   }
