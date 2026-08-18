@@ -160,14 +160,6 @@
       <button type="button" class="btn-outline" onclick="toggleFormNuevaActa()">➕ Generar nuevo borrador de Acta</button>
       <button type="button" class="btn-outline" onclick="toggleFormActaManual()">📋 Registrar Acta manual / externa</button>
 
-      <div style="background:rgba(192,57,43,0.15); border:2px dashed var(--error); border-radius:16px; padding:14px; margin-top:10px; margin-bottom:14px;">
-        <div style="color:var(--error); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:6px;">⚠️ Herramienta temporal -- se va a sacar después de usarla</div>
-        <div style="font-size:12px; color:var(--petroleo); margin-bottom:10px;">Restaura el Acta 563 al estado exacto guardado en el snapshot de auditoría (antes del test de edición formal del 18/08). No toca número, estado, origen ni la Bitácora.</div>
-        <input type="password" id="r563Pin" inputmode="numeric" maxlength="4" placeholder="PIN" style="margin-bottom:8px;">
-        <button type="button" class="btn-peligro" style="background:var(--error); color:var(--blanco);" onclick="restaurarActa563UI()">Restaurar Acta 563 desde snapshot</button>
-        <div id="r563Resultado" style="margin-top:10px; font-size:12px; color:var(--petroleo); white-space:pre-wrap;"></div>
-      </div>
-
       <div class="form-panel" id="formNuevaActa" style="display:none; background: var(--petroleo); border-radius: 16px; padding: 14px; margin-bottom: 14px;">
         <span class="field-label" style="color:var(--lima);">Fecha de la reunión</span>
         <input type="date" id="fFechaReunion">
@@ -997,26 +989,6 @@ function anularActaUI() {
         mostrarAviso('Acta anulada.', function() { cerrarPreview(); cargarActas(); });
       } else {
         mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
-      }
-    });
-  });
-}
-
-// HERRAMIENTA TEMPORAL -- restaura el Acta 563 al snapshot de auditoría verificado. No manda
-// ningún dato de contenido, solo el PIN -- toda la lógica de qué restaurar vive en el backend,
-// hardcodeada a este único registro. Sacar esta función y el bloque HTML asociado del archivo
-// una vez confirmado el resultado.
-function restaurarActa563UI() {
-  const pin = document.getElementById('r563Pin').value;
-  if (!pin) { mostrarAviso('Ingresá el PIN.'); return; }
-  mostrarConfirmacion('¿Restaurar el Acta 563 al estado exacto del snapshot de auditoría (antes del test fallido)? Esto sobrescribe fecha, horarios, presentes y puntos actuales del 563. No toca número, estado, origen ni la Bitácora.', function() {
-    document.getElementById('r563Resultado').textContent = 'Restaurando...';
-    postAction({ action: 'restaurarActa563DesdeSnapshot', pin: pin }, function(res) {
-      if (res && res.ok) {
-        document.getElementById('r563Resultado').textContent = '✔️ ' + res.mensaje + '\n\n' + JSON.stringify(res.resumen, null, 2);
-        cargarActas();
-      } else {
-        document.getElementById('r563Resultado').textContent = '❌ Error: ' + (res && res.error ? res.error : 'desconocido');
       }
     });
   });
