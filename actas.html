@@ -210,7 +210,14 @@
         <div id="mBloqueTextoLibre" style="display:none;">
           <span class="field-label" style="color:var(--lima);">Texto completo del Acta</span>
           <div style="font-size:11px; color:var(--lima); opacity:.8; margin-bottom:6px;">Pegá el acta tal cual la confeccionaste -- se guarda exactamente así, sin numerar ni dividir en puntos.</div>
-          <textarea id="mTextoLibre" style="width:100%; min-height:220px; border-radius:10px; padding:10px; border:none; font-family:monospace; font-size:12.5px;"></textarea>
+          <div style="font-size:11px; color:var(--naranja); font-weight:700; margin-bottom:8px;">⚠️ Fecha, horarios y presentes de arriba son datos aparte del texto -- si tu acta los menciona también en el párrafo de apertura, tienen que decir lo mismo. La app no los sincroniza sola.</div>
+          <textarea id="mTextoLibre" style="width:100%; min-height:220px; border-radius:10px; padding:10px; border:none; font-family:monospace; font-size:12.5px;" placeholder="ACTA N.º 563
+
+En la sede social del Club de Campo La Eugenia, siendo las 21:00 hs. del día 25 de agosto de 2026, se reúnen los siguientes miembros de Comisión Directiva: Javier Stefañuk, Presidente; Augusto Coutada, Vicepresidente...
+
+Como primer punto del orden del día...
+
+Siendo las 21:30 horas se levanta la sesión.-"></textarea>
         </div>
 
         <button type="button" class="btn-solid" id="btnRegistrarManual" style="margin-top:12px;" onclick="registrarActaManualUI()">Registrar como Asentada</button>
@@ -274,7 +281,14 @@
           <button type="button" class="btn-outline" style="background:var(--blanco); margin-top:4px;" onclick="efAgregarPunto()">➕ Agregar punto</button>
         </div>
         <div id="efBloqueTextoLibre" style="display:none;">
-          <textarea id="efTextoLibre" style="width:100%; min-height:260px; border-radius:10px; padding:10px; border:2px solid var(--petroleo); font-family:monospace; font-size:12.5px;"></textarea>
+          <div style="font-size:11px; color:var(--error); font-weight:700; margin-bottom:8px;">⚠️ Fecha, horarios y presentes de arriba son datos aparte del texto -- si el texto también los menciona, tienen que decir lo mismo. La app no los sincroniza sola.</div>
+          <textarea id="efTextoLibre" style="width:100%; min-height:260px; border-radius:10px; padding:10px; border:2px solid var(--petroleo); font-family:monospace; font-size:12.5px;" placeholder="ACTA N.º 563
+
+En la sede social del Club de Campo La Eugenia, siendo las 21:00 hs. del día 25 de agosto de 2026, se reúnen los siguientes miembros de Comisión Directiva: Javier Stefañuk, Presidente; Augusto Coutada, Vicepresidente...
+
+Como primer punto del orden del día...
+
+Siendo las 21:30 horas se levanta la sesión.-"></textarea>
         </div>
 
         <span class="field-label">PIN (volvé a ingresarlo para confirmar)</span>
