@@ -47,7 +47,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'editarActaFormal', 'asentarActa', 'eliminarBorradorActa', 'anularActa', 'registrarActaManual', 'migrarActasV2', 'migrarActasV3ModoContenido', 'migrarColumnaPuntosManuales', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarOrdenDelDiaEnDocumentos', 'guardarPuntosManualesAsamblea', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'backupDocumentos', 'diagnosticoDuplicadosDocumentos', 'limpiarDocumentosConvocatoriaViejos', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'editarActaFormal', 'asentarActa', 'eliminarBorradorActa', 'anularActa', 'registrarActaManual', 'migrarActasV2', 'migrarActasV3ModoContenido', 'migrarColumnaPuntosManuales', 'migrarColumnaIdActaCD', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarOrdenDelDiaEnDocumentos', 'guardarPuntosManualesAsamblea', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'backupDocumentos', 'diagnosticoDuplicadosDocumentos', 'limpiarDocumentosConvocatoriaViejos', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -140,6 +140,8 @@ function manejarAccion(action, params) {
       resultado = migrarActasV2();
     } else if (action === 'migrarActasV3ModoContenido') {
       resultado = migrarActasV3ModoContenido();
+    } else if (action === 'migrarColumnaIdActaCD') {
+      resultado = migrarColumnaIdActaCD();
     } else if (action === 'procesarBalance') {
       resultado = procesarBalance();
     } else if (action === 'listarBalances') {
@@ -149,7 +151,7 @@ function manejarAccion(action, params) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(params);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v59-sacar-fuera-de-termino-18ago' };
+      resultado = { ok: true, version: 'v60-vincular-acta-cd-convocatoria-con-actas-19ago' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -2475,6 +2477,19 @@ function migrarColumnaPuntosManuales() {
   return { ok: true, mensaje: 'Columna agregada en la posición ' + nuevaCol + '.' };
 }
 
+// Vincula el "Acta de Comisión Directiva" que genera Convocatoria con una fila REAL del módulo
+// Actas -- antes era un número calculado y escrito en un texto suelto, sin ningún registro,
+// lo que permitía que colisionara en silencio con una acta real posterior (pasó el 19/08/2026
+// con el Acta 563). Idempotente, aditiva, no toca datos existentes.
+function migrarColumnaIdActaCD() {
+  const hoja = getHojaAsambleas();
+  const headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
+  if (headers.indexOf('ID_REGISTRO_ACTA_CD') !== -1) return { ok: true, mensaje: 'Ya existía.' };
+  const nuevaCol = hoja.getLastColumn() + 1;
+  hoja.getRange(1, nuevaCol).setValue('ID_REGISTRO_ACTA_CD').setFontWeight('bold').setBackground('#135457').setFontColor('#c4df57');
+  return { ok: true, mensaje: 'Columna agregada en la posición ' + nuevaCol + '.' };
+}
+
 // Guarda el listado completo de puntos manuales (reemplaza el anterior) para el Ejercicio activo.
 function guardarPuntosManualesAsamblea(params) {
   const ejercicioActivo = obtenerEjercicioActivo();
@@ -2495,6 +2510,70 @@ function guardarPuntosManualesAsamblea(params) {
 // Día recalculado en el momento. Compartida por generarConvocatoriaYDocumentos (crea versión
 // nueva) y actualizarOrdenDelDiaEnDocumentos (sobrescribe en el lugar) -- así nunca hay dos
 // copias de esta plantilla que se puedan desincronizar entre sí.
+// Vincula el Acta de Comisión Directiva de Convocatoria con una fila real de ACTAS (Borrador).
+// Si ya existe un vínculo guardado en ASAMBLEAS, actualiza esa misma fila (nunca crea una
+// segunda). Si esa fila ya fue Asentada por fuera (alguien la cerró desde el módulo Actas
+// directamente), NO la toca -- una vez asentada, su contenido es responsabilidad del módulo
+// Actas, no de Convocatoria. Devuelve el ID_REGISTRO y el número previsto para mostrar en pantalla.
+function sincronizarBorradorActaCD_(filaAsam, filaAsamIndice, ej, actaCDTexto, fechaReunionCD, horaReunionCD, horaFinReunionCD, presentesCD) {
+  const hojaAsam = getHojaAsambleas();
+  const idxAsam = {};
+  hojaAsam.getRange(1, 1, 1, hojaAsam.getLastColumn()).getValues()[0].forEach((h, i) => idxAsam[h] = i);
+  if (idxAsam.ID_REGISTRO_ACTA_CD === undefined) {
+    return { idRegistro: null, numeroPrevisto: null }; // todavía no se corrió la migración -- no rompe nada, solo no vincula
+  }
+
+  const hojaActas = getHojaActas();
+  const idRegistroGuardado = filaAsam[idxAsam.ID_REGISTRO_ACTA_CD];
+
+  if (idRegistroGuardado) {
+    const datosActas = hojaActas.getDataRange().getValues();
+    const idxActas = {};
+    datosActas[0].forEach((h, i) => idxActas[h] = i);
+    for (let i = 1; i < datosActas.length; i++) {
+      if (String(datosActas[i][idxActas.ID_REGISTRO]) === String(idRegistroGuardado)) {
+        if (datosActas[i][idxActas.ESTADO] === 'BORRADOR') {
+          const fila = i + 1;
+          hojaActas.getRange(fila, idxActas.TEXTO_LIBRE + 1).setValue(actaCDTexto);
+          hojaActas.getRange(fila, idxActas.FECHA_REUNION + 1).setValue(parsearFechaSegura(fechaReunionCD));
+          hojaActas.getRange(fila, idxActas.HORA_INICIO + 1).setNumberFormat('@').setValue(horaReunionCD || '');
+          hojaActas.getRange(fila, idxActas.HORA_FIN + 1).setNumberFormat('@').setValue(horaFinReunionCD || '');
+          hojaActas.getRange(fila, idxActas.PRESENTES + 1).setValue(presentesCD || '');
+        }
+        // Si ya no es BORRADOR (fue asentada o anulada por fuera), no se toca -- queda tal cual está.
+        return { idRegistro: idRegistroGuardado, numeroPrevisto: obtenerUltimoNumeroActa() + 1 };
+      }
+    }
+    // El ID guardado no aparece más en ACTAS (se borró) -- se crea de nuevo, más abajo.
+  }
+
+  const idRegistroNuevo = 'ACTA-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss') + '-CD';
+  appendFilaActa_(hojaActas, {
+    ID_EJERCICIO: ej.idEjercicio,
+    FECHA_REUNION: parsearFechaSegura(fechaReunionCD),
+    HORA_INICIO: horaReunionCD || '',
+    HORA_FIN: horaFinReunionCD || '',
+    PRESENTES: presentesCD || '',
+    PUNTOS: '[]',
+    ESTADO: 'BORRADOR',
+    NUMERO_ACTA_ANTERIOR: '',
+    NUMERO_ACTA: '',
+    ID_REGISTRO: idRegistroNuevo,
+    ORIGEN: 'APP',
+    FECHA_ASENTAMIENTO: '',
+    MOTIVO_ANULACION: '',
+    MODO_CONTENIDO: 'TEXTO_LIBRE',
+    TEXTO_LIBRE: actaCDTexto
+  });
+  const filaNueva = hojaActas.getLastRow();
+  hojaActas.getRange(filaNueva, colDeHoja_(hojaActas, 'HORA_INICIO')).setNumberFormat('@').setValue(horaReunionCD || '');
+  hojaActas.getRange(filaNueva, colDeHoja_(hojaActas, 'HORA_FIN')).setNumberFormat('@').setValue(horaFinReunionCD || '');
+
+  hojaAsam.getRange(filaAsamIndice, idxAsam.ID_REGISTRO_ACTA_CD + 1).setValue(idRegistroNuevo);
+
+  return { idRegistro: idRegistroNuevo, numeroPrevisto: obtenerUltimoNumeroActa() + 1 };
+}
+
 function armarTextosConvocatoria_(ej, params, numeroActaUsar) {
   const hojaAsam = getHojaAsambleas();
   const datosAsam = hojaAsam.getDataRange().getValues();
@@ -2539,6 +2618,10 @@ function armarTextosConvocatoria_(ej, params, numeroActaUsar) {
   actaCD += 'Como tercer punto del orden del día, se aprueba el siguiente Orden del Día para la Asamblea:\n\n' + ordenDelDiaTexto + '\n\n';
   actaCD += 'Siendo las ' + (params.horaFinReunionCD || '21:15') + ' horas se levanta la sesión.-';
 
+  // Vincula (crea o actualiza) el Borrador real en el módulo Actas -- ya no es un número
+  // calculado y escrito en un texto suelto sin registro. Ver sincronizarBorradorActaCD_.
+  const sync = sincronizarBorradorActaCD_(filaAsam, filaExistente, ej, actaCD, params.fechaReunionCD, params.horaReunionCD, params.horaFinReunionCD, params.presentesCD);
+
   // ---- 2. Edicto diario local ----
   let edictoDiario = 'CLUB DE CAMPO "LA EUGENIA"\nConvocatoria a Asamblea General Ordinaria\n\n';
   edictoDiario += 'La Comisión Directiva convoca a los señores asociados a la Asamblea General Ordinaria, que se celebrará el día ' + fechaAsambleaFmt + ', a las ' + horaAsamblea + ' horas, en ' + lugarAsamblea + ', para tratar el siguiente:\n\nORDEN DEL DÍA\n\n' + ordenDelDiaTexto;
@@ -2555,6 +2638,7 @@ function armarTextosConvocatoria_(ej, params, numeroActaUsar) {
     ok: true,
     fueraDeTermino: fueraDeTermino,
     fechaLimite: fechaLimite,
+    actaCDSync: sync,
     documentos: [
       { tipo: 'ACTA_CD_CONVOCATORIA', contenido: actaCD },
       { tipo: 'EDICTO_DIARIO', contenido: edictoDiario },
@@ -2597,7 +2681,7 @@ function generarConvocatoriaYDocumentos(params) {
     resultado.push({ tipo: doc.tipo, idDocumento: nuevoId, contenido: doc.contenido, estado: 'BORRADOR', version: version });
   });
 
-  return { ok: true, documentos: resultado, numeroActa: nuevoNumeroActa };
+  return { ok: true, documentos: resultado, numeroActa: nuevoNumeroActa, actaCDSync: armado.actaCDSync };
 }
 
 // "Actualizar" en vez de "Generar de nuevo": sobrescribe el CONTENIDO de la versión vigente de
@@ -2653,7 +2737,7 @@ function actualizarOrdenDelDiaEnDocumentos(params) {
     resultado.push({ tipo: doc.tipo, idDocumento: idDocumento, contenido: doc.contenido, estado: estadoNuevo, reabierto: estadoAnterior === 'APROBADO' });
   });
 
-  return { ok: true, documentos: resultado, numeroActa: numeroActaUsar };
+  return { ok: true, documentos: resultado, numeroActa: numeroActaUsar, actaCDSync: armado.actaCDSync };
 }
 
 function registrarInformeRevisor(params) {
