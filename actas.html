@@ -391,6 +391,25 @@ function mostrarConfirmacion(mensaje, callbackAceptar) {
   overlay.querySelector('.confirm-btn-aceptar').onclick = function() { document.body.removeChild(overlay); callbackAceptar(); };
 }
 
+// Reemplaza al prompt() nativo del navegador (que no se puede estilizar) para pedir texto
+// libre -- mismo look que mostrarConfirmacion, con un campo de entrada agregado.
+function mostrarPrompt(mensaje, callbackAceptar) {
+  const overlay = document.createElement('div');
+  overlay.className = 'aviso-overlay';
+  overlay.innerHTML = '<div class="aviso-card"><div class="aviso-texto">' + mensaje.replace(/</g,'&lt;') + '</div>' +
+    '<textarea id="promptInputTexto" style="width:100%; min-height:70px; border-radius:10px; padding:10px; border:2px solid var(--petroleo); font-family:\'Roboto\'; font-size:14px; margin-bottom:14px; color:var(--petroleo);"></textarea>' +
+    '<div class="confirm-btns"><button type="button" class="confirm-btn-cancelar">Cancelar</button><button type="button" class="confirm-btn-aceptar">Aceptar</button></div></div>';
+  document.body.appendChild(overlay);
+  const input = overlay.querySelector('#promptInputTexto');
+  input.focus();
+  overlay.querySelector('.confirm-btn-cancelar').onclick = function() { document.body.removeChild(overlay); };
+  overlay.querySelector('.confirm-btn-aceptar').onclick = function() {
+    const valor = input.value;
+    document.body.removeChild(overlay);
+    callbackAceptar(valor);
+  };
+}
+
 const EXEC_URL_GI = 'https://script.google.com/macros/s/AKfycbyBxlDAteVncpf2hyQ-Nna6YZjMiZodntG9gZZ9aPXPei1As_yhqMUCnjnM9mHmJYYZJg/exec';
 const EXEC_URL_PINES_CGV_CHECK = 'https://script.google.com/macros/s/AKfycbyt4PoL_IWHaXRlMNDy2cPtWmvj7f0-DLpSe5IHir54yPDNg8osPtX_0ezoopC4aGR_7A/exec';
 
@@ -1020,35 +1039,35 @@ function asentarActaUI() {
 }
 
 function eliminarBorradorUI() {
-  const motivo = prompt('Motivo para eliminar este borrador (obligatorio):');
-  if (motivo === null) return;
-  if (!motivo.trim()) { mostrarAviso('El motivo es obligatorio.'); return; }
-  mostrarConfirmacion('¿Eliminar este borrador? Se libera cualquier nota de Bitácora que había tomado. No se puede deshacer.', function() {
-    document.getElementById('loadingText').textContent = 'Eliminando...';
-    postAction({ action: 'eliminarBorradorActa', idRegistro: ACTA_ACTUAL.idRegistro, motivo: motivo, pin: PIN_SESION }, function(res) {
-      document.getElementById('loadingText').textContent = '';
-      if (res && res.ok) {
-        mostrarAviso('Borrador eliminado. ' + res.notasLiberadas + ' nota(s) de Bitácora liberada(s).', function() { cerrarPreview(); cargarActas(); cargarNotas(); });
-      } else {
-        mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
-      }
+  mostrarPrompt('Motivo para eliminar este borrador (obligatorio):', function(motivo) {
+    if (!motivo || !motivo.trim()) { mostrarAviso('El motivo es obligatorio.'); return; }
+    mostrarConfirmacion('¿Eliminar este borrador? Se libera cualquier nota de Bitácora que había tomado. No se puede deshacer.', function() {
+      document.getElementById('loadingText').textContent = 'Eliminando...';
+      postAction({ action: 'eliminarBorradorActa', idRegistro: ACTA_ACTUAL.idRegistro, motivo: motivo, pin: PIN_SESION }, function(res) {
+        document.getElementById('loadingText').textContent = '';
+        if (res && res.ok) {
+          mostrarAviso('Borrador eliminado. ' + res.notasLiberadas + ' nota(s) de Bitácora liberada(s).', function() { cerrarPreview(); cargarActas(); cargarNotas(); });
+        } else {
+          mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+        }
+      });
     });
   });
 }
 
 function anularActaUI() {
-  const motivo = prompt('Motivo para anular el Acta N.º ' + ACTA_ACTUAL.numeroActa + ' (obligatorio):');
-  if (motivo === null) return;
-  if (!motivo.trim()) { mostrarAviso('El motivo es obligatorio.'); return; }
-  mostrarConfirmacion('¿Anular el Acta N.º ' + ACTA_ACTUAL.numeroActa + '? El número queda quemado para siempre -- no se reutiliza ni se puede deshacer.', function() {
-    document.getElementById('loadingText').textContent = 'Anulando...';
-    postAction({ action: 'anularActa', idRegistro: ACTA_ACTUAL.idRegistro, motivo: motivo, pin: PIN_SESION }, function(res) {
-      document.getElementById('loadingText').textContent = '';
-      if (res && res.ok) {
-        mostrarAviso('Acta anulada.', function() { cerrarPreview(); cargarActas(); });
-      } else {
-        mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
-      }
+  mostrarPrompt('Motivo para anular el Acta N.º ' + ACTA_ACTUAL.numeroActa + ' (obligatorio):', function(motivo) {
+    if (!motivo || !motivo.trim()) { mostrarAviso('El motivo es obligatorio.'); return; }
+    mostrarConfirmacion('¿Anular el Acta N.º ' + ACTA_ACTUAL.numeroActa + '? El número queda quemado para siempre -- no se reutiliza ni se puede deshacer.', function() {
+      document.getElementById('loadingText').textContent = 'Anulando...';
+      postAction({ action: 'anularActa', idRegistro: ACTA_ACTUAL.idRegistro, motivo: motivo, pin: PIN_SESION }, function(res) {
+        document.getElementById('loadingText').textContent = '';
+        if (res && res.ok) {
+          mostrarAviso('Acta anulada.', function() { cerrarPreview(); cargarActas(); });
+        } else {
+          mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+        }
+      });
     });
   });
 }
