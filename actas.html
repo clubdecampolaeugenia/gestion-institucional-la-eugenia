@@ -261,6 +261,7 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
         <button type="button" style="display:block; width:100%; padding:14px; border-radius:24px; border:2px solid var(--lima); background:var(--petroleo); color:var(--lima); font-family:'Roboto'; font-size:15px; font-weight:900; text-transform:uppercase; cursor:pointer; margin-bottom:10px;" id="btnEditarActa" onclick="pasarAEditar()">✏️ Editar</button>
         <button type="button" class="btn-peligro" id="btnEliminarBorrador" style="display:none;" onclick="eliminarBorradorUI()">🗑️ Eliminar borrador</button>
         <button type="button" class="btn-peligro" id="btnAnularActa" style="display:none;" onclick="anularActaUI()">⚠️ Anular Acta</button>
+        <button type="button" style="display:none; width:100%; padding:12px; border-radius:24px; border:3px dotted var(--error); background:rgba(192,57,43,0.08); color:var(--error); font-family:'Roboto'; font-size:12px; font-weight:900; text-transform:uppercase; cursor:pointer; margin-bottom:10px;" id="btnEliminarErroneo" onclick="eliminarRegistroErroneoUI()">🚫 Eliminar registro erróneo (nunca existió en el Libro físico)</button>
         <button type="button" class="btn-peligro" id="btnEditarFormal" style="display:none; border-style:dashed;" onclick="abrirEditorFormal()">🔒 Editar acta asentada / anulada</button>
         <button type="button" class="btn-ghost" onclick="cerrarPreview()">← Volver a la lista de actas</button>
       </div>
@@ -408,6 +409,30 @@ function mostrarPrompt(mensaje, callbackAceptar) {
     const valor = input.value;
     document.body.removeChild(overlay);
     callbackAceptar(valor);
+  };
+}
+
+// Variante con motivo (textarea) + PIN (campo enmascarado) en un mismo modal -- para acciones
+// destructivas que exigen las dos cosas juntas antes de confirmar.
+function mostrarPromptMotivoPin(mensaje, callbackAceptar) {
+  const overlay = document.createElement('div');
+  overlay.className = 'aviso-overlay';
+  overlay.innerHTML = '<div class="aviso-card"><div class="aviso-texto">' + mensaje.replace(/</g,'&lt;') + '</div>' +
+    '<div style="text-align:left; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--petroleo); margin-bottom:4px;">Motivo (obligatorio)</div>' +
+    '<textarea id="promptMotivoTexto" style="width:100%; min-height:60px; border-radius:10px; padding:10px; border:2px solid var(--petroleo); font-family:\'Roboto\'; font-size:14px; margin-bottom:10px; color:var(--petroleo);"></textarea>' +
+    '<div style="text-align:left; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--petroleo); margin-bottom:4px;">PIN (volvé a ingresarlo)</div>' +
+    '<input type="password" id="promptPinTexto" inputmode="numeric" maxlength="4" style="width:100%; text-align:center; font-size:20px; font-weight:900; letter-spacing:6px; border-radius:10px; padding:10px; border:2px solid var(--petroleo); margin-bottom:14px; color:var(--petroleo);">' +
+    '<div class="confirm-btns"><button type="button" class="confirm-btn-cancelar">Cancelar</button><button type="button" class="confirm-btn-aceptar">Confirmar</button></div></div>';
+  document.body.appendChild(overlay);
+  const inputMotivo = overlay.querySelector('#promptMotivoTexto');
+  const inputPin = overlay.querySelector('#promptPinTexto');
+  inputMotivo.focus();
+  overlay.querySelector('.confirm-btn-cancelar').onclick = function() { document.body.removeChild(overlay); };
+  overlay.querySelector('.confirm-btn-aceptar').onclick = function() {
+    const motivo = inputMotivo.value;
+    const pin = inputPin.value;
+    document.body.removeChild(overlay);
+    callbackAceptar(motivo, pin);
   };
 }
 
@@ -959,6 +984,7 @@ function abrirPreview(idRegistro) {
     document.getElementById('btnEditarActa').style.display = ACTA_ACTUAL.estado === 'BORRADOR' ? 'block' : 'none';
     document.getElementById('btnEliminarBorrador').style.display = ACTA_ACTUAL.estado === 'BORRADOR' ? 'block' : 'none';
     document.getElementById('btnAnularActa').style.display = ACTA_ACTUAL.estado === 'ASENTADA' ? 'block' : 'none';
+    document.getElementById('btnEliminarErroneo').style.display = (ACTA_ACTUAL.estado === 'ASENTADA' || ACTA_ACTUAL.estado === 'ANULADA') ? 'block' : 'none';
     document.getElementById('btnEditarFormal').style.display = (ACTA_ACTUAL.estado === 'ASENTADA' || ACTA_ACTUAL.estado === 'ANULADA') ? 'block' : 'none';
 
     document.getElementById('editorActa').style.display = 'none';
@@ -1068,6 +1094,51 @@ function anularActaUI() {
         } else {
           mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
         }
+      });
+    });
+  });
+}
+
+// "Eliminar registro erróneo" -- SOLO para actas que nunca existieron en el Libro físico
+// (errores puros de la app, ej. duplicados accidentales). No confundir con "Anular", que es
+// para actas reales a dejar sin efecto (esas conservan su número para siempre). Muestra primero
+// el diagnóstico real de dependencias, y recién después pide motivo + PIN.
+function eliminarRegistroErroneoUI() {
+  document.getElementById('loadingText').textContent = 'Revisando dependencias...';
+  postAction({ action: 'diagnosticarEliminacionActa', idRegistro: ACTA_ACTUAL.idRegistro, pin: PIN_SESION }, function(diag) {
+    document.getElementById('loadingText').textContent = '';
+    if (!diag || !diag.ok) { mostrarAviso('Error al diagnosticar: ' + (diag && diag.error ? diag.error : 'desconocido')); return; }
+
+    if (diag.dependencias.actasQueLaReferencian.length > 0) {
+      mostrarAviso('No se puede eliminar: hay ' + diag.dependencias.actasQueLaReferencian.length + ' acta(s) que la referencian como "acta anterior" (' +
+        diag.dependencias.actasQueLaReferencian.map(a => 'N.º ' + a.numeroActa).join(', ') + '). Resolvé esa referencia primero.');
+      return;
+    }
+
+    let detalle = 'Dependencias encontradas:\n' +
+      '• Notas de Bitácora vinculadas: ' + diag.resumen.totalNotasBitacora + ' (se liberan automáticamente)\n' +
+      '• Documentos que la mencionan: ' + diag.resumen.totalDocumentosConMencion + ' (NO se corrigen solos -- hay que revisarlos aparte)\n\n' +
+      '⚠️ ESTA ACCIÓN ES SOLO PARA REGISTROS QUE NUNCA EXISTIERON EN EL LIBRO FÍSICO.\n' +
+      'Si esta acta existió realmente en el Libro (aunque tenga un error), no la elimines -- usá "Anular Acta" en su lugar, que conserva el número.\n\n' +
+      'La fila se borra físicamente. No se puede deshacer desde la app.';
+
+    mostrarPromptMotivoPin(detalle, function(motivo, pin) {
+      if (!motivo || !motivo.trim()) { mostrarAviso('El motivo es obligatorio.'); return; }
+      if (!pin) { mostrarAviso('El PIN es obligatorio.'); return; }
+      mostrarConfirmacion('¿Confirmás definitivamente eliminar el registro del Acta N.º ' + diag.acta.numeroActa + '? Esta acción NO se puede deshacer desde la app.', function() {
+        document.getElementById('loadingText').textContent = 'Eliminando...';
+        postAction({ action: 'eliminarRegistroErroneo', idRegistro: ACTA_ACTUAL.idRegistro, motivo: motivo, pin: pin }, function(res) {
+          document.getElementById('loadingText').textContent = '';
+          if (res && res.ok) {
+            let msg = 'Registro eliminado. Próximo número disponible: ' + res.proximoNumeroDisponible + '.';
+            if (res.documentosConMencionSinCorregir && res.documentosConMencionSinCorregir.length > 0) {
+              msg += '\n\n⚠️ Hay ' + res.documentosConMencionSinCorregir.length + ' documento(s) generado(s) que todavía mencionan el número eliminado -- revisalos y volvé a generarlos si corresponde.';
+            }
+            mostrarAviso(msg, function() { cerrarPreview(); cargarActas(); });
+          } else {
+            mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+          }
+        });
       });
     });
   });
