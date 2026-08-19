@@ -149,7 +149,7 @@ function manejarAccion(action, params) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(params);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v58c-limpieza-herramienta-temporal-563-18ago' };
+      resultado = { ok: true, version: 'v59-sacar-fuera-de-termino-18ago' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -2412,13 +2412,14 @@ function generarActaAsamblea(params) {
 // tipo: 'FIJO' (obligatorio por Estatuto, se da siempre) | 'AUTOMATICO' (lo decide el
 // sistema según datos reales, ej. si hay renovación de cargos) | 'MANUAL' (cargado a mano).
 // Ninguno de FIJO/AUTOMATICO es editable desde la pantalla -- solo MANUAL.
+// NOTA: el parámetro fueraDeTermino se conserva en la firma por compatibilidad con las llamadas
+// existentes, pero ya no se usa -- el Estatuto (Art. 39) no exige que se justifique la demora
+// en el Orden del Día, era una recomendación de prudencia, no una obligación. Se sacó a pedido
+// explícito (18/08/2026).
 function construirPuntosOrdenDelDia(ej, fueraDeTermino, vencenEsteAnio, puntosManuales) {
   const puntos = [];
   puntos.push({ tipo: 'FIJO', articulo: 'Art. 66', texto: 'Elección de Presidente y Secretario de la Asamblea y de dos Socios para firmar el Acta.' });
   puntos.push({ tipo: 'FIJO', articulo: 'Art. 52.a', texto: 'Lectura y aprobación del Acta de la Asamblea anterior.' });
-  if (fueraDeTermino) {
-    puntos.push({ tipo: 'AUTOMATICO', articulo: 'Art. 39', texto: 'Consideración de las razones por las cuales la Asamblea General Ordinaria correspondiente al Ejercicio Económico N.° ' + ej.numero + ' se celebra fuera del plazo previsto por el artículo 39 del Estatuto Social.' });
-  }
   puntos.push({ tipo: 'FIJO', articulo: 'Art. 52.b', texto: 'Lectura y aprobación de la Memoria, Balance General, Inventario, Cuenta de Gastos y Recursos e Informe del Revisor de Cuentas correspondientes al Ejercicio Económico N.° ' + ej.numero + ', finalizado el ' + ej.fechaCierre + '.' });
   puntos.push({ tipo: 'FIJO', articulo: 'Art. 16', texto: 'Aprobación del monto establecido por la Comisión Directiva para la cuota social, de conformidad con lo establecido en el artículo 16 del Estatuto Social. Definición del nuevo monto.' });
   if (vencenEsteAnio && vencenEsteAnio.length > 0) {
@@ -2535,9 +2536,6 @@ function armarTextosConvocatoria_(ej, params, numeroActaUsar) {
   actaCD += 'En la sede social del Club de Campo La Eugenia, siendo las ' + params.horaReunionCD + ' hs. del día ' + params.fechaReunionCD + ', se reúnen los siguientes miembros de Comisión Directiva: ' + params.presentesCD + '.\n\n';
   actaCD += 'Como primer punto del orden del día se da lectura al acta N.º ' + ultimoNumero + '. Se aprueba por unanimidad.\n\n';
   actaCD += 'Como segundo punto del orden del día, la Comisión Directiva resuelve convocar a Asamblea General Ordinaria para el día ' + fechaAsambleaFmt + ', a las ' + horaAsamblea + ' horas, en ' + lugarAsamblea + '.\n\n';
-  if (fueraDeTermino) {
-    actaCD += 'Se deja constancia de que, conforme al artículo 39 del Estatuto Social, el plazo estatutario para la Asamblea Ordinaria vencía el ' + Utilities.formatDate(fechaLimite, Session.getScriptTimeZone(), 'dd/MM/yyyy') + '. En razón de ' + (params.motivoFueraDeTermino || '[COMPLETAR MOTIVO]') + ', se incluye en el Orden del Día el tratamiento de esta circunstancia.\n\n';
-  }
   actaCD += 'Como tercer punto del orden del día, se aprueba el siguiente Orden del Día para la Asamblea:\n\n' + ordenDelDiaTexto + '\n\n';
   actaCD += 'Siendo las ' + (params.horaFinReunionCD || '21:15') + ' horas se levanta la sesión.-';
 
@@ -2599,7 +2597,7 @@ function generarConvocatoriaYDocumentos(params) {
     resultado.push({ tipo: doc.tipo, idDocumento: nuevoId, contenido: doc.contenido, estado: 'BORRADOR', version: version });
   });
 
-  return { ok: true, documentos: resultado, fueraDeTermino: armado.fueraDeTermino, fechaLimite: Utilities.formatDate(armado.fechaLimite, Session.getScriptTimeZone(), 'dd/MM/yyyy'), numeroActa: nuevoNumeroActa };
+  return { ok: true, documentos: resultado, numeroActa: nuevoNumeroActa };
 }
 
 // "Actualizar" en vez de "Generar de nuevo": sobrescribe el CONTENIDO de la versión vigente de
@@ -2655,7 +2653,7 @@ function actualizarOrdenDelDiaEnDocumentos(params) {
     resultado.push({ tipo: doc.tipo, idDocumento: idDocumento, contenido: doc.contenido, estado: estadoNuevo, reabierto: estadoAnterior === 'APROBADO' });
   });
 
-  return { ok: true, documentos: resultado, fueraDeTermino: armado.fueraDeTermino, fechaLimite: Utilities.formatDate(armado.fechaLimite, Session.getScriptTimeZone(), 'dd/MM/yyyy'), numeroActa: numeroActaUsar };
+  return { ok: true, documentos: resultado, numeroActa: numeroActaUsar };
 }
 
 function registrarInformeRevisor(params) {

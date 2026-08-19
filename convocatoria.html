@@ -58,7 +58,6 @@
   .doc-titulo { font-family: Impact, sans-serif; font-size: 14px; color: var(--petroleo); text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
   .doc-texto { white-space: pre-wrap; font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: var(--petroleo); line-height: 1.5; text-align: justify; }
 
-  .alerta-fuera-termino { background: #f3c6c6; border: 2px solid var(--error); border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; color: #7a1f1f; font-size: 13px; font-weight: 700; }
 
   .divider { border: none; border-top: 1.5px solid #9bb583; margin: 16px 0; }
   .loading-text { text-align: center; color: var(--petroleo); font-size: 13px; font-weight: 700; min-height: 20px; }
@@ -118,12 +117,6 @@
       </div>
       <span class="field-label">Presentes en la reunión (tildá quiénes asistieron)</span>
       <div id="listaPresentesCD" style="background:var(--blanco); border-radius:12px; padding:12px; max-height:220px; overflow-y:auto; margin-bottom:8px;">cargando autoridades...</div>
-
-      <div id="avisoFueraTermino" style="display:none; background:var(--naranja); border-radius:12px; padding:10px; margin-top:10px; margin-bottom:16px; font-size:12px; font-weight:700; color:var(--petroleo);"></div>
-      <div id="campoMotivo" style="display:none;">
-        <span class="field-label">Motivo de la demora (Art. 39)</span>
-        <textarea id="fMotivoFueraTermino" placeholder="Ej: demora en la confección de la documentación contable"></textarea>
-      </div>
 
       <button type="button" class="btn-solid" style="margin-top:14px; margin-bottom:0;" id="btnGenerar" onclick="generarDocumentos()">Generar los 4 documentos</button>
       <button type="button" class="btn-outline" style="margin-top:8px; margin-bottom:0;" id="btnActualizarOD" onclick="actualizarOrdenDia()">Actualizar Orden del Día en los documentos ya generados</button>
@@ -303,7 +296,7 @@ function cargarUltimosDocumentos() {
         return delTipo.length ? delTipo[0] : null; // ya viene ordenado por versión descendente
       });
       if (ultimos.every(d => d)) {
-        mostrarResultado({ documentos: ultimos.map(d => ({ tipo: d.tipo, contenido: d.contenido, idDocumento: d.idDocumento, estado: d.estado })), fueraDeTermino: false });
+        mostrarResultado({ documentos: ultimos.map(d => ({ tipo: d.tipo, contenido: d.contenido, idDocumento: d.idDocumento, estado: d.estado })) });
       }
     });
   });
@@ -361,7 +354,6 @@ function precargarAsambleaReal() {
       DATOS_ASAMBLEA_REAL = null;
       cont.innerHTML = '⚠️ No hay fecha cargada todavía. Andá al Home a cargarla primero.';
     }
-    chequearFueraDeTermino();
   });
 }
 
@@ -389,26 +381,6 @@ function cerrarSesion() {
   location.reload();
 }
 
-function chequearFueraDeTermino() {
-  if (!DATOS_ASAMBLEA_REAL) return;
-  jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(res) {
-    if (!res || !res.ok) return;
-    const fechaAsamblea = new Date(DATOS_ASAMBLEA_REAL.fecha);
-    const cierre = new Date(res.ejercicio.fechaCierre.split('/').reverse().join('-'));
-    const limite = new Date(cierre);
-    limite.setMonth(limite.getMonth() + 3);
-    const aviso = document.getElementById('avisoFueraTermino');
-    const campoMotivo = document.getElementById('campoMotivo');
-    if (fechaAsamblea > limite) {
-      aviso.style.display = 'block';
-      aviso.textContent = '⚠️ Esta fecha supera el plazo estatutario (Art. 39), que vencía el ' + limite.toLocaleDateString('es-AR') + '. El Orden del Día va a incluir el tratamiento de esta demora.';
-      campoMotivo.style.display = 'block';
-    } else {
-      aviso.style.display = 'none';
-      campoMotivo.style.display = 'none';
-    }
-  });
-}
 
 function escapeHtml(s) {
   const d = document.createElement('div');
@@ -432,7 +404,6 @@ function actualizarOrdenDia() {
     horaReunionCD: obtenerValorHora('fHoraReunionCD'),
     horaFinReunionCD: obtenerValorHora('fHoraFinReunionCD'),
     presentesCD: obtenerPresentesSeleccionados(),
-    motivoFueraDeTermino: document.getElementById('fMotivoFueraTermino').value,
     pin: PIN_SESION
   });
 
@@ -467,7 +438,6 @@ function generarDocumentos() {
     horaReunionCD: obtenerValorHora('fHoraReunionCD'),
     horaFinReunionCD: obtenerValorHora('fHoraFinReunionCD'),
     presentesCD: obtenerPresentesSeleccionados(),
-    motivoFueraDeTermino: document.getElementById('fMotivoFueraTermino').value,
     pin: PIN_SESION
   });
 
@@ -492,9 +462,6 @@ const NOMBRES_TIPO = {
 function mostrarResultado(res) {
   const cont = document.getElementById('resultadoContainer');
   let html = '';
-  if (res.fueraDeTermino) {
-    html += '<div class="alerta-fuera-termino">⚠️ Fuera del plazo estatutario (vencía el ' + res.fechaLimite + '). Los documentos ya incluyen el punto correspondiente.</div>';
-  }
   html += '<div style="font-size:11px; color:var(--petroleo); opacity:.8; text-align:center; margin-bottom:12px;">Estos son borradores para consolidar — el formato final de impresión (márgenes, sangría, justificado) se aplica en Word u otro procesador de texto, fuera de la app.</div>';
   res.documentos.forEach(d => {
     const aprobado = d.estado === 'APROBADO';
