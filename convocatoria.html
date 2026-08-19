@@ -103,24 +103,30 @@
         <span style="font-weight:900; color:var(--petroleo);">/</span>
         <select id="fFechaReunionCD_a" style="flex:1.3; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
       </div>
-      <span class="field-label">Hora de inicio (24 hs)</span>
-      <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
-        <select id="fHoraReunionCD_h" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
-        <span style="font-weight:900; color:var(--petroleo);">:</span>
-        <select id="fHoraReunionCD_m" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
-      </div>
-      <span class="field-label">Hora de cierre (24 hs)</span>
-      <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
-        <select id="fHoraFinReunionCD_h" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
-        <span style="font-weight:900; color:var(--petroleo);">:</span>
-        <select id="fHoraFinReunionCD_m" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
+      <div style="display:flex; gap:12px; margin-bottom:8px;">
+        <div style="flex:1;">
+          <span class="field-label">Inicio (24 hs)</span>
+          <div style="display:flex; gap:4px; align-items:center;">
+            <select id="fHoraReunionCD_h" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
+            <span style="font-weight:900; color:var(--lima);">:</span>
+            <select id="fHoraReunionCD_m" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
+          </div>
+        </div>
+        <div style="flex:1;">
+          <span class="field-label">Cierre (24 hs)</span>
+          <div style="display:flex; gap:4px; align-items:center;">
+            <select id="fHoraFinReunionCD_h" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
+            <span style="font-weight:900; color:var(--lima);">:</span>
+            <select id="fHoraFinReunionCD_m" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
+          </div>
+        </div>
       </div>
       <span class="field-label">Presentes en la reunión (tildá quiénes asistieron)</span>
       <div id="listaPresentesCD" style="background:var(--blanco); border-radius:12px; padding:12px; max-height:220px; overflow-y:auto; margin-bottom:8px;">cargando autoridades...</div>
 
       <button type="button" class="btn-solid" style="margin-top:14px; margin-bottom:0;" id="btnGenerar" onclick="generarDocumentos()">Generar los 4 documentos</button>
-      <button type="button" class="btn-outline" style="margin-top:8px; margin-bottom:0;" id="btnActualizarOD" onclick="actualizarOrdenDia()">Actualizar Orden del Día en los documentos ya generados</button>
-      <div style="font-size:11px; color:var(--petroleo); opacity:.75; text-align:center; margin-top:6px;">Usá esto si solo cambió el Orden del Día (agregaste/sacaste un punto) y los datos de la reunión de CD siguen siendo los mismos. Si algún documento ya estaba aprobado, vuelve a borrador.</div>
+      <button type="button" style="display:block; width:100%; margin-top:8px; margin-bottom:0; padding:12px; border-radius:24px; border:2px solid var(--lima); background:transparent; color:var(--lima); font-family:'Roboto'; font-size:14px; font-weight:900; text-transform:uppercase; cursor:pointer;" id="btnActualizarOD" onclick="actualizarOrdenDia()">Actualizar Orden del Día en los documentos ya generados</button>
+      <div style="font-size:11px; color:var(--hueso); opacity:.75; text-align:center; margin-top:6px;">Usá esto si solo cambió el Orden del Día (agregaste/sacaste un punto) y los datos de la reunión de CD siguen siendo los mismos. Si algún documento ya estaba aprobado, vuelve a borrador.</div>
     </div>
 
     <div style="background:var(--petroleo); border-radius:16px; padding:16px; margin-bottom:14px; text-align:center;">
