@@ -195,10 +195,16 @@
 
       <div class="form-panel" id="formActaManual" style="display:none; background: var(--petroleo); border-radius: 16px; padding: 14px; margin-bottom: 14px;">
         <div style="font-size:11px; color:var(--lima); opacity:.85; margin-bottom:10px;">Para un acta confeccionada fuera de la app (en papel). Podés indicar cualquier número libre -- no tiene que ser necesariamente el siguiente, sirve también para completar un número que quedó pendiente.</div>
-        <span class="field-label" style="color:var(--lima);">Número de Acta</span>
-        <input type="number" id="mNumeroActa" placeholder="Ej: 570">
-        <span class="field-label" style="color:var(--lima);">Fecha de la reunión</span>
-        <input type="date" id="mFechaReunion">
+        <div style="display:flex; gap:10px;">
+          <div style="flex:0.8;">
+            <span class="field-label" style="color:var(--lima);">Número de Acta</span>
+            <input type="number" id="mNumeroActa" placeholder="Ej: 570">
+          </div>
+          <div style="flex:1.2;">
+            <span class="field-label" style="color:var(--lima);">Fecha de la reunión</span>
+            <input type="date" id="mFechaReunion">
+          </div>
+        </div>
         <span class="field-label" style="color:var(--lima);">Hora de inicio (24 hs)</span>
         <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
           <select id="mHoraInicio_h" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
@@ -262,10 +268,16 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
         <div style="background:rgba(192,57,43,0.12); border:2px solid var(--error); border-radius:12px; padding:12px 14px; margin-bottom:14px; color:var(--error); font-size:12px; font-weight:700; line-height:1.5;">
           ⚠️ Estás editando un registro ya ASENTADO/ANULADO. El Libro físico es la fuente formal definitiva -- esto es para reconciliar la app con lo que finalmente quedó asentado ahí. Cada cambio queda auditado con motivo, fecha y snapshot antes/después.
         </div>
-        <span class="field-label">Número de Acta</span>
-        <input type="number" id="efNumeroActa">
-        <span class="field-label">Número de Acta anterior (referencia)</span>
-        <input type="number" id="efNumeroActaAnterior">
+        <div style="display:flex; gap:10px;">
+          <div style="flex:1;">
+            <span class="field-label">Número de Acta</span>
+            <input type="number" id="efNumeroActa">
+          </div>
+          <div style="flex:1;">
+            <span class="field-label">Acta anterior (ref.)</span>
+            <input type="number" id="efNumeroActaAnterior">
+          </div>
+        </div>
         <span class="field-label">Fecha de la reunión</span>
         <input type="date" id="efFechaReunion" onchange="if(EF_MODO==='TEXTO_LIBRE') actualizarAvisoMetadataFormal();">
         <span class="field-label">Hora de inicio (24 hs)</span>
