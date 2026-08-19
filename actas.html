@@ -255,7 +255,8 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
         <div class="field-label" id="previewActaTitulo"></div>
         <div id="previewActaMotivoAnulacion" style="display:none; background:rgba(192,57,43,0.12); border:2px solid var(--error); border-radius:12px; padding:10px 12px; margin-bottom:12px; color:var(--error); font-size:12px; font-weight:700;"></div>
         <div id="previewActaAvisoMetadata" style="display:none; background:rgba(222,175,77,0.2); border:2px solid var(--naranja); border-radius:12px; padding:10px 12px; margin-bottom:12px; color:var(--petroleo); font-size:11.5px; line-height:1.5;"></div>
-        <div class="texto-final-box" id="previewTextoBox" style="display:block; margin-bottom:16px;"></div>
+        <div class="texto-final-box" id="previewTextoBox" style="display:block; margin-bottom:6px;"></div>
+        <div style="text-align:right; margin-bottom:16px;"><a href="#" id="linkCopiarPreview" onclick="copiarTextoPreview(); return false;" style="color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:underline; cursor:pointer;">Copiar texto</a></div>
         <button type="button" class="btn-asentar" id="btnAsentarActa" style="display:none;" onclick="asentarActaUI()">✔️ Asentar en el Libro (asigna número definitivo)</button>
         <button type="button" style="display:block; width:100%; padding:14px; border-radius:24px; border:2px solid var(--lima); background:var(--petroleo); color:var(--lima); font-family:'Roboto'; font-size:15px; font-weight:900; text-transform:uppercase; cursor:pointer; margin-bottom:10px;" id="btnEditarActa" onclick="pasarAEditar()">✏️ Editar</button>
         <button type="button" class="btn-peligro" id="btnEliminarBorrador" style="display:none;" onclick="eliminarBorradorUI()">🗑️ Eliminar borrador</button>
@@ -1265,6 +1266,16 @@ function copiarTextoFinal() {
     const btn = document.getElementById('btnCopiarActa');
     btn.textContent = '✓ Copiado';
     setTimeout(() => { btn.textContent = 'Copiar texto'; }, 1500);
+  });
+}
+
+function copiarTextoPreview() {
+  const texto = document.getElementById('previewTextoBox').textContent;
+  navigator.clipboard.writeText(texto).then(() => {
+    const link = document.getElementById('linkCopiarPreview');
+    const original = link.textContent;
+    link.textContent = '✓ Copiado';
+    setTimeout(() => { link.textContent = original; }, 1500);
   });
 }
 
