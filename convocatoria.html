@@ -470,8 +470,7 @@ function mostrarResultado(res) {
   let html = '';
   if (res.actaCDSync && res.actaCDSync.idRegistro) {
     html += '<div style="background:var(--verdecl); border:2px solid var(--petroleo); border-radius:12px; padding:10px 12px; margin-bottom:12px; font-size:12px; color:var(--petroleo); line-height:1.5;">' +
-      '🔗 <strong>El Acta de Comisión Directiva ya está vinculada al módulo Actas</strong> (Borrador, N.º previsto: ' + res.actaCDSync.numeroPrevisto + '). ' +
-      'Es la misma fila real, no un número aparte -- no puede colisionar con otra acta. Para que quede definitiva, andá a Actas y "Asentala" ahí.' +
+      '🔗 <strong>Borrador de Acta CD creado correctamente.</strong> Está vinculado al módulo Actas -- no es un número aparte, no puede colisionar con otra acta. El número definitivo se asignará al Asentar. Para que quede definitiva, andá a Actas y "Asentala" ahí.' +
       '</div>';
   }
   html += '<div style="font-size:11px; color:var(--petroleo); opacity:.8; text-align:center; margin-bottom:12px;">Estos son borradores para consolidar — el formato final de impresión (márgenes, sangría, justificado) se aplica en Word u otro procesador de texto, fuera de la app.</div>';

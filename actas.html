@@ -176,6 +176,11 @@
 
     <!-- ACTAS -->
     <div class="tab-panel" id="panelActas">
+      <div style="background:var(--petroleo); border-radius:14px; padding:12px 14px; margin-bottom:12px; text-align:center;">
+        <div style="color:var(--lima); font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.5px;">Próximo número institucional disponible</div>
+        <div id="proximoNumeroInstitucional" style="color:var(--hueso); font-size:22px; font-weight:900; margin:4px 0;">—</div>
+        <div style="color:var(--hueso); font-size:10.5px; opacity:.8;">Se asignará al primer borrador que sea asentado. No está reservado.</div>
+      </div>
       <button type="button" class="btn-outline" onclick="toggleFormNuevaActa()">➕ Generar nuevo borrador de Acta</button>
       <button type="button" class="btn-outline" onclick="toggleFormActaManual()">📋 Registrar Acta manual / externa</button>
 
@@ -933,6 +938,9 @@ function cargarActas() {
   jsonp(EXEC_URL_GI + '?action=listarActas', function(res) {
     const cont = document.getElementById('listaActas');
     cont.innerHTML = '';
+    if (res && res.ok && res.proximoNumeroInstitucional) {
+      document.getElementById('proximoNumeroInstitucional').textContent = res.proximoNumeroInstitucional;
+    }
     if (!res || !res.ok || res.actas.length === 0) {
       cont.innerHTML = '<div class="empty-msg">Todavía no hay actas generadas en el sistema.</div>';
       return;
@@ -941,7 +949,7 @@ function cargarActas() {
       const div = document.createElement('div');
       div.className = 'acta-card';
       div.onclick = () => abrirPreview(a.idRegistro);
-      const numeroTexto = a.estado === 'BORRADOR' ? ('Previsto: ' + a.numeroPrevisto) : ('Acta N.º ' + a.numeroActa);
+      const numeroTexto = a.estado === 'BORRADOR' ? 'Borrador de Acta' : ('Acta N.º ' + a.numeroActa);
       const origenTag = a.origen === 'MANUAL' ? '<span class="acta-origen-tag">MANUAL</span>' : (a.origen === 'MIGRADO' ? '<span class="acta-origen-tag">MIGRADO</span>' : '');
       const modoTag = a.modoContenido === 'TEXTO_LIBRE' ? '<span class="acta-origen-tag">TEXTO LIBRE</span>' : '';
       div.innerHTML = '<span class="acta-num">' + numeroTexto + origenTag + modoTag + ' — ' + a.fechaReunion + ' <small style="opacity:.6; font-weight:400;">(' + a.idEjercicio + ')</small></span><span class="estado-badge estado-' + a.estado + '">' + a.estado + '</span>';
@@ -955,7 +963,7 @@ function abrirPreview(idRegistro) {
     if (!res || !res.ok) { mostrarAviso('No se pudo abrir el acta'); return; }
     ACTA_ACTUAL = res.acta;
     document.getElementById('previewActa').style.display = 'block';
-    const titulo = ACTA_ACTUAL.estado === 'BORRADOR' ? ('Borrador (N.º previsto informativo)') : ('Acta N.º ' + ACTA_ACTUAL.numeroActa + ' — ' + ACTA_ACTUAL.estado);
+    const titulo = ACTA_ACTUAL.estado === 'BORRADOR' ? 'Borrador de Acta — sin número asignado' : ('Acta N.º ' + ACTA_ACTUAL.numeroActa + ' — ' + ACTA_ACTUAL.estado);
     document.getElementById('previewActaTitulo').textContent = titulo;
     document.getElementById('previewTextoBox').textContent = construirTextoFinalActa(ACTA_ACTUAL);
 
