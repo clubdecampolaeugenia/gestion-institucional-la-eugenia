@@ -153,7 +153,7 @@ function manejarAccion(action, params) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(params);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v59i-revertir-cuota-social-20ago' };
+      resultado = { ok: true, version: 'v59j-memoria-balance-y-aprobacion-20ago' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -2740,7 +2740,7 @@ function construirPuntosOrdenDelDia(ej, fueraDeTermino, vencenEsteAnio, puntosMa
   const puntos = [];
   puntos.push({ tipo: 'FIJO', articulo: 'Art. 66', texto: 'Elección del Presidente de la Asamblea y de dos asociados para firmar el Acta.' });
   puntos.push({ tipo: 'FIJO', articulo: 'Art. 52.a', texto: 'Lectura y aprobación del Acta de la Asamblea anterior.' });
-  puntos.push({ tipo: 'FIJO', articulo: 'Art. 52.b', texto: 'Consideración de la Memoria, Balance General, Inventario, Cuenta de Gastos y Recursos e Informe de la Comisión Revisora de Cuentas correspondientes al Ejercicio Económico N.° ' + ej.numero + ', finalizado el ' + ej.fechaCierre + '.' });
+  puntos.push({ tipo: 'FIJO', articulo: 'Art. 52.b', texto: 'Lectura y aprobación de la Memoria, Balance General, Inventario, Cuenta de Gastos y Recursos e Informe de la Comisión Revisora de Cuentas correspondientes al Ejercicio Económico N.° ' + ej.numero + ', finalizado el ' + ej.fechaCierre + '.' });
   puntos.push({ tipo: 'FIJO', articulo: 'Art. 16', texto: 'Aprobación del monto establecido por la Comisión Directiva para la cuota social, de conformidad con lo establecido en el artículo 16 del Estatuto Social. Definición del nuevo monto.' });
   if (vencenEsteAnio && vencenEsteAnio.length > 0) {
     puntos.push({ tipo: 'AUTOMATICO', articulo: 'Arts. 22, 35 y 63', texto: 'Renovación parcial de la Comisión Directiva y/o Comisión Revisora de Cuentas por finalización de mandato: ' + vencenEsteAnio.join(', ') + ', conforme a los artículos 22, 35 y 63 del Estatuto Social.' });
