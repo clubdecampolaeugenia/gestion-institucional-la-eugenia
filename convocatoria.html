@@ -477,12 +477,13 @@ function mostrarResultado(res) {
   res.documentos.forEach(d => {
     const aprobado = d.estado === 'APROBADO';
     html += '<div class="doc-box" data-id-documento="' + (d.idDocumento || '') + '"><div class="doc-titulo">' + NOMBRES_TIPO[d.tipo] +
-      '<div style="display:flex; gap:6px;"><button type="button" class="btn-small" onclick="copiarTexto(this)">Copiar</button>' +
+      '<div style="display:flex; gap:6px;">' +
       (aprobado
         ? '<span class="btn-small" style="background:var(--petroleo); color:var(--lima); cursor:default;">✓ Aprobado</span>'
         : '<button type="button" class="btn-small" onclick="aprobarDocumento(this)">Aprobar</button>') +
       '<button type="button" class="btn-small" style="background:var(--error); color:var(--hueso);" onclick="borrarDocumento(this)">Borrar</button>' +
-      '</div></div><div class="doc-texto">' + escapeHtml(d.contenido) + '</div>';
+      '</div></div><div class="doc-texto">' + escapeHtml(d.contenido) + '</div>' +
+      '<div style="text-align:right; margin-bottom:10px;"><a href="#" onclick="copiarTexto(this); return false;" style="color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:underline; cursor:pointer;">Copiar texto</a></div>';
     if (d.tipo === 'CIRCULAR') {
       html += '<div style="background:var(--hueso); border-radius:10px; padding:10px 12px; margin-top:10px; font-size:11px; color:var(--petroleo); line-height:1.5;">Este documento de texto normalmente se suple por su versión en HTML (el mismo contenido, con diseño), que es la que efectivamente se remite a los socios por mail desde la app del Boletín Mensual. <a href="https://clubdecampolaeugenia.github.io/boletin-la-eugenia/admin.html" target="_blank" style="color:var(--petroleo); font-weight:900; text-decoration:underline;">Ir al Boletín →</a></div>';
     }
@@ -491,11 +492,12 @@ function mostrarResultado(res) {
   cont.innerHTML = html;
 }
 
-function copiarTexto(btn) {
-  const texto = btn.closest('.doc-box').querySelector('.doc-texto').textContent;
+function copiarTexto(link) {
+  const texto = link.closest('.doc-box').querySelector('.doc-texto').textContent;
   navigator.clipboard.writeText(texto).then(() => {
-    btn.textContent = '✓ Copiado';
-    setTimeout(() => { btn.textContent = 'Copiar'; }, 1500);
+    const original = link.textContent;
+    link.textContent = '✓ Copiado';
+    setTimeout(() => { link.textContent = original; }, 1500);
   });
 }
 </script>

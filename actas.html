@@ -343,7 +343,7 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
         <div class="field-label" id="editorActaTitulo"></div>
         <button type="button" class="btn-outline" style="background:var(--verdecl);" onclick="generarTextoFinal()">👁️ Ver texto final del Acta (no editable)</button>
         <div class="texto-final-box" id="textoFinalBox"></div>
-        <button type="button" class="btn-outline" id="btnCopiarActa" style="display:none;" onclick="copiarTextoFinal()">Copiar texto</button>
+        <div style="text-align:right; margin-bottom:16px;"><a href="#" id="btnCopiarActa" style="display:none; color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:underline; cursor:pointer;" onclick="copiarTextoFinal(); return false;">Copiar texto</a></div>
         <div id="avisoImprimirActa" style="display:none; font-size:11px; color:var(--petroleo); opacity:.7; text-align:center; margin-bottom:10px;">Esto es un borrador para consolidar — el formato final de impresión (márgenes, sangría, justificado) se aplica en Word u otro procesador de texto, fuera de la app.</div>
         <hr class="divider">
         <div class="field-label">Edición punto por punto</div>
