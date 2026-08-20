@@ -153,7 +153,7 @@ function manejarAccion(action, params) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(params);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v59h-estatuto-vigente-adecuaciones-20ago' };
+      resultado = { ok: true, version: 'v59i-revertir-cuota-social-20ago' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -2495,7 +2495,7 @@ function textosConvocatoria() {
     saludo: 'Estimados socios:',
     intro: 'Por medio de la presente circular, conforme al artículo 41 del Estatuto Social, la Comisión Directiva convoca a la Asamblea General Ordinaria, que se realizará según los siguientes datos:',
     avisoQuorum: 'Conforme al Estatuto Social, si a la hora fijada no se reuniera la mayoría absoluta de los asociados con derecho a voto, la Asamblea se celebrará válidamente una hora después, con los socios presentes.',
-    avisoCuotas: 'Solo pueden participar y votar los socios activos que se encuentren al día con el pago de sus cuotas de mantenimiento.',
+    avisoCuotas: 'Solo pueden participar y votar los socios activos que se encuentren al día con el pago de sus cuotas sociales.',
     firmaLinea1: 'Comisión Directiva',
     firmaLinea2: 'Asociación Civil La Eugenia',
     sinOrdenDelDia: 'Todavía no se cargó el Orden del Día.'
@@ -2741,7 +2741,7 @@ function construirPuntosOrdenDelDia(ej, fueraDeTermino, vencenEsteAnio, puntosMa
   puntos.push({ tipo: 'FIJO', articulo: 'Art. 66', texto: 'Elección del Presidente de la Asamblea y de dos asociados para firmar el Acta.' });
   puntos.push({ tipo: 'FIJO', articulo: 'Art. 52.a', texto: 'Lectura y aprobación del Acta de la Asamblea anterior.' });
   puntos.push({ tipo: 'FIJO', articulo: 'Art. 52.b', texto: 'Consideración de la Memoria, Balance General, Inventario, Cuenta de Gastos y Recursos e Informe de la Comisión Revisora de Cuentas correspondientes al Ejercicio Económico N.° ' + ej.numero + ', finalizado el ' + ej.fechaCierre + '.' });
-  puntos.push({ tipo: 'FIJO', articulo: 'Art. 16', texto: 'Aprobación del monto de la cuota de mantenimiento establecido por la Comisión Directiva, de conformidad con lo establecido en el artículo 16 del Estatuto Social. Definición del nuevo monto.' });
+  puntos.push({ tipo: 'FIJO', articulo: 'Art. 16', texto: 'Aprobación del monto establecido por la Comisión Directiva para la cuota social, de conformidad con lo establecido en el artículo 16 del Estatuto Social. Definición del nuevo monto.' });
   if (vencenEsteAnio && vencenEsteAnio.length > 0) {
     puntos.push({ tipo: 'AUTOMATICO', articulo: 'Arts. 22, 35 y 63', texto: 'Renovación parcial de la Comisión Directiva y/o Comisión Revisora de Cuentas por finalización de mandato: ' + vencenEsteAnio.join(', ') + ', conforme a los artículos 22, 35 y 63 del Estatuto Social.' });
   }
@@ -3007,7 +3007,7 @@ function armarTextosConvocatoria_(ej, params, numeroActaUsar) {
 
   // ---- 4. Circular a socios ----
   let circular = 'CIRCULAR\n\nSeñores Socios:\n\nPor medio de la presente circular, conforme al artículo 41 del Estatuto Social, la Comisión Directiva convoca a la Asamblea General Ordinaria, que se celebrará el día ' + fechaAsambleaFmt + ', a las ' + horaAsamblea + ' horas, en ' + lugarAsamblea + ', para tratar el siguiente:\n\nORDEN DEL DÍA\n\n' + ordenDelDiaTexto;
-  circular += '\n\nRecordamos que, conforme a los artículos 13 y 47 del Estatuto Social, solo podrán participar y votar los socios activos que se encuentren al día con el pago de sus cuotas de mantenimiento.\n\nCOMISIÓN DIRECTIVA';
+  circular += '\n\nRecordamos que, conforme a los artículos 13 y 47 del Estatuto Social, solo podrán participar y votar los socios activos que se encuentren al día con el pago de sus cuotas sociales.\n\nCOMISIÓN DIRECTIVA';
 
   return {
     ok: true,
