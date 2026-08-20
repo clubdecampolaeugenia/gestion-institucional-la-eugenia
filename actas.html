@@ -349,6 +349,9 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
         <div class="field-label">Edición punto por punto</div>
         <div id="puntosContainer"></div>
         <button type="button" class="btn-outline" onclick="agregarPuntoVacio()">➕ Agregar punto</button>
+        <span class="field-label">Acta leída en la reunión (N.º)</span>
+        <div style="font-size:11px; color:var(--petroleo); opacity:.75; margin-bottom:4px;">Qué Acta se leyó y aprobó realmente ese día. Es un dato distinto de la correlatividad del Libro, que se calcula recién al Asentar -- pueden no coincidir si mientras tanto se incorpora otra acta.</div>
+        <input type="number" id="eActaLeidaNumero">
         <span class="field-label">Hora de cierre (24 hs)</span>
         <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
           <select id="eHoraFin_h" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
@@ -1009,6 +1012,7 @@ function pasarAEditar() {
   document.getElementById('previewActa').style.display = 'none';
   document.getElementById('editorActa').style.display = 'block';
   document.getElementById('editorActaTitulo').textContent = 'Editando borrador (previsto)';
+  document.getElementById('eActaLeidaNumero').value = ACTA_ACTUAL.actaLeidaNumero || '';
   renderPuntos();
   document.getElementById('textoFinalBox').style.display = 'none';
   document.getElementById('editorActa').scrollIntoView({ behavior: 'smooth' });
@@ -1020,6 +1024,7 @@ function abrirEditor(idRegistro) {
     ACTA_ACTUAL = res.acta;
     document.getElementById('editorActa').style.display = 'block';
     document.getElementById('editorActaTitulo').textContent = 'Editando borrador (previsto)';
+    document.getElementById('eActaLeidaNumero').value = ACTA_ACTUAL.actaLeidaNumero || '';
     renderPuntos();
     document.getElementById('textoFinalBox').style.display = 'none';
     document.getElementById('editorActa').scrollIntoView({ behavior: 'smooth' });
@@ -1048,11 +1053,16 @@ function agregarPuntoVacio() {
 
 function guardarCambiosActa() {
   const horaFin = obtenerValorHora('eHoraFin');
+  const actaLeidaNumero = document.getElementById('eActaLeidaNumero').value;
   document.getElementById('loadingText').textContent = 'Guardando...';
-  postAction({ action: 'actualizarActa', idRegistro: ACTA_ACTUAL.idRegistro, puntos: JSON.stringify(ACTA_ACTUAL.puntos), horaFin: horaFin, pin: PIN_SESION }, function(res) {
+  postAction({ action: 'actualizarActa', idRegistro: ACTA_ACTUAL.idRegistro, puntos: JSON.stringify(ACTA_ACTUAL.puntos), horaFin: horaFin, actaLeidaNumero: actaLeidaNumero, textoLibre: ACTA_ACTUAL.textoLibre || '', pin: PIN_SESION }, function(res) {
     document.getElementById('loadingText').textContent = '';
     if (res && res.ok) {
-      cargarActas();
+      if (res.advertenciaTextoInconsistente) {
+        mostrarAviso('Guardado. ⚠️ ' + res.advertenciaTextoInconsistente, function() { cargarActas(); });
+      } else {
+        cargarActas();
+      }
     } else {
       mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
     }
@@ -1061,16 +1071,58 @@ function guardarCambiosActa() {
 
 function asentarActaUI() {
   mostrarConfirmacion('¿Asentar esta acta en el Libro? Recién en este momento se le asigna el número definitivo -- no se puede deshacer. Si hay un error después, hay que anularla, no se puede volver a Borrador.', function() {
-    document.getElementById('loadingText').textContent = 'Asentando...';
-    postAction({ action: 'asentarActa', idRegistro: ACTA_ACTUAL.idRegistro, pin: PIN_SESION }, function(res) {
-      document.getElementById('loadingText').textContent = '';
-      if (res && res.ok) {
-        mostrarAviso('Asentada como Acta N.º ' + res.numeroActa + '.', function() { cerrarPreview(); cargarActas(); });
-      } else {
-        mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
-      }
-    });
+    ejecutarAsentarActa(null);
   });
+}
+
+function ejecutarAsentarActa(confirmacion) {
+  const payload = { action: 'asentarActa', idRegistro: ACTA_ACTUAL.idRegistro, pin: PIN_SESION };
+  if (confirmacion) {
+    payload.confirmadoDiscrepancia = 'true';
+    payload.numeroAConfirmar = confirmacion.numeroPrevisto;
+    payload.numeroAnteriorAConfirmar = confirmacion.numeroAnteriorCalculado;
+    payload.actaLeidaAConfirmar = confirmacion.actaLeidaRegistrada === null ? '' : confirmacion.actaLeidaRegistrada;
+  }
+  document.getElementById('loadingText').textContent = 'Asentando...';
+  postAction(payload, function(res) {
+    document.getElementById('loadingText').textContent = '';
+    if (res && res.ok) {
+      mostrarAviso('Asentada como Acta N.º ' + res.numeroActa + '.', function() { cerrarPreview(); cargarActas(); });
+    } else if (res && res.requiereConfirmacion) {
+      mostrarDiscrepanciaAsentar(res);
+    } else {
+      mostrarAviso('Error: ' + (res && res.error ? res.error : 'desconocido'));
+    }
+  });
+}
+
+function mostrarDiscrepanciaAsentar(res) {
+  let mensaje;
+  if (res.actaLeidaRegistrada === null) {
+    mensaje = 'Esta acta no tiene registrado qué Acta se leyó en la reunión.\n\nCompletalo en el editor, o confirmá igual si preferís continuar sin ese dato.\n\nSerá asentada como Acta N.º ' + res.numeroPrevisto + '.';
+  } else {
+    mensaje = 'Atención: esta acta será asentada como N.º ' + res.numeroPrevisto + ' y la inmediatamente anterior en el Libro será la N.º ' + res.numeroAnteriorCalculado + '.\n\n' +
+      'Sin embargo, el Punto 1 registra que durante la reunión se leyó el Acta N.º ' + res.actaLeidaRegistrada + '.';
+    if (res.actasIntermedias && res.actasIntermedias.length > 0) {
+      mensaje += '\n\nDesde entonces se incorporaron ' + res.actasIntermedias.length + ' acta(s): ' +
+        res.actasIntermedias.map(a => 'N.º ' + a.numeroActa + ' (' + a.fechaReunion + ', ' + a.origen + ', ' + a.estado + ')').join('; ') + '.';
+    }
+    mensaje += '\n\nEsto puede ser correcto si entre la reunión y el asentamiento se incorporó otra acta. Verificá el dato antes de continuar.';
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'aviso-overlay';
+  overlay.innerHTML = '<div class="aviso-card"><div class="aviso-texto">' + mensaje.replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</div>' +
+    '<div class="confirm-btns"><button type="button" class="confirm-btn-cancelar">Revisar borrador</button><button type="button" class="confirm-btn-aceptar">Confirmar y asentar</button></div></div>';
+  document.body.appendChild(overlay);
+  overlay.querySelector('.confirm-btn-cancelar').onclick = function() {
+    document.body.removeChild(overlay);
+    pasarAEditar();
+  };
+  overlay.querySelector('.confirm-btn-aceptar').onclick = function() {
+    document.body.removeChild(overlay);
+    ejecutarAsentarActa(res);
+  };
 }
 
 function eliminarBorradorUI() {
