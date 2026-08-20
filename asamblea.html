@@ -128,7 +128,7 @@
         <span class="field-label">Orden del Día (para referencia al redactar)</span>
         <div id="ordenDelDiaVisible" style="background:var(--blanco); border-radius:12px; padding:12px; color:var(--petroleo); font-size:12px; line-height:1.6; margin-bottom:10px; white-space:pre-wrap;">cargando...</div>
         <span class="field-label">Resultados por punto del Orden del Día</span>
-        <textarea id="fResultados" placeholder="Ej: Punto 3, Memoria y Balance aprobados por unanimidad. Punto 4, cuota social aprobada en $X..."></textarea>
+        <textarea id="fResultados" placeholder="Ej: Punto 3, Memoria y Balance aprobados por unanimidad. Punto 4, cuota de mantenimiento aprobada en $X..."></textarea>
         <div style="color:var(--hueso); font-size:11px; margin-top:6px; opacity:.8;">Las autoridades electas de la Sección 2 se agregan solas, no hace falta repetirlas acá.</div>
         <button type="button" class="btn-solid" style="margin-top:10px; margin-bottom:0;" onclick="generarActa()">Generar Acta de Asamblea</button>
       </div>
@@ -466,7 +466,7 @@ function guardarActaAsamblea() {
 }
 
 function firmarActaAsamblea() {
-  mostrarConfirmacion('Esto marca el Acta como firmada — el documento formal ya está cerrado, con la firma real del Presidente y el Secretario de Asamblea. ¿Confirmás?', function() {
+  mostrarConfirmacion('Esto marca el Acta como firmada — el documento formal ya está cerrado, con la firma real del Presidente de la Asamblea y los dos asociados designados para firmar el Acta. ¿Confirmás?', function() {
     const textoActual = document.getElementById('actaAsambleaTextarea').value;
     jsonp(EXEC_URL_GI + '?action=actualizarDocumento&idDocumento=' + encodeURIComponent(DOCUMENTO_ACTA_ASAMBLEA_ID) + '&estado=FIRMADA&pin=' + encodeURIComponent(PIN_SESION), function(res) {
       if (res && res.ok) {

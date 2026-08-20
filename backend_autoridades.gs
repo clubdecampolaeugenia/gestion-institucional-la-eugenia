@@ -153,7 +153,7 @@ function manejarAccion(action, params) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(params);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v59g-estatuto-plazo-asamblea-4meses-20ago' };
+      resultado = { ok: true, version: 'v59h-estatuto-vigente-adecuaciones-20ago' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -275,7 +275,12 @@ function listarAutoridades() {
     let vence = 'ok';
     if (anioFin === anioActual) {
       vence = 'este_anio';
-      vencenEsteAnioObjs.push({ cargo: fila[idx.CARGO], nombre: fila[idx.NOMBRE] });
+      // Solo los órganos con régimen de renovación conocido estatutariamente entran acá --
+      // aunque algún día ARQUITECTURA tuviera una FECHA_FIN_MANDATO cargada (a mano, por error),
+      // nunca se mete en el texto de "Renovación parcial..." que cita Arts. 22, 35 y 63.
+      if (fila[idx.ORGANO] === 'COMISION_DIRECTIVA' || fila[idx.ORGANO] === 'REVISORA_CUENTAS') {
+        vencenEsteAnioObjs.push({ cargo: fila[idx.CARGO], nombre: fila[idx.NOMBRE] });
+      }
     } else if (anioFin === anioActual + 1) {
       vence = 'proximo_anio';
     }
@@ -367,8 +372,15 @@ function calcularFechaFinMandato(organo, cargo, fechaInicio) {
     // Renovación anual (Art. 35)
     return new Date(inicio.getFullYear() + 1, inicio.getMonth(), inicio.getDate());
   }
-  // Comisión Directiva (Art. 22) y Arquitectura (Art. 37): cada 2 años
-  return new Date(inicio.getFullYear() + 2, inicio.getMonth(), inicio.getDate());
+  if (organo === 'COMISION_DIRECTIVA') {
+    // Mandato de dos años (Art. 22)
+    return new Date(inicio.getFullYear() + 2, inicio.getMonth(), inicio.getDate());
+  }
+  // Cualquier otro órgano (ej. ARQUITECTURA) -- el Estatuto vigente no le fija un régimen de
+  // renovación conocido (el Art. 37 que antes lo hacía fue eliminado: "Artículo 37º.- Eliminado.").
+  // No se infiere ninguna duración: queda sin fecha de fin automática hasta que exista una norma
+  // vigente que la establezca.
+  return null;
 }
 
 function guardarAutoridad(params) {
@@ -2483,7 +2495,7 @@ function textosConvocatoria() {
     saludo: 'Estimados socios:',
     intro: 'Por medio de la presente circular, conforme al artículo 41 del Estatuto Social, la Comisión Directiva convoca a la Asamblea General Ordinaria, que se realizará según los siguientes datos:',
     avisoQuorum: 'Conforme al Estatuto Social, si a la hora fijada no se reuniera la mayoría absoluta de los asociados con derecho a voto, la Asamblea se celebrará válidamente una hora después, con los socios presentes.',
-    avisoCuotas: 'Solo pueden participar y votar los socios activos que se encuentren al día con el pago de sus cuotas sociales.',
+    avisoCuotas: 'Solo pueden participar y votar los socios activos que se encuentren al día con el pago de sus cuotas de mantenimiento.',
     firmaLinea1: 'Comisión Directiva',
     firmaLinea2: 'Asociación Civil La Eugenia',
     sinOrdenDelDia: 'Todavía no se cargó el Orden del Día.'
@@ -2650,7 +2662,7 @@ ESTILO OBLIGATORIO:
 - Menciona el quórum alcanzado y los socios presentes según el dato que te paso.
 - Desarrollá cada punto del Orden del Día como un párrafo de resultado (aprobado, con modificaciones, etc.), usando los datos reales que te doy -- no inventes resultados que no te haya dado.
 - Si se informaron autoridades electas, mencionalas nominalmente en el punto de renovación de Comisión Directiva.
-- Cierra con: "Siendo las [HORA] horas se da por finalizada la Asamblea, firmando la presente el Presidente y el Secretario de Asamblea designados.\\n\\nGarupá, [FECHA]."
+- Cierra con: "Siendo las [HORA] horas se da por finalizada la Asamblea, firmando la presente el Presidente de la Asamblea y los dos asociados designados para firmar el Acta.\\n\\nGarupá, [FECHA]."
 
 Respondé ÚNICAMENTE con el texto completo del acta, sin explicaciones adicionales, sin markdown.`;
 
@@ -2726,10 +2738,10 @@ function generarActaAsamblea(params) {
 // explícito (18/08/2026).
 function construirPuntosOrdenDelDia(ej, fueraDeTermino, vencenEsteAnio, puntosManuales) {
   const puntos = [];
-  puntos.push({ tipo: 'FIJO', articulo: 'Art. 66', texto: 'Elección de Presidente y Secretario de la Asamblea y de dos Socios para firmar el Acta.' });
+  puntos.push({ tipo: 'FIJO', articulo: 'Art. 66', texto: 'Elección del Presidente de la Asamblea y de dos asociados para firmar el Acta.' });
   puntos.push({ tipo: 'FIJO', articulo: 'Art. 52.a', texto: 'Lectura y aprobación del Acta de la Asamblea anterior.' });
-  puntos.push({ tipo: 'FIJO', articulo: 'Art. 52.b', texto: 'Lectura y aprobación de la Memoria, Balance General, Inventario, Cuenta de Gastos y Recursos e Informe del Revisor de Cuentas correspondientes al Ejercicio Económico N.° ' + ej.numero + ', finalizado el ' + ej.fechaCierre + '.' });
-  puntos.push({ tipo: 'FIJO', articulo: 'Art. 16', texto: 'Aprobación del monto establecido por la Comisión Directiva para la cuota social, de conformidad con lo establecido en el artículo 16 del Estatuto Social. Definición del nuevo monto.' });
+  puntos.push({ tipo: 'FIJO', articulo: 'Art. 52.b', texto: 'Consideración de la Memoria, Balance General, Inventario, Cuenta de Gastos y Recursos e Informe de la Comisión Revisora de Cuentas correspondientes al Ejercicio Económico N.° ' + ej.numero + ', finalizado el ' + ej.fechaCierre + '.' });
+  puntos.push({ tipo: 'FIJO', articulo: 'Art. 16', texto: 'Aprobación del monto de la cuota de mantenimiento establecido por la Comisión Directiva, de conformidad con lo establecido en el artículo 16 del Estatuto Social. Definición del nuevo monto.' });
   if (vencenEsteAnio && vencenEsteAnio.length > 0) {
     puntos.push({ tipo: 'AUTOMATICO', articulo: 'Arts. 22, 35 y 63', texto: 'Renovación parcial de la Comisión Directiva y/o Comisión Revisora de Cuentas por finalización de mandato: ' + vencenEsteAnio.join(', ') + ', conforme a los artículos 22, 35 y 63 del Estatuto Social.' });
   }
@@ -2995,7 +3007,7 @@ function armarTextosConvocatoria_(ej, params, numeroActaUsar) {
 
   // ---- 4. Circular a socios ----
   let circular = 'CIRCULAR\n\nSeñores Socios:\n\nPor medio de la presente circular, conforme al artículo 41 del Estatuto Social, la Comisión Directiva convoca a la Asamblea General Ordinaria, que se celebrará el día ' + fechaAsambleaFmt + ', a las ' + horaAsamblea + ' horas, en ' + lugarAsamblea + ', para tratar el siguiente:\n\nORDEN DEL DÍA\n\n' + ordenDelDiaTexto;
-  circular += '\n\nRecordamos que, conforme a los artículos 13 y 47 del Estatuto Social, solo podrán participar y votar los socios activos que se encuentren al día con el pago de sus cuotas sociales.\n\nCOMISIÓN DIRECTIVA';
+  circular += '\n\nRecordamos que, conforme a los artículos 13 y 47 del Estatuto Social, solo podrán participar y votar los socios activos que se encuentren al día con el pago de sus cuotas de mantenimiento.\n\nCOMISIÓN DIRECTIVA';
 
   return {
     ok: true,
