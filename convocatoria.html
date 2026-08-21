@@ -92,6 +92,7 @@
     <div class="form-panel">
       <span class="field-label">Fecha, hora y lugar de la Asamblea Ordinaria</span>
       <div id="datosAsambleaSoloLectura" style="background:var(--blanco); border-radius:12px; padding:16px; margin-bottom:10px; color:var(--petroleo); font-size:14px; font-weight:700; line-height:1.7;">cargando...</div>
+      <div id="avisoAntelacion" style="display:none;"></div>
       <a href="index.html" style="display:block; text-align:center; color:var(--lima); font-size:11px; font-weight:700; text-decoration:underline; margin-bottom:16px;">¿Está mal? Cambialo en el Home — acá solo se muestra</a>
 
       <span class="seccion-label">Reunión de Comisión Directiva que aprueba esta convocatoria</span>
@@ -216,6 +217,17 @@ function jsonp(url, cb) {
   const script = document.createElement('script');
   script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
   document.body.appendChild(script);
+}
+
+function postAction(payload, cb) {
+  fetch(EXEC_URL_GI, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(res) { cb(res); })
+    .catch(function(err) { cb({ ok: false, error: 'Error de red: ' + err.message }); });
 }
 
 function verificarPin() {
@@ -356,9 +368,43 @@ function precargarAsambleaReal() {
       DATOS_ASAMBLEA_REAL = res;
       const fechaLegible = new Date(res.fecha).toLocaleDateString('es-AR', { timeZone: 'UTC' });
       cont.innerHTML = '<div style="margin-bottom:6px;">📅 ' + fechaLegible + ' &nbsp;·&nbsp; 🕓 ' + res.hora + ' hs</div><div>📍 ' + res.lugar + '</div>';
+      mostrarAvisoAntelacion(res);
     } else {
       DATOS_ASAMBLEA_REAL = null;
       cont.innerHTML = '⚠️ No hay fecha cargada todavía. Andá al Home a cargarla primero.';
+      document.getElementById('avisoAntelacion').style.display = 'none';
+    }
+  });
+}
+
+function mostrarAvisoAntelacion(res) {
+  const aviso = document.getElementById('avisoAntelacion');
+  if (res.antelacionConfirmada) { aviso.style.display = 'none'; return; }
+
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const fechaAsamblea = new Date(res.fecha + 'T00:00:00');
+  const diasRestantes = Math.round((fechaAsamblea - hoy) / 86400000);
+
+  if (diasRestantes >= 15) { aviso.style.display = 'none'; return; }
+
+  aviso.style.display = 'block';
+  aviso.innerHTML = '<div style="background:rgba(222,175,77,0.25); border:2px solid var(--naranja); border-radius:12px; padding:12px 14px; margin-bottom:10px; color:var(--petroleo); font-size:12px; line-height:1.5;">' +
+    '⚠️ Faltan solo ' + diasRestantes + ' día(s) para la Asamblea. El Art. 41 del Estatuto exige un mínimo de 15 días de antelación desde que se comunica la Convocatoria.<br><br>' +
+    '<label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer;"><input type="checkbox" id="chkAntelacionConfirmada" style="margin-top:2px;" onchange="confirmarAntelacion(this)"> Ya se cumplió con la antelación correspondiente (o decidí avanzar igual)</label>' +
+    '</div>';
+}
+
+function confirmarAntelacion(checkbox) {
+  if (!checkbox.checked) return;
+  checkbox.disabled = true;
+  postAction({ action: 'confirmarAntelacionConvocatoria', pin: PIN_SESION }, function(res) {
+    if (res && res.ok) {
+      document.getElementById('avisoAntelacion').style.display = 'none';
+    } else {
+      checkbox.disabled = false;
+      checkbox.checked = false;
+      mostrarAviso('Error al confirmar: ' + (res && res.error ? res.error : 'desconocido'));
     }
   });
 }

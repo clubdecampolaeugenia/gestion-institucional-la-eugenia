@@ -597,25 +597,38 @@ function cargarEstadoActas() {
 function cargarEstadoConvocatoria() {
   jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(resEj) {
     if (!resEj || !resEj.ok) return;
-    jsonp(EXEC_URL_GI + '?action=listarDocumentos&idEjercicio=' + encodeURIComponent(resEj.ejercicio.idEjercicio), function(res) {
-      if (!res || !res.ok) {
-        actualizarHito('Acta CD, Convocatoria y Edictos', 'PENDIENTE', 'Todavía no se generó ningún documento');
-        return;
+    jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(resAsam) {
+      let notaAntelacion = '';
+      if (resAsam && resAsam.ok && !resAsam.antelacionConfirmada) {
+        const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+        const fechaAsamblea = new Date(resAsam.fecha + 'T00:00:00');
+        const dias = Math.round((fechaAsamblea - hoy) / 86400000);
+        if (dias < 15) notaAntelacion = ' · ⚠️ Antelación Art.41 sin confirmar (faltan ' + dias + ' día(s))';
       }
-      const tipos = ['ACTA_CD_CONVOCATORIA', 'EDICTO_DIARIO', 'EDICTO_BOLETIN', 'CIRCULAR'];
-      // Se generan siempre los 4 juntos -- o están todos, o no hay ninguno
-      const ultimoDeCadaTipo = tipos.map(t => res.documentos.filter(d => d.tipo === t)[0]).filter(d => d);
-      if (ultimoDeCadaTipo.length === 0) {
-        actualizarHito('Acta CD, Convocatoria y Edictos', 'PENDIENTE', 'Todavía no se generó ningún documento');
-      } else {
-        const todosAprobados = ultimoDeCadaTipo.length === tipos.length && ultimoDeCadaTipo.every(d => d.estado === 'APROBADO');
-        if (todosAprobados) {
-          actualizarHito('Acta CD, Convocatoria y Edictos', 'COMPLETO', 'Los 4 documentos generados y aprobados');
-        } else {
-          const aprobados = ultimoDeCadaTipo.filter(d => d.estado === 'APROBADO').length;
-          actualizarHito('Acta CD, Convocatoria y Edictos', 'PROGRESO', 'Generados — ' + aprobados + ' de 4 aprobados');
+      function hito(estado, detalle) {
+        const estadoFinal = (notaAntelacion && estado === 'COMPLETO') ? 'OBSERVADO' : estado;
+        actualizarHito('Acta CD, Convocatoria y Edictos', estadoFinal, detalle + notaAntelacion);
+      }
+      jsonp(EXEC_URL_GI + '?action=listarDocumentos&idEjercicio=' + encodeURIComponent(resEj.ejercicio.idEjercicio), function(res) {
+        if (!res || !res.ok) {
+          hito('PENDIENTE', 'Todavía no se generó ningún documento');
+          return;
         }
-      }
+        const tipos = ['ACTA_CD_CONVOCATORIA', 'EDICTO_DIARIO', 'EDICTO_BOLETIN', 'CIRCULAR'];
+        // Se generan siempre los 4 juntos -- o están todos, o no hay ninguno
+        const ultimoDeCadaTipo = tipos.map(t => res.documentos.filter(d => d.tipo === t)[0]).filter(d => d);
+        if (ultimoDeCadaTipo.length === 0) {
+          hito('PENDIENTE', 'Todavía no se generó ningún documento');
+        } else {
+          const todosAprobados = ultimoDeCadaTipo.length === tipos.length && ultimoDeCadaTipo.every(d => d.estado === 'APROBADO');
+          if (todosAprobados) {
+            hito('COMPLETO', 'Los 4 documentos generados y aprobados');
+          } else {
+            const aprobados = ultimoDeCadaTipo.filter(d => d.estado === 'APROBADO').length;
+            hito('PROGRESO', 'Generados — ' + aprobados + ' de 4 aprobados');
+          }
+        }
+      });
     });
   });
 }

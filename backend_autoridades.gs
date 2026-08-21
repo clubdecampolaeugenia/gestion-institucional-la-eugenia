@@ -47,7 +47,7 @@ function validarPinInterno(pin, moduloRequerido) {
 
 // Acciones que cuestan dinero o escriben datos: requieren PIN válido verificado en el servidor,
 // no solo en la pantalla. El resto (listar/consultar) queda sin este requisito por ahora.
-const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'editarActaFormal', 'asentarActa', 'eliminarBorradorActa', 'anularActa', 'registrarActaManual', 'diagnosticarEliminacionActa', 'eliminarRegistroErroneo', 'migrarActasV2', 'migrarActasV3ModoContenido', 'migrarColumnaPuntosManuales', 'migrarColumnaActaLeida', 'diagnosticarEtiquetadoActas', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarOrdenDelDiaEnDocumentos', 'guardarPuntosManualesAsamblea', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'backupDocumentos', 'diagnosticoDuplicadosDocumentos', 'limpiarDocumentosConvocatoriaViejos', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
+const ACCIONES_PROTEGIDAS = ['guardarAutoridad', 'eliminarAutoridad', 'guardarNota', 'guardarNotasSeleccionadas', 'eliminarNota', 'generarBorradorActa', 'actualizarActa', 'editarActaFormal', 'asentarActa', 'eliminarBorradorActa', 'anularActa', 'registrarActaManual', 'diagnosticarEliminacionActa', 'eliminarRegistroErroneo', 'migrarActasV2', 'migrarActasV3ModoContenido', 'migrarColumnaPuntosManuales', 'migrarColumnaActaLeida', 'migrarColumnaAntelacion', 'confirmarAntelacionConvocatoria', 'diagnosticarEtiquetadoActas', 'procesarBalance', 'actualizarEstadoBalance', 'cerrarYAbrirNuevoEjercicio', 'actualizarObservacionBalance', 'guardarNovedad', 'actualizarNovedad', 'generarBorradorMemoria', 'registrarInformeRevisor', 'generarConvocatoriaYDocumentos', 'actualizarOrdenDelDiaEnDocumentos', 'guardarPuntosManualesAsamblea', 'actualizarDocumento', 'eliminarDocumento', 'guardarNovedadesSeleccionadas', 'extraerNovedadesDeChat', 'eliminarNovedad', 'guardarConfigMemoria', 'sembrarAsambleaReal', 'guardarAsambleaEjercicio', 'corregirFechaAsambleaExistente', 'limpiarDuplicadosAsambleas', 'backupAsambleas', 'backupDocumentos', 'diagnosticoDuplicadosDocumentos', 'limpiarDocumentosConvocatoriaViejos', 'insertarEncabezadoAsambleas', 'marcarAsambleaCelebrada', 'registrarAutoridadesElectas', 'generarActaAsamblea'];
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -153,7 +153,7 @@ function manejarAccion(action, params) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(params);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v59j-memoria-balance-y-aprobacion-20ago' };
+      resultado = { ok: true, version: 'v59k-antelacion-art41-20ago' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -184,6 +184,10 @@ function manejarAccion(action, params) {
       resultado = guardarPuntosManualesAsamblea(params);
     } else if (action === 'migrarColumnaPuntosManuales') {
       resultado = migrarColumnaPuntosManuales();
+    } else if (action === 'migrarColumnaAntelacion') {
+      resultado = migrarColumnaAntelacion();
+    } else if (action === 'confirmarAntelacionConvocatoria') {
+      resultado = confirmarAntelacionConvocatoria();
     } else if (action === 'diagnosticarEtiquetadoActas') {
       resultado = diagnosticarEtiquetadoActas();
     } else if (action === 'migrarColumnaActaLeida') {
@@ -2463,6 +2467,8 @@ function obtenerAsambleaEjercicio() {
   if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
 
   const hoja = getHojaAsambleas();
+  const headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
+  const colAntelacion = headers.indexOf('ANTELACION_CONFIRMADA'); // -1 si no se corrió la migración todavía -- no rompe nada
   const datos = hoja.getDataRange().getValues();
   for (let i = 1; i < datos.length; i++) {
     if (datos[i][1] === ejercicioActivo.ejercicio.idEjercicio) {
@@ -2476,7 +2482,8 @@ function obtenerAsambleaEjercicio() {
         lugar: datos[i][4],
         estado: datos[i][6],
         ordenDelDia: ordenDelDia,
-        autoridadesRegistradas: datos[i][9] === 'SI'
+        autoridadesRegistradas: datos[i][9] === 'SI',
+        antelacionConfirmada: colAntelacion !== -1 && datos[i][colAntelacion] === 'SI'
       };
     }
   }
@@ -2927,6 +2934,40 @@ function migrarColumnaPuntosManuales() {
   const nuevaCol = hoja.getLastColumn() + 1;
   hoja.getRange(1, nuevaCol).setValue('PUNTOS_MANUALES').setFontWeight('bold').setBackground('#135457').setFontColor('#c4df57');
   return { ok: true, mensaje: 'Columna agregada en la posición ' + nuevaCol + '.' };
+}
+
+// Marca si ya se confirmó manualmente que la Convocatoria se comunicó con la antelación mínima
+// del Art. 41 (15 días). No se calcula solo -- la app no sabe cuándo salió realmente el mail del
+// Boletín, así que es una confirmación humana, no automática. Idempotente.
+function migrarColumnaAntelacion() {
+  const hoja = getHojaAsambleas();
+  const headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
+  if (headers.indexOf('ANTELACION_CONFIRMADA') !== -1) return { ok: true, mensaje: 'Ya existía.' };
+  const nuevaCol = hoja.getLastColumn() + 1;
+  hoja.getRange(1, nuevaCol).setValue('ANTELACION_CONFIRMADA').setFontWeight('bold').setBackground('#135457').setFontColor('#c4df57');
+  return { ok: true, mensaje: 'Columna agregada en la posición ' + nuevaCol + '.' };
+}
+
+// Marca la confirmación para la Asamblea del Ejercicio activo. No hay forma de "des-confirmar"
+// desde acá a propósito -- si algo cambió (se pospuso la Asamblea), se vuelve a evaluar con la
+// nueva fecha la próxima vez que se calculen los días restantes.
+function confirmarAntelacionConvocatoria() {
+  const ejercicioActivo = obtenerEjercicioActivo();
+  if (!ejercicioActivo.ok) return { ok: false, error: 'No hay Ejercicio activo' };
+
+  const hoja = getHojaAsambleas();
+  const headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
+  const colAntelacion = headers.indexOf('ANTELACION_CONFIRMADA');
+  if (colAntelacion === -1) return { ok: false, error: 'Falta correr la migración migrarColumnaAntelacion primero.' };
+
+  const datos = hoja.getDataRange().getValues();
+  for (let i = 1; i < datos.length; i++) {
+    if (datos[i][1] === ejercicioActivo.ejercicio.idEjercicio) {
+      hoja.getRange(i + 1, colAntelacion + 1).setValue('SI');
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'No se encontró la Asamblea de este Ejercicio.' };
 }
 
 // Guarda el listado completo de puntos manuales (reemplaza el anterior) para el Ejercicio activo.
