@@ -515,9 +515,16 @@ function mostrarResultado(res) {
   const cont = document.getElementById('resultadoContainer');
   let html = '';
   if (res.actaCDSync && res.actaCDSync.idRegistro) {
-    html += '<div style="background:var(--verdecl); border:2px solid var(--petroleo); border-radius:12px; padding:10px 12px; margin-bottom:12px; font-size:12px; color:var(--petroleo); line-height:1.5;">' +
-      '🔗 <strong>Borrador de Acta CD creado correctamente.</strong> Está vinculado al módulo Actas -- no es un número aparte, no puede colisionar con otra acta. El número definitivo se asignará al Asentar. Para que quede definitiva, andá a Actas y "Asentala" ahí.' +
-      '</div>';
+    const sync = res.actaCDSync;
+    let mensajeSync;
+    if (sync.estado === 'BORRADOR') {
+      mensajeSync = '🔗 <strong>Vinculada al módulo Actas como Borrador.</strong> No es un número aparte, no puede colisionar con otra acta. El número definitivo (previsto: ' + sync.numeroPrevisto + ') se asignará al Asentar. Para que quede definitiva, andá a Actas y "Asentala" ahí.';
+    } else if (sync.estado === 'ASENTADA') {
+      mensajeSync = '🔗 <strong>Ya está Asentada como Acta N.º ' + sync.numeroActa + '.</strong> Este texto ya refleja el número definitivo. Si cambiaste algo del Orden del Día después de asentarla, el contenido de la Comisión Directiva ya no se actualiza acá -- corregilo directo en Actas.';
+    } else {
+      mensajeSync = '🔗 Vinculada al módulo Actas (estado: ' + sync.estado + ').';
+    }
+    html += '<div style="background:var(--verdecl); border:2px solid var(--petroleo); border-radius:12px; padding:10px 12px; margin-bottom:12px; font-size:12px; color:var(--petroleo); line-height:1.5;">' + mensajeSync + '</div>';
   }
   html += '<div style="font-size:11px; color:var(--petroleo); opacity:.8; text-align:center; margin-bottom:12px;">Estos son borradores para consolidar — el formato final de impresión (márgenes, sangría, justificado) se aplica en Word u otro procesador de texto, fuera de la app.</div>';
   res.documentos.forEach(d => {
