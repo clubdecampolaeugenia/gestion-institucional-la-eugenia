@@ -566,12 +566,18 @@ function cargarEstadoAutoridades() {
       actualizarHito('Autoridades', 'PENDIENTE', 'No se pudo consultar');
       return;
     }
-    const vacantes = 12 - res.autoridades.length; // 11 cargos CD + al menos considerar Revisora/Arquitectura aparte
+    const cdCubiertos = res.autoridades.filter(a => a.organo === 'COMISION_DIRECTIVA').length;
+    const revisoraCubiertos = res.autoridades.filter(a => a.organo === 'REVISORA_CUENTAS').length;
+    const vacantesCD = Math.max(0, 12 - cdCubiertos);
+    const vacantesRevisora = Math.max(0, 2 - revisoraCubiertos);
     const vencen = res.vencenEsteAnio.length;
-    if (vacantes > 0) {
-      actualizarHito('Autoridades', 'PROGRESO', vacantes + ' cargo(s) vacante(s) · ' + vencen + ' renuevan este año');
+    if (vacantesCD > 0 || vacantesRevisora > 0) {
+      const partes = [];
+      if (vacantesCD > 0) partes.push(vacantesCD + ' de CD');
+      if (vacantesRevisora > 0) partes.push(vacantesRevisora + ' de Revisora');
+      actualizarHito('Autoridades', 'PROGRESO', 'Vacante(s): ' + partes.join(', ') + ' · ' + vencen + ' renuevan este año');
     } else {
-      actualizarHito('Autoridades', 'COMPLETO', 'Todos los cargos cubiertos · ' + vencen + ' renuevan este año');
+      actualizarHito('Autoridades', 'COMPLETO', 'CD (12/12) y Revisora (2/2) cubiertos · ' + vencen + ' renuevan este año');
     }
   });
 }
