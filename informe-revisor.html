@@ -85,6 +85,12 @@
       Este documento lo redacta y firma el <strong>Revisor de Cuentas</strong>, igual que el contador con el Balance — la app no lo escribe. Solo lo <strong>registra</strong>: subilo a la carpeta de Drive <a href="https://drive.google.com/drive/folders/1hI8nzHEraUxqEoKAZdqjjtdJKj9FTWnO" target="_blank">Informes_Revisor_Gestion_Institucional_La_Eugenia</a> y tocá "Registrar informe" — queda archivado y con un resumen breve para referencia rápida, sin tocar el documento original.
     </div>
 
+    <div class="field-label" style="color:var(--petroleo); font-weight:900; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Texto modelo (para copiar)</div>
+    <div style="font-size:11px; color:var(--petroleo); opacity:.75; margin-bottom:8px;">Cambia poco de un año a otro -- acá tenés el molde precargado con los datos del Ejercicio activo, para copiarlo y pegarlo como punto de partida. La redacción y la firma siguen siendo del Revisor.</div>
+    <div id="modeloInformeBox" style="background:var(--blanco); border-radius:16px; padding:14px 16px; font-size:12.5px; color:var(--petroleo); line-height:1.6; white-space:pre-wrap; margin-bottom:6px;">Cargando...</div>
+    <div style="text-align:right; margin-bottom:16px;"><a href="#" id="linkCopiarModelo" onclick="copiarModeloInforme(); return false;" style="color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:underline; cursor:pointer;">Copiar texto</a></div>
+
+    <hr class="divider">
     <button type="button" class="btn-solid" id="btnProcesar" onclick="registrarInforme()">Registrar informe subido</button>
 
     <div class="loading-text" id="loadingText"></div>
@@ -179,6 +185,7 @@ function entrarApp() {
   document.getElementById('mainScreen').style.display = 'block';
   document.getElementById('mainScreen').classList.add('active');
   cargarVersiones();
+  cargarModeloInforme();
 }
 
 function cerrarSesion() {
@@ -235,6 +242,56 @@ function cargarVersiones() {
       div.textContent = 'Versión ' + d.version + ' — ' + d.estado;
       cont.appendChild(div);
     });
+  });
+}
+
+const MESES_LARGO = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function formatearFechaLarga_(d) {
+  const dia = d.getDate();
+  return (dia === 1 ? '1º' : dia) + ' de ' + MESES_LARGO[d.getMonth()] + ' de ' + d.getFullYear();
+}
+
+function cargarModeloInforme() {
+  jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(resEj) {
+    if (!resEj || !resEj.ok) {
+      document.getElementById('modeloInformeBox').textContent = 'No se pudo cargar el Ejercicio activo.';
+      return;
+    }
+    jsonp(EXEC_URL_GI + '?action=listarAutoridades', function(resAut) {
+      const ej = resEj.ejercicio;
+      const partesCierre = ej.fechaCierre.split('/'); // dd/mm/yyyy
+      const fechaCierre = new Date(Number(partesCierre[2]), Number(partesCierre[1]) - 1, Number(partesCierre[0]));
+      const partesInicio = ej.fechaInicio.split('/');
+      const fechaInicioEj = new Date(Number(partesInicio[2]), Number(partesInicio[1]) - 1, Number(partesInicio[0]));
+
+      let nombreRevisor = '[NOMBRE DEL REVISOR TITULAR]';
+      if (resAut && resAut.ok) {
+        const revisor = resAut.autoridades.find(a => a.organo === 'REVISORA_CUENTAS' && a.cargo === 'Revisor Titular' && a.estado === 'VIGENTE');
+        if (revisor) nombreRevisor = revisor.nombre.toUpperCase();
+      }
+
+      const hoy = formatearFechaLarga_(new Date());
+
+      const texto = 'Ejercicio Económico Nº ' + ej.numero + '\n' +
+        'Finalizado al ' + ej.fechaCierre + '\n\n' +
+        'INFORME DEL REVISOR DE CUENTAS\n\n' +
+        'En mi carácter de Revisor de Cuentas Titular del Club de Campo La Eugenia informo a los señores asociados que la Comisión Directiva ha sometido a mi estudio la Memoria, Estado de Situación Patrimonial, Estado de Recursos y Gastos, Estado de Evolución del Patrimonio Neto, Estado de Flujo de Efectivo, Notas y Anexos por el ejercicio comprendido entre el ' + formatearFechaLarga_(fechaInicioEj) + ' y el ' + formatearFechaLarga_(fechaCierre) + '. Me permito sugerir a los señores asociados la aprobación de los mismos.\n\n' +
+        'Garupá, Misiones ' + hoy + '.-\n\n' +
+        nombreRevisor + '\n' +
+        'Revisor de Cuentas Titular';
+
+      document.getElementById('modeloInformeBox').textContent = texto;
+    });
+  });
+}
+
+function copiarModeloInforme() {
+  const texto = document.getElementById('modeloInformeBox').textContent;
+  navigator.clipboard.writeText(texto).then(() => {
+    const link = document.getElementById('linkCopiarModelo');
+    const original = link.textContent;
+    link.textContent = '✓ Copiado';
+    setTimeout(() => { link.textContent = original; }, 1500);
   });
 }
 </script>
