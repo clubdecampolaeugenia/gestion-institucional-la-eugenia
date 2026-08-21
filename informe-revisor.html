@@ -81,14 +81,26 @@
   </div>
 
   <div id="mainScreen">
-    <div class="instr-box">
-      Este documento lo redacta y firma el <strong>Revisor de Cuentas</strong>, igual que el contador con el Balance — la app no lo escribe. Solo lo <strong>registra</strong>: subilo a la carpeta de Drive <a href="https://drive.google.com/drive/folders/1hI8nzHEraUxqEoKAZdqjjtdJKj9FTWnO" target="_blank">Informes_Revisor_Gestion_Institucional_La_Eugenia</a> y tocá "Registrar informe" — queda archivado y con un resumen breve para referencia rápida, sin tocar el documento original.
+    <div class="field-label" style="color:var(--petroleo); font-weight:900; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Texto modelo (editable)</div>
+    <div style="font-size:11px; color:var(--petroleo); opacity:.75; margin-bottom:8px;">Precargado con los datos reales del Ejercicio activo y el Revisor Titular vigente. Podés editarlo acá mismo antes de copiarlo -- la redacción final y la firma siguen siendo del Revisor.</div>
+
+    <span class="field-label" style="color:var(--petroleo);">Conclusión</span>
+    <select id="selTipoConclusion" onchange="cargarModeloInforme()" style="width:100%; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo); font-family:'Roboto'; font-size:13px; margin-bottom:10px;">
+      <option value="APRUEBA_SIN_SALVEDADES">Aprueba sin salvedades</option>
+      <option value="APRUEBA_CON_SALVEDADES">Aprueba con salvedades</option>
+      <option value="NO_APRUEBA">No aprueba</option>
+    </select>
+
+    <div id="modeloInformeError" style="display:none; background:rgba(192,57,43,0.12); border:2px solid var(--error); border-radius:12px; padding:10px 12px; margin-bottom:10px; color:var(--error); font-size:12px; font-weight:700;"></div>
+    <textarea id="modeloInformeBox" style="width:100%; min-height:280px; background:var(--blanco); border-radius:16px; padding:14px 16px; font-size:12.5px; color:var(--petroleo); line-height:1.6; border:2px solid var(--petroleo); font-family:'Roboto'; margin-bottom:6px;">Cargando...</textarea>
+    <div style="text-align:right; margin-bottom:16px;">
+      <a href="#" onclick="cargarModeloInforme(); return false;" style="color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:underline; cursor:pointer; margin-right:16px;">↻ Recargar datos</a>
+      <a href="#" id="linkCopiarModelo" onclick="copiarModeloInforme(); return false;" style="color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:underline; cursor:pointer;">Copiar texto</a>
     </div>
 
-    <div class="field-label" style="color:var(--petroleo); font-weight:900; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Texto modelo (para copiar)</div>
-    <div style="font-size:11px; color:var(--petroleo); opacity:.75; margin-bottom:8px;">Cambia poco de un año a otro -- acá tenés el molde precargado con los datos del Ejercicio activo, para copiarlo y pegarlo como punto de partida. La redacción y la firma siguen siendo del Revisor.</div>
-    <div id="modeloInformeBox" style="background:var(--blanco); border-radius:16px; padding:14px 16px; font-size:12.5px; color:var(--petroleo); line-height:1.6; white-space:pre-wrap; margin-bottom:6px;">Cargando...</div>
-    <div style="text-align:right; margin-bottom:16px;"><a href="#" id="linkCopiarModelo" onclick="copiarModeloInforme(); return false;" style="color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:underline; cursor:pointer;">Copiar texto</a></div>
+    <div class="instr-box">
+      Este documento lo redacta y firma el <strong>Revisor de Cuentas</strong> -- la app arma un punto de partida con datos reales, pero la evaluación y la firma son suyas. Cuando esté listo (en papel o acá mismo), subilo como PDF a la carpeta de Drive <a href="https://drive.google.com/drive/folders/1hI8nzHEraUxqEoKAZdqjjtdJKj9FTWnO" target="_blank">Informes_Revisor_Gestion_Institucional_La_Eugenia</a> y tocá "Registrar informe" — queda archivado y con un resumen breve para referencia rápida, sin tocar el documento original.
+    </div>
 
     <hr class="divider">
     <button type="button" class="btn-solid" id="btnProcesar" onclick="registrarInforme()">Registrar informe subido</button>
@@ -251,42 +263,74 @@ function formatearFechaLarga_(d) {
   return (dia === 1 ? '1º' : dia) + ' de ' + MESES_LARGO[d.getMonth()] + ' de ' + d.getFullYear();
 }
 
+const FRASES_CONCLUSION = {
+  APRUEBA_SIN_SALVEDADES: 'Me permito sugerir a los señores asociados la aprobación de los mismos.',
+  APRUEBA_CON_SALVEDADES: 'Me permito sugerir a los señores asociados la aprobación de los mismos, con las salvedades que se detallan a continuación:\n\n[DETALLAR SALVEDADES]',
+  NO_APRUEBA: 'No me permito sugerir a los señores asociados la aprobación de los mismos, por los motivos que se detallan a continuación:\n\n[DETALLAR MOTIVOS]'
+};
+
+function mostrarErrorModelo_(msg) {
+  const err = document.getElementById('modeloInformeError');
+  err.style.display = 'block';
+  err.textContent = '⚠️ ' + msg;
+  document.getElementById('modeloInformeBox').value = '';
+}
+
 function cargarModeloInforme() {
+  document.getElementById('modeloInformeError').style.display = 'none';
+  document.getElementById('modeloInformeBox').value = 'Cargando...';
+
   jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(resEj) {
     if (!resEj || !resEj.ok) {
-      document.getElementById('modeloInformeBox').textContent = 'No se pudo cargar el Ejercicio activo.';
+      mostrarErrorModelo_('No se pudo cargar el Ejercicio activo: ' + (resEj && resEj.error ? resEj.error : 'sin respuesta del servidor. Revisá la versión desplegada del backend.'));
       return;
     }
-    jsonp(EXEC_URL_GI + '?action=listarAutoridades', function(resAut) {
-      const ej = resEj.ejercicio;
-      const partesCierre = ej.fechaCierre.split('/'); // dd/mm/yyyy
-      const fechaCierre = new Date(Number(partesCierre[2]), Number(partesCierre[1]) - 1, Number(partesCierre[0]));
-      const partesInicio = ej.fechaInicio.split('/');
-      const fechaInicioEj = new Date(Number(partesInicio[2]), Number(partesInicio[1]) - 1, Number(partesInicio[0]));
+    if (!resEj.ejercicio || !resEj.ejercicio.fechaCierre || !resEj.ejercicio.fechaInicio) {
+      mostrarErrorModelo_('El Ejercicio activo no tiene fecha de inicio o cierre cargada.');
+      return;
+    }
 
-      let nombreRevisor = '[NOMBRE DEL REVISOR TITULAR]';
-      if (resAut && resAut.ok) {
-        const revisor = resAut.autoridades.find(a => a.organo === 'REVISORA_CUENTAS' && a.cargo === 'Revisor Titular' && a.estado === 'VIGENTE');
-        if (revisor) nombreRevisor = revisor.nombre.toUpperCase();
+    jsonp(EXEC_URL_GI + '?action=listarAutoridades', function(resAut) {
+      if (!resAut || !resAut.ok) {
+        mostrarErrorModelo_('No se pudo cargar Autoridades: ' + (resAut && resAut.error ? resAut.error : 'sin respuesta del servidor.'));
+        return;
       }
 
+      const ej = resEj.ejercicio;
+      let fechaCierre, fechaInicioEj;
+      try {
+        const partesCierre = ej.fechaCierre.split('/');
+        fechaCierre = new Date(Number(partesCierre[2]), Number(partesCierre[1]) - 1, Number(partesCierre[0]));
+        const partesInicio = ej.fechaInicio.split('/');
+        fechaInicioEj = new Date(Number(partesInicio[2]), Number(partesInicio[1]) - 1, Number(partesInicio[0]));
+        if (isNaN(fechaCierre) || isNaN(fechaInicioEj)) throw new Error('fecha inválida');
+      } catch (e) {
+        mostrarErrorModelo_('Las fechas del Ejercicio activo no se pudieron interpretar (' + ej.fechaCierre + ' / ' + ej.fechaInicio + ').');
+        return;
+      }
+
+      const revisor = resAut.autoridades.find(a => a.organo === 'REVISORA_CUENTAS' && a.cargo === 'Revisor Titular' && a.estado === 'VIGENTE');
+      let nombreRevisor = '[NO HAY REVISOR TITULAR VIGENTE CARGADO EN AUTORIDADES]';
+      if (revisor && revisor.nombre) nombreRevisor = revisor.nombre.toUpperCase();
+
+      const tipoConclusion = document.getElementById('selTipoConclusion').value;
       const hoy = formatearFechaLarga_(new Date());
 
       const texto = 'Ejercicio Económico Nº ' + ej.numero + '\n' +
         'Finalizado al ' + ej.fechaCierre + '\n\n' +
         'INFORME DEL REVISOR DE CUENTAS\n\n' +
-        'En mi carácter de Revisor de Cuentas Titular del Club de Campo La Eugenia informo a los señores asociados que la Comisión Directiva ha sometido a mi estudio la Memoria, Estado de Situación Patrimonial, Estado de Recursos y Gastos, Estado de Evolución del Patrimonio Neto, Estado de Flujo de Efectivo, Notas y Anexos por el ejercicio comprendido entre el ' + formatearFechaLarga_(fechaInicioEj) + ' y el ' + formatearFechaLarga_(fechaCierre) + '. Me permito sugerir a los señores asociados la aprobación de los mismos.\n\n' +
+        'En mi carácter de Revisor de Cuentas Titular del Club de Campo La Eugenia informo a los señores asociados que la Comisión Directiva ha sometido a mi estudio la Memoria, Estado de Situación Patrimonial, Estado de Recursos y Gastos, Estado de Evolución del Patrimonio Neto, Estado de Flujo de Efectivo, Notas y Anexos por el ejercicio comprendido entre el ' + formatearFechaLarga_(fechaInicioEj) + ' y el ' + formatearFechaLarga_(fechaCierre) + '. ' + FRASES_CONCLUSION[tipoConclusion] + '\n\n' +
         'Garupá, Misiones ' + hoy + '.-\n\n' +
         nombreRevisor + '\n' +
         'Revisor de Cuentas Titular';
 
-      document.getElementById('modeloInformeBox').textContent = texto;
+      document.getElementById('modeloInformeBox').value = texto;
     });
   });
 }
 
 function copiarModeloInforme() {
-  const texto = document.getElementById('modeloInformeBox').textContent;
+  const texto = document.getElementById('modeloInformeBox').value;
   navigator.clipboard.writeText(texto).then(() => {
     const link = document.getElementById('linkCopiarModelo');
     const original = link.textContent;
