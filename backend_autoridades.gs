@@ -153,7 +153,7 @@ function manejarAccion(action, params) {
     } else if (action === 'actualizarEstadoBalance') {
       resultado = actualizarEstadoBalance(params);
     } else if (action === 'version') {
-      resultado = { ok: true, version: 'v59l-vinculo-actacd-actas-21ago' };
+      resultado = { ok: true, version: 'v59m-fix-fecha-actacd-21ago' };
     } else if (action === 'obtenerEjercicioActivo') {
       resultado = obtenerEjercicioActivo();
     } else if (action === 'obtenerResumenDashboard') {
@@ -2958,6 +2958,11 @@ function migrarColumnaIdActaCD() {
 // Si la fila vinculada ya se Asentó o Anuló por fuera, NO se toca -- ya es responsabilidad del
 // módulo Actas, no de Convocatoria.
 function sincronizarBorradorActaCD_(ej, ultimoNumero, fechaReunionCD, horaReunionCD, horaFinReunionCD, presentesCD, textoPunto2, textoPunto3) {
+  // Convocatoria arma la fecha como dd/mm/yyyy (3 selects separados), pero parsearFechaSegura
+  // espera yyyy-mm-dd -- sin esta conversión, cae en fecha inválida (Sheets la guarda como
+  // época cero, 31/12/1969). Bug real encontrado y corregido el 21/08/2026.
+  const fechaReunionCDIso = fechaReunionCD && fechaReunionCD.includes('/') ? fechaReunionCD.split('/').reverse().join('-') : fechaReunionCD;
+
   const lock = LockService.getScriptLock();
   let conseguido = false;
   try {
@@ -2996,7 +3001,7 @@ function sincronizarBorradorActaCD_(ej, ultimoNumero, fechaReunionCD, horaReunio
             const fila = i + 1;
             hojaActas.getRange(fila, idxActas.PUNTOS + 1).setValue(JSON.stringify(puntosNuevos));
             hojaActas.getRange(fila, idxActas.ACTA_LEIDA_NUMERO + 1).setValue(ultimoNumero);
-            hojaActas.getRange(fila, idxActas.FECHA_REUNION + 1).setValue(parsearFechaSegura(fechaReunionCD));
+            hojaActas.getRange(fila, idxActas.FECHA_REUNION + 1).setValue(parsearFechaSegura(fechaReunionCDIso));
             hojaActas.getRange(fila, idxActas.HORA_INICIO + 1).setNumberFormat('@').setValue(horaReunionCD || '');
             hojaActas.getRange(fila, idxActas.HORA_FIN + 1).setNumberFormat('@').setValue(horaFinReunionCD || '');
             hojaActas.getRange(fila, idxActas.PRESENTES + 1).setValue(presentesCD || '');
@@ -3016,7 +3021,7 @@ function sincronizarBorradorActaCD_(ej, ultimoNumero, fechaReunionCD, horaReunio
     const idRegistroNuevo = 'ACTA-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss') + '-CD';
     appendFilaActa_(hojaActas, {
       ID_EJERCICIO: ej.idEjercicio,
-      FECHA_REUNION: parsearFechaSegura(fechaReunionCD),
+      FECHA_REUNION: parsearFechaSegura(fechaReunionCDIso),
       HORA_INICIO: horaReunionCD || '',
       HORA_FIN: horaFinReunionCD || '',
       PRESENTES: presentesCD || '',
