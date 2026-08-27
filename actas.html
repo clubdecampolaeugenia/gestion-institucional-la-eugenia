@@ -46,7 +46,10 @@
   .btn-solid { display: block; width: 100%; padding: 15px; border-radius: 24px; border: none; background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; cursor: pointer; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
   .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 1.5px solid rgba(19,84,87,0.35); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
   .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; }
-  .btn-solid:active, .btn-outline:active { transform: scale(.96); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .btn-solid:active,   .link-copiar { display: inline-flex; align-items: center; gap: 6px; background: rgba(19,84,87,0.1); border: none; border-radius: 20px; padding: 9px 16px; font-family: 'Roboto'; font-size: 13px; font-weight: 700; color: var(--petroleo); cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: background 0.15s, transform 0.08s; }
+  .link-copiar:hover { background: rgba(19,84,87,0.18); }
+  .link-copiar:active { transform: scale(0.96); }
+  .btn-outline:active { transform: scale(.96); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
   .btn-small { padding: 8px 12px; font-size: 12px; border-radius: 16px; border: none; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
   .btn-modo-activo { background: var(--lima) !important; }
 
@@ -157,8 +160,8 @@
       <button type="button" class="btn-solid" style="margin-top:10px;" onclick="agregarNota()">Agregar a la bitácora</button>
 
       <hr class="divider">
-      <button type="button" class="btn-outline" onclick="toggleImportChatBitacora()">💬 Importar desde chat de WhatsApp</button>
-      <button type="button" class="btn-outline" onclick="sincronizarBoletinBitacora()">📰 Sincronizar con Boletín Mensual</button>
+      <button type="button" class="btn-outline" onclick="toggleImportChatBitacora()">Importar desde chat de WhatsApp</button>
+      <button type="button" class="btn-outline" onclick="sincronizarBoletinBitacora()">Sincronizar con Boletín Mensual</button>
 
       <div class="form-panel" id="importChatPanelBitacora" style="display:none; background:var(--petroleo); border-radius:16px; padding:16px; margin-top:10px;">
         <span class="field-label" style="color:var(--lima); margin-bottom:4px; opacity:.8; font-weight:400; text-transform:none; font-size:11px;">Pegá un fragmento del chat exportado (una semana o un mes, no el año completo). La IA separa lo institucional, vos elegís a dónde va cada cosa.</span>
@@ -182,8 +185,8 @@
         <div id="proximoNumeroInstitucional" style="color:var(--hueso); font-size:22px; font-weight:900; margin:4px 0;">—</div>
         <div style="color:var(--hueso); font-size:10.5px; opacity:.8;">Se asignará al primer borrador que sea asentado. No está reservado.</div>
       </div>
-      <button type="button" class="btn-outline" onclick="toggleFormNuevaActa()">➕ Generar nuevo borrador de Acta</button>
-      <button type="button" class="btn-outline" onclick="toggleFormActaManual()">📋 Registrar Acta manual / externa</button>
+      <button type="button" class="btn-outline" onclick="toggleFormNuevaActa()">Generar nuevo borrador de Acta</button>
+      <button type="button" class="btn-outline" onclick="toggleFormActaManual()">Registrar Acta manual / externa</button>
 
       <div class="form-panel" id="formNuevaActa" style="display:none; background: var(--petroleo); border-radius: 16px; padding: 14px; margin-bottom: 14px;">
         <span class="field-label" style="color:var(--lima);">Fecha de la reunión</span>
@@ -236,7 +239,7 @@
         <div id="mBloqueEstructurado">
           <span class="field-label" style="color:var(--lima);">Puntos tratados</span>
           <div id="mPuntosContainer"></div>
-          <button type="button" class="btn-outline" style="background:var(--blanco); margin-top:4px;" onclick="rmAgregarPunto()">➕ Agregar punto</button>
+          <button type="button" class="btn-outline" style="background:var(--blanco); margin-top:4px;" onclick="rmAgregarPunto()">Agregar punto</button>
         </div>
         <div id="mBloqueTextoLibre" style="display:none;">
           <span class="field-label" style="color:var(--lima);">Texto completo del Acta</span>
@@ -262,13 +265,13 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
         <div id="previewActaMotivoAnulacion" style="display:none; background:rgba(192,57,43,0.12); border:1.5px solid var(--error); border-radius:12px; padding:10px 12px; margin-bottom:12px; color:var(--error); font-size:12px; font-weight:700;"></div>
         <div id="previewActaAvisoMetadata" style="display:none; background:rgba(222,175,77,0.2); border:1.5px solid var(--naranja); border-radius:12px; padding:10px 12px; margin-bottom:12px; color:var(--petroleo); font-size:11.5px; line-height:1.5;"></div>
         <div class="texto-final-box" id="previewTextoBox" style="display:block; margin-bottom:6px;"></div>
-        <div style="text-align:right; margin-bottom:16px;"><a href="#" id="linkCopiarPreview" onclick="copiarTextoPreview(); return false;" style="color:var(--petroleo); font-size:12px; font-weight:900;  text-decoration:underline; cursor:pointer;">Copiar texto</a></div>
-        <button type="button" class="btn-asentar" id="btnAsentarActa" style="display:none;" onclick="asentarActaUI()">✔️ Asentar en el Libro (asigna número definitivo)</button>
-        <button type="button" style="display:block; width:100%; padding:14px; border-radius:24px; border:1.5px solid var(--lima); background:var(--petroleo); color:var(--lima); font-family:'Roboto'; font-size:15px; font-weight:900;  cursor:pointer; margin-bottom:10px;" id="btnEditarActa" onclick="pasarAEditar()">✏️ Editar</button>
-        <button type="button" class="btn-peligro" id="btnEliminarBorrador" style="display:none;" onclick="eliminarBorradorUI()">🗑️ Eliminar borrador</button>
-        <button type="button" class="btn-peligro" id="btnAnularActa" style="display:none;" onclick="anularActaUI()">⚠️ Anular Acta</button>
-        <button type="button" style="display:none; width:100%; padding:12px; border-radius:24px; border:3px dotted var(--error); background:rgba(192,57,43,0.08); color:var(--error); font-family:'Roboto'; font-size:12px; font-weight:900;  cursor:pointer; margin-bottom:10px;" id="btnEliminarErroneo" onclick="eliminarRegistroErroneoUI()">🚫 Eliminar registro erróneo (nunca existió en el Libro físico)</button>
-        <button type="button" class="btn-peligro" id="btnEditarFormal" style="display:none; border-style:dashed;" onclick="abrirEditorFormal()">🔒 Editar acta asentada / anulada</button>
+        <div style="text-align:right; margin-bottom:16px;"><button type="button" class="link-copiar" id="linkCopiarPreview" onclick="copiarTextoPreview()">Copiar texto</button></div>
+        <button type="button" class="btn-asentar" id="btnAsentarActa" style="display:none;" onclick="asentarActaUI()">Asentar en el Libro (asigna número definitivo)</button>
+        <button type="button" style="display:block; width:100%; padding:14px; border-radius:24px; border:1.5px solid var(--lima); background:var(--petroleo); color:var(--lima); font-family:'Roboto'; font-size:15px; font-weight:900;  cursor:pointer; margin-bottom:10px;" id="btnEditarActa" onclick="pasarAEditar()">Editar</button>
+        <button type="button" class="btn-peligro" id="btnEliminarBorrador" style="display:none;" onclick="eliminarBorradorUI()">Eliminar borrador</button>
+        <button type="button" class="btn-peligro" id="btnAnularActa" style="display:none;" onclick="anularActaUI()">Anular Acta</button>
+        <button type="button" style="display:none; width:100%; padding:12px; border-radius:24px; border:3px dotted var(--error); background:rgba(192,57,43,0.08); color:var(--error); font-family:'Roboto'; font-size:12px; font-weight:900;  cursor:pointer; margin-bottom:10px;" id="btnEliminarErroneo" onclick="eliminarRegistroErroneoUI()">Eliminar registro erróneo (nunca existió en el Libro físico)</button>
+        <button type="button" class="btn-peligro" id="btnEditarFormal" style="display:none; border-style:dashed;" onclick="abrirEditorFormal()">Editar acta asentada / anulada</button>
         <button type="button" class="btn-ghost" onclick="cerrarPreview()">← Volver a la lista de actas</button>
       </div>
 
@@ -318,7 +321,7 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
 
         <div id="efBloqueEstructurado">
           <div id="efPuntosContainer"></div>
-          <button type="button" class="btn-outline" style="background:var(--blanco); margin-top:4px;" onclick="efAgregarPunto()">➕ Agregar punto</button>
+          <button type="button" class="btn-outline" style="background:var(--blanco); margin-top:4px;" onclick="efAgregarPunto()">Agregar punto</button>
         </div>
         <div id="efBloqueTextoLibre" style="display:none;">
           <div id="efAvisoMetadataTextoLibre" style="font-size:11px; color:var(--error); font-weight:700; margin-bottom:8px;"></div>
@@ -342,14 +345,14 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
       <div id="editorActa" style="display:none;">
         <hr class="divider">
         <div class="field-label" id="editorActaTitulo"></div>
-        <button type="button" class="btn-outline" style="background:var(--verdecl);" onclick="generarTextoFinal()">👁️ Ver texto final del Acta (no editable)</button>
+        <button type="button" class="btn-outline" style="background:var(--verdecl);" onclick="generarTextoFinal()">Ver texto final del Acta (no editable)</button>
         <div class="texto-final-box" id="textoFinalBox"></div>
-        <div style="text-align:right; margin-bottom:16px;"><a href="#" id="btnCopiarActa" style="display:none; color:var(--petroleo); font-size:12px; font-weight:900;  text-decoration:underline; cursor:pointer;" onclick="copiarTextoFinal(); return false;">Copiar texto</a></div>
+        <div style="text-align:right; margin-bottom:16px;"><button type="button" class="link-copiar" id="btnCopiarActa" style="display:none;" onclick="copiarTextoFinal()">Copiar texto</button></div>
         <div id="avisoImprimirActa" style="display:none; font-size:11px; color:var(--petroleo); opacity:.7; text-align:center; margin-bottom:10px;">Esto es un borrador para consolidar — el formato final de impresión (márgenes, sangría, justificado) se aplica en Word u otro procesador de texto, fuera de la app.</div>
         <hr class="divider">
         <div class="field-label">Edición punto por punto</div>
         <div id="puntosContainer"></div>
-        <button type="button" class="btn-outline" onclick="agregarPuntoVacio()">➕ Agregar punto</button>
+        <button type="button" class="btn-outline" onclick="agregarPuntoVacio()">Agregar punto</button>
         <span class="field-label">Acta leída en la reunión (N.º)</span>
         <div style="font-size:11px; color:var(--petroleo); opacity:.75; margin-bottom:4px;">Qué Acta se leyó y aprobó realmente ese día. Es un dato distinto de la correlatividad del Libro, que se calcula recién al Asentar -- pueden no coincidir si mientras tanto se incorpora otra acta.</div>
         <input type="number" id="eActaLeidaNumero">
@@ -369,7 +372,7 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
       <div style="background:var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:16px; font-size:13px; color:var(--hueso); line-height:1.5;">
         Todas las actas del Ejercicio activo, una atrás de la otra, en modo lectura — como el libro de actas completo, sin entrar acta por acta. Nada de esto es editable acá.
       </div>
-      <button type="button" class="btn-outline" onclick="cargarConsolidado()">🔄 Actualizar</button>
+      <button type="button" class="btn-outline" onclick="cargarConsolidado()">Actualizar</button>
       <div id="consolidadoContainer"></div>
     </div>
 
@@ -882,7 +885,7 @@ function cargarNotas() {
     res.notas.forEach(n => {
       const div = document.createElement('div');
       div.className = 'nota-card';
-      div.innerHTML = '<div class="nota-meta">' + n.fechaCarga + '</div><div class="nota-texto">' + escapeHtml(n.texto) + '</div><button type="button" class="btn-ghost" style="text-align:right; opacity:.6; font-size:10px; padding:4px 0;" onclick="borrarNota(\'' + n.idNota + '\')">🗑️ Borrar</button>';
+      div.innerHTML = '<div class="nota-meta">' + n.fechaCarga + '</div><div class="nota-texto">' + escapeHtml(n.texto) + '</div><button type="button" class="btn-ghost" style="text-align:right; opacity:.6; font-size:10px; padding:4px 0;" onclick="borrarNota(\'' + n.idNota + '\')">Borrar</button>';
       cont.appendChild(div);
     });
   });
@@ -1402,7 +1405,7 @@ function copiarTextoFinal() {
   const texto = document.getElementById('textoFinalBox').textContent;
   navigator.clipboard.writeText(texto).then(() => {
     const btn = document.getElementById('btnCopiarActa');
-    btn.textContent = '✓ Copiado';
+    btn.textContent = '¡Copiado!';
     setTimeout(() => { btn.textContent = 'Copiar texto'; }, 1500);
   });
 }
@@ -1412,7 +1415,7 @@ function copiarTextoPreview() {
   navigator.clipboard.writeText(texto).then(() => {
     const link = document.getElementById('linkCopiarPreview');
     const original = link.textContent;
-    link.textContent = '✓ Copiado';
+    link.textContent = '¡Copiado!';
     setTimeout(() => { link.textContent = original; }, 1500);
   });
 }
