@@ -331,12 +331,12 @@ function mostrarResultado(analisis, estado, idBalance) {
     const tachado = (resuelta || omitida) ? 'text-decoration:line-through;' : '';
 
     html += '<div class="obs-item obs-' + o.tipo + '" style="' + opacidad + '">';
-    html += '<span class="obs-tipo">' + o.tipo.replace('_', ' ') + (resuelta ? ' · ✅ RESUELTA' : omitida ? ' · ⏭ OMITIDA' : '') + '</span>';
+    html += '<span class="obs-tipo">' + o.tipo.replace('_', ' ') + (resuelta ? ' · RESUELTA' : omitida ? ' · ⏭ OMITIDA' : '') + '</span>';
     html += '<span style="' + tachado + '">' + escapeHtml(o.texto) + '</span>';
 
     if (estadoObs === 'PENDIENTE') {
       html += '<div style="margin-top:8px; display:flex; gap:8px;">';
-      html += '<button type="button" class="btn-resolver" onclick="marcarObservacion(' + i + ', \'RESUELTA\')">✅ Marcar resuelta</button>';
+      html += '<button type="button" class="btn-resolver" onclick="marcarObservacion(' + i + ', \'RESUELTA\')">Marcar resuelta</button>';
       html += '<button type="button" class="btn-omitir" onclick="marcarObservacion(' + i + ', \'OMITIDA\')">⏭ Omitir</button>';
       html += '</div>';
     } else {
