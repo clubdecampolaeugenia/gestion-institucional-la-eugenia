@@ -19,30 +19,31 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes shakeError { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 40%{transform:translateX(6px);} 60%{transform:translateX(-4px);} 80%{transform:translateX(4px);} }
 
-  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 560px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
+  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 560px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 16px 36px rgba(13,42,43,0.22); }
   .logo-wrap img { width: 140px; display: block; margin: 0 auto; filter: drop-shadow(0 4px 7px rgba(0,0,0,0.2)); }
   h1 { margin: 2px 0 4px; color: var(--negro); font-family: Impact, sans-serif; font-size: 24px; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
-  .subtitle { text-align: center; color: var(--petroleo); font-size: 13px; margin-bottom: 18px; text-transform: uppercase; letter-spacing: .5px; }
+  .subtitle { text-align: center; color: var(--petroleo); font-size: 13px; margin-bottom: 18px; letter-spacing: .2px; }
 
   #pinScreen { display: none; animation: fadeInScreen .3s ease-out; }
   #checkingSession { text-align: center; padding: 60px 0; }
   .session-spinner { width: 30px; height: 30px; margin: 0 auto 12px; border: 3px solid rgba(19,84,87,0.2); border-top-color: var(--petroleo); border-radius: 50%; animation: spin .7s linear infinite; }
-  .session-spinner-label { color: var(--petroleo); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  .session-spinner-label { color: var(--petroleo); font-weight: 700; font-size: 12px; letter-spacing: .5px; }
   #mainScreen { display: none; }
   #mainScreen.active { animation: fadeInScreen .3s ease-out; }
-  .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
-  .pin-input { display: block; width: 100%; text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; border: 2px solid var(--petroleo); border-radius: 16px; padding: 12px; background: var(--blanco); color: var(--petroleo); outline: none; margin-bottom: 12px; }
-  .pin-input.error { animation: shakeError .35s ease-in-out; border-color: var(--error); }
+  .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; margin-bottom: 10px; }
+  .pin-input { display: block; width: 100%; text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; border: none; border-radius: 16px; padding: 12px; background: var(--blanco); color: var(--petroleo); outline: none; margin-bottom: 12px; box-shadow: inset 0 0 0 1.5px rgba(19,84,87,0.15); }
+  .pin-input:focus { box-shadow: inset 0 0 0 2px var(--petroleo); }
+  .pin-input.error { animation: shakeError .35s ease-in-out; box-shadow: inset 0 0 0 2px var(--error); }
   .pin-error { text-align: center; color: var(--error); font-size: 13px; font-weight: 700; min-height: 18px; margin-bottom: 8px; }
 
-  .btn-solid { display: block; width: 100%; padding: 14px; border-radius: 24px; border: 2px solid var(--petroleo); background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
-  .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 2px solid var(--petroleo); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
-  .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; text-align: center; }
+  .btn-solid { display: block; width: 100%; padding: 15px; border-radius: 24px; border: none; background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; cursor: pointer; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+  .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 1.5px solid rgba(19,84,87,0.35); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
+  .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; }
   .btn-solid:active, .btn-outline:active { transform: scale(.96); }
 
-  .field-label { color: var(--petroleo); font-size: 11px; font-weight: 900; text-transform: uppercase; margin: 10px 0 4px; display: block; }
+  .field-label { color: var(--petroleo); font-size: 11px; font-weight: 900; margin: 10px 0 4px; display: block; }
   .field-label:first-child { margin-top: 0; }
-  input[type=text], input[type=date], input[type=number], select, textarea { width: 100%; border: 2px solid var(--petroleo); border-radius: 12px; padding: 10px 12px; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; }
+  input[type=text], input[type=date], input[type=number], select, textarea { width: 100%; border: none; border-radius: 12px; padding: 10px 12px; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; box-shadow: inset 0 0 0 1.5px rgba(19,84,87,0.15); }
   textarea { min-height: 70px; resize: vertical; }
 
   .form-panel { background: var(--petroleo); border-radius: 16px; padding: 16px; margin-bottom: 14px; display: none; }
@@ -54,8 +55,8 @@
   .novedad-titulo { font-weight: 900; color: var(--petroleo); font-size: 14px; }
   .novedad-fecha { font-size: 11px; color: var(--petroleo); opacity: .6; white-space: nowrap; }
   .novedad-desc { font-size: 13px; color: var(--petroleo); margin-bottom: 6px; }
-  .chip-categoria { display: inline-block; background: var(--petroleo); border-radius: 14px; padding: 5px 12px; font-size: 11px; font-weight: 900; color: var(--verdecl); text-transform: uppercase; margin-right: 6px; line-height: 1.3; }
-  .chip-memoria { display: inline-block; border-radius: 14px; padding: 5px 12px; font-size: 11px; font-weight: 900; text-transform: uppercase; line-height: 1.3; }
+  .chip-categoria { display: inline-block; background: var(--petroleo); border-radius: 14px; padding: 5px 12px; font-size: 11px; font-weight: 900; color: var(--verdecl); margin-right: 6px; line-height: 1.3; }
+  .chip-memoria { display: inline-block; border-radius: 14px; padding: 5px 12px; font-size: 11px; font-weight: 900; line-height: 1.3; }
   .chip-SI { background: var(--verdecl); color: var(--petroleo); }
   .chip-NO { background: #e8e8e8; color: #888; }
   .chip-EVALUAR { background: var(--naranja); color: var(--petroleo); }
@@ -63,32 +64,32 @@
   .chip-memoria:active { transform: scale(.95); }
 
   .filtro-cat { position: relative; margin-bottom: 14px; }
-  .filtro-dropdown-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 18px; border: 2px solid var(--petroleo); background: var(--petroleo); color: var(--lima); font-size: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
-  .filtro-lista { display: none; position: absolute; top: 100%; left: 0; margin-top: 6px; background: var(--blanco); border: 2px solid var(--petroleo); border-radius: 14px; padding: 8px; z-index: 50; min-width: 220px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+  .filtro-dropdown-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 18px; border: none; background: var(--petroleo); color: var(--lima); font-size: 12px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+  .filtro-lista { display: none; position: absolute; top: 100%; left: 0; margin-top: 6px; background: var(--blanco); border: 1.5px solid rgba(19,84,87,0.2); border-radius: 14px; padding: 8px; z-index: 50; min-width: 220px; box-shadow: 0 8px 20px rgba(13,42,43,0.18); }
   .filtro-lista.open { display: block; }
-  .filtro-opcion { display: block; width: 100%; text-align: left; padding: 8px 10px; border-radius: 10px; border: none; background: transparent; color: var(--petroleo); font-size: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .filtro-opcion { display: block; width: 100%; text-align: left; padding: 8px 10px; border-radius: 10px; border: none; background: transparent; color: var(--petroleo); font-size: 12px; font-weight: 900; cursor: pointer; }
   .filtro-opcion.active { background: var(--verdecl); }
 
   .divider { border: none; border-top: 1.5px solid #9bb583; margin: 16px 0; }
   .loading-text { text-align: center; color: var(--petroleo); font-size: 13px; font-weight: 700; min-height: 20px; }
   .empty-msg { text-align: center; color: var(--petroleo); opacity: .6; font-size: 13px; padding: 20px 0; }
 
-  .aviso-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
-  .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 12px 32px rgba(0,0,0,0.35); text-align: center; }
+  .aviso-overlay { position: fixed; inset: 0; background: rgba(19,84,87,0.55); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
+  .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 16px 36px rgba(0,0,0,0.3); text-align: center; }
   .aviso-texto { color: var(--petroleo); font-size: 14px; line-height: 1.5; margin-bottom: 18px; white-space: pre-wrap; }
-  .aviso-btn { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .aviso-btn { background: var(--lima); color: var(--petroleo); border: none; border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
 
   .confirm-btns { display: flex; gap: 10px; justify-content: center; }
-  .confirm-btn-aceptar { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
-  .confirm-btn-cancelar { background: transparent; color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .confirm-btn-aceptar { background: var(--lima); color: var(--petroleo); border: none; border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+  .confirm-btn-cancelar { background: transparent; color: var(--petroleo); border: 1.5px solid rgba(19,84,87,0.35); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 700; cursor: pointer; }
 </style>
 </head>
 <body>
 <div class="card">
-  <a href="index.html" style="display:inline-block; text-align:left; color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:none; opacity:.75; margin-bottom:10px;">&larr; Volver al panel</a>
+  <a href="index.html" style="display:inline-block; text-align:left; color:var(--petroleo); font-size:12px; font-weight:900;  text-decoration:none; opacity:.75; margin-bottom:10px;">&larr; Volver al panel</a>
   <a href="index.html" class="logo-wrap" style="cursor:pointer;"><img src="logo.png" alt="Logo La Eugenia"></a>
   <h1>Gestión Institucional</h1>
-  <div class="subtitle"><strong style="color:var(--negro); text-transform:uppercase;">Novedades</strong></div>
+  <div class="subtitle"><strong style="color:var(--negro); ">Novedades</strong></div>
 
   <div id="checkingSession"><div class="session-spinner"></div><div class="session-spinner-label">Verificando sesión...</div></div>
   <div id="pinScreen">
@@ -99,7 +100,7 @@
   </div>
 
   <div id="mainScreen">
-    <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
+    <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900;  margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
     <div id="instrBox" style="display:none; background:var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:16px; font-size:13px; color:var(--hueso); line-height:1.5;">
       Vas cargando acá los hechos relevantes del año — obras, gestiones, eventos, gastos puntuales. Esto es lo que va a alimentar el borrador de la Memoria. Marcá "¿Va a Memoria?" en cada una: <strong>Sí</strong> / <strong>No</strong> / <strong>Evaluar</strong> — las de categoría Personal arrancan en "No" por defecto, tocá el chip para cambiarlo.
     </div>
@@ -479,7 +480,7 @@ function renderCandidatosChat() {
   }
   let html = '<div class="field-label">Sugerencias encontradas (' + CANDIDATOS_CHAT.length + ') — elegí a dónde va cada una (Novedades, Bitácora, las dos, o ninguna)</div>';
   CANDIDATOS_CHAT.forEach((c, i) => {
-    const estiloDuplicado = c.posibleDuplicadoDe ? 'border:2px solid var(--naranja);' : '';
+    const estiloDuplicado = c.posibleDuplicadoDe ? 'border:1.5px solid var(--naranja);' : '';
     html += '<div class="novedad-card" style="' + estiloDuplicado + '">';
     html += '<div class="novedad-header"><span class="novedad-titulo">' + escapeHtml(c.titulo) + '</span><span class="novedad-fecha">' + c.fecha + '</span></div>';
     html += '<div class="novedad-desc">' + escapeHtml(c.descripcion) + '</div>';
