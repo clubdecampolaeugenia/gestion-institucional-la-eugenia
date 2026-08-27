@@ -1792,9 +1792,12 @@ function obtenerResumenDashboard() {
   if (!ejercicioActivo.ok) return { ok: false, error: 'Sin Ejercicio activo' };
   const ej = ejercicioActivo.ejercicio;
 
-  // Autoridades: vacantes sobre 12 cargos de Comisión Directiva
+  // Autoridades: vacantes de Comisión Directiva (12) y Revisora de Cuentas (2) por separado
   const autRes = listarAutoridades();
-  const vacantesAutoridades = autRes.ok ? Math.max(0, 12 - autRes.autoridades.length) : null;
+  const cdCubiertos = autRes.ok ? autRes.autoridades.filter(a => a.organo === 'COMISION_DIRECTIVA').length : 0;
+  const revisoraCubiertos = autRes.ok ? autRes.autoridades.filter(a => a.organo === 'REVISORA_CUENTAS').length : 0;
+  const vacantesAutoridades = autRes.ok ? Math.max(0, 12 - cdCubiertos) : null;
+  const vacantesRevisora = autRes.ok ? Math.max(0, 2 - revisoraCubiertos) : null;
   const vencenEsteAnio = autRes.ok ? autRes.vencenEsteAnio.length : 0;
 
   // Actas: cuántas en borrador
@@ -1815,13 +1818,50 @@ function obtenerResumenDashboard() {
   const memoriaRes = listarDocumentos({ tipo: 'MEMORIA', idEjercicio: ej.idEjercicio });
   const ultimaMemoria = memoriaRes.ok && memoriaRes.documentos.length ? memoriaRes.documentos[0] : null;
 
-  // Progreso: mismos 10 hitos y pesos que usa el Dashboard de la app (3 calculados en vivo, 7 con el estado real conocido hoy)
+  // Informe Comisión Revisora: ¿existe algún documento generado?
+  const informeRes = listarDocumentos({ tipo: 'INFORME_REVISOR', idEjercicio: ej.idEjercicio });
+  const hayInforme = informeRes.ok && informeRes.documentos.length > 0;
+
+  // Orden del Día: se arma solo si ya hay fecha de Asamblea cargada
+  const ordenRes = previsualizarOrdenDelDia();
+
+  // Acta CD, Convocatoria y Edictos: se generan los 4 documentos juntos
+  const tiposConvocatoria = ['ACTA_CD_CONVOCATORIA', 'EDICTO_DIARIO', 'EDICTO_BOLETIN', 'CIRCULAR'];
+  const docsConvRes = listarDocumentos({ idEjercicio: ej.idEjercicio });
+  let estadoConvocatoria = 'PENDIENTE';
+  if (docsConvRes.ok) {
+    const ultimoDeCadaTipo = tiposConvocatoria.map(t => docsConvRes.documentos.filter(d => d.tipo === t)[0]).filter(d => d);
+    if (ultimoDeCadaTipo.length > 0) {
+      const todosAprobados = ultimoDeCadaTipo.length === tiposConvocatoria.length && ultimoDeCadaTipo.every(d => d.estado === 'APROBADO');
+      estadoConvocatoria = todosAprobados ? 'COMPLETO' : 'PROGRESO';
+    }
+  }
+
+  // Ejercicio cerrado: compara hoy contra la fecha real de cierre del ejercicio activo
+  const partesCierre = ej.fechaCierre.split('/');
+  const fechaCierreDate = new Date(Number(partesCierre[2]), Number(partesCierre[1]) - 1, Number(partesCierre[0]));
+  const estadoEjercicio = new Date() >= fechaCierreDate ? 'COMPLETO' : 'PROGRESO';
+
+  // Progreso: los mismos 9 hitos y pesos que usa el Dashboard de la app -- todos calculados en vivo
   const pesoEstado = { COMPLETO: 1, PROGRESO: 0.5, OBSERVADO: 0.25, PENDIENTE: 0, NOINICIADO: 0 };
   const estadoBalance = !balanceDelEjercicio ? 'NOINICIADO' : ((balanceDelEjercicio.estado === 'APROBADO_ASAMBLEA' || balanceDelEjercicio.estado === 'LEGALIZADO') ? 'COMPLETO' : (balanceDelEjercicio.estado === 'OBSERVADO' ? 'OBSERVADO' : 'PROGRESO'));
-  const estadoAutoridades = vacantesAutoridades === 0 ? 'COMPLETO' : 'PROGRESO';
+  const estadoAutoridades = (vacantesAutoridades === 0 && vacantesRevisora === 0) ? 'COMPLETO' : 'PROGRESO';
   const estadoActas = actasTotal === 0 ? 'NOINICIADO' : (actasBorrador > 0 ? 'PROGRESO' : 'COMPLETO');
-  const hitosFijos = ['COMPLETO', 'PENDIENTE', ultimaMemoria ? 'PROGRESO' : 'PENDIENTE', 'PROGRESO', 'PROGRESO', 'NOINICIADO', 'PROGRESO'];
-  const todosLosPesos = [estadoBalance, estadoAutoridades, estadoActas].concat(hitosFijos).map(e => pesoEstado[e]);
+  const estadoInforme = hayInforme ? 'COMPLETO' : 'PENDIENTE';
+  const estadoOrden = ordenRes.ok ? 'COMPLETO' : 'PENDIENTE';
+  const estadoMemoria = !ultimaMemoria ? 'NOINICIADO' : (ultimaMemoria.estado === 'APROBADA' ? 'COMPLETO' : 'PROGRESO');
+
+  const todosLosPesos = [
+    estadoEjercicio,      // Ejercicio cerrado
+    estadoBalance,        // Balance
+    estadoInforme,        // Informe Comisión Revisora
+    estadoMemoria,        // Memoria
+    estadoOrden,          // Orden del Día
+    estadoConvocatoria,   // Acta CD, Convocatoria y Edictos
+    estadoAutoridades,    // Autoridades
+    'NOINICIADO',         // Padrón de socios (manual, se arma leyendo Base Madre)
+    estadoActas           // Bitácora y Actas
+  ].map(e => pesoEstado[e]);
   const progresoPct = Math.round((todosLosPesos.reduce((a, b) => a + b, 0) / todosLosPesos.length) * 100);
 
   return {
