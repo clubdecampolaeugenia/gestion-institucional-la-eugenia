@@ -304,6 +304,7 @@ function cargarEjercicioActivo() {
   jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(res) {
     if (!res || !res.ok) {
       document.getElementById('ejercicioTituloTexto').textContent = 'Sin Ejercicio cargado — pedile a Claude que lo configure';
+      actualizarHito('Ejercicio cerrado', 'PENDIENTE', 'No se pudo consultar el ejercicio activo');
       return;
     }
     EJERCICIO_ACTIVO = res.ejercicio;
@@ -602,7 +603,10 @@ function cargarEstadoActas() {
 
 function cargarEstadoConvocatoria() {
   jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(resEj) {
-    if (!resEj || !resEj.ok) return;
+    if (!resEj || !resEj.ok) {
+      actualizarHito('Acta CD, Convocatoria y Edictos', 'PENDIENTE', 'No se pudo consultar el ejercicio activo');
+      return;
+    }
     jsonp(EXEC_URL_GI + '?action=obtenerAsambleaEjercicio', function(resAsam) {
       let notaAntelacion = '';
       if (resAsam && resAsam.ok && !resAsam.antelacionConfirmada) {
@@ -684,7 +688,10 @@ function cargarEstadoMemoria() {
 
 function cargarEstadoInformeRevisor() {
   jsonp(EXEC_URL_GI + '?action=obtenerEjercicioActivo', function(resEj) {
-    if (!resEj || !resEj.ok) return;
+    if (!resEj || !resEj.ok) {
+      actualizarHito('Informe Comisión Revisora', 'PENDIENTE', 'No se pudo consultar el ejercicio activo');
+      return;
+    }
     jsonp(EXEC_URL_GI + '?action=listarDocumentos&tipo=INFORME_REVISOR&idEjercicio=' + encodeURIComponent(resEj.ejercicio.idEjercicio), function(res) {
       if (!res || !res.ok || res.documentos.length === 0) {
         actualizarHito('Informe Comisión Revisora', 'PENDIENTE', 'Falta informe formal firmado (Art. 36)');
