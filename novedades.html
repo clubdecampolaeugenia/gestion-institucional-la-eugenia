@@ -105,9 +105,9 @@
       Vas cargando acá los hechos relevantes del año — obras, gestiones, eventos, gastos puntuales. Esto es lo que va a alimentar el borrador de la Memoria. Marcá "¿Va a Memoria?" en cada una: <strong>Sí</strong> / <strong>No</strong> / <strong>Evaluar</strong> — las de categoría Personal arrancan en "No" por defecto, tocá el chip para cambiarlo.
     </div>
 
-    <button type="button" class="btn-outline" onclick="toggleForm()">➕ Cargar novedad</button>
-    <button type="button" class="btn-outline" onclick="toggleImportChat()">💬 Importar desde chat de WhatsApp</button>
-    <button type="button" class="btn-outline" onclick="sincronizarBoletin()">📰 Sincronizar con Boletín Mensual</button>
+    <button type="button" class="btn-outline" onclick="toggleForm()">Cargar novedad</button>
+    <button type="button" class="btn-outline" onclick="toggleImportChat()">Importar desde chat de WhatsApp</button>
+    <button type="button" class="btn-outline" onclick="sincronizarBoletin()">Sincronizar con Boletín Mensual</button>
 
     <div class="form-panel" id="importChatPanel" style="display:none;">
       <span class="field-label" style="margin-bottom:4px; opacity:.8; font-weight:400; text-transform:none; font-size:11px;">Pegá un fragmento del chat exportado (una semana o un mes, no el año completo — hay un límite de tamaño). La IA separa lo institucional del resto y te muestra sugerencias, vos elegís cuáles guardar.</span>
@@ -374,8 +374,8 @@ function renderNovedades() {
       (n.descripcion ? '<div class="novedad-desc">' + escapeHtml(n.descripcion) + '</div>' : '') +
       '<span class="chip-categoria">' + n.categoria + montoTxt + '</span>' +
       '<span class="chip-memoria chip-' + n.considerarMemoria + '" onclick="ciclarMemoria(\'' + n.idNovedad + '\', \'' + n.considerarMemoria + '\')">' + textoChipMemoria(n.considerarMemoria) + '</span>' +
-      '<div style="display:flex; justify-content:flex-end; gap:6px; margin-top:8px;"><button type="button" class="btn-ghost" style="display:inline; padding:4px 10px; font-size:11px; width:auto;" onclick="toggleEditar(\'' + n.idNovedad + '\')">✏️ Editar</button>' +
-      '<button type="button" class="btn-ghost" style="display:inline; padding:4px 10px; font-size:11px; width:auto; opacity:.6;" onclick="borrarNovedad(\'' + n.idNovedad + '\')">🗑️ Borrar</button></div>' +
+      '<div style="display:flex; justify-content:flex-end; gap:6px; margin-top:8px;"><button type="button" class="btn-ghost" style="display:inline; padding:4px 10px; font-size:11px; width:auto;" onclick="toggleEditar(\'' + n.idNovedad + '\')">Editar</button>' +
+      '<button type="button" class="btn-ghost" style="display:inline; padding:4px 10px; font-size:11px; width:auto; opacity:.6;" onclick="borrarNovedad(\'' + n.idNovedad + '\')">Borrar</button></div>' +
       '<div id="editForm-' + n.idNovedad + '" style="display:none; background:var(--petroleo); border-radius:12px; padding:12px; margin-top:8px;">' +
         '<span class="field-label" style="color:var(--lima);">Fecha</span><input type="date" id="eFecha-' + n.idNovedad + '" value="' + n.fechaISO + '">' +
         '<span class="field-label" style="color:var(--lima);">Título</span><input type="text" id="eTitulo-' + n.idNovedad + '" value="' + escapeHtml(n.titulo) + '">' +
@@ -390,8 +390,8 @@ function renderNovedades() {
 }
 
 function textoChipMemoria(estado) {
-  if (estado === 'SI') return '✅ Aprobado para Memoria';
-  if (estado === 'NO') return '🚫 No va en Memoria';
+  if (estado === 'SI') return 'Aprobado para Memoria';
+  if (estado === 'NO') return 'No va en Memoria';
   return '¿Memoria? Evaluar';
 }
 
