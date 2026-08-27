@@ -19,42 +19,43 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes shakeError { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 40%{transform:translateX(6px);} 60%{transform:translateX(-4px);} 80%{transform:translateX(4px);} }
 
-  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 600px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
+  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 600px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 16px 36px rgba(13,42,43,0.22); }
   .logo-wrap img { width: 140px; display: block; margin: 0 auto; filter: drop-shadow(0 4px 7px rgba(0,0,0,0.2)); }
   h1 { margin: 2px 0 4px; color: var(--negro); font-family: Impact, sans-serif; font-size: 24px; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
-  .subtitle { text-align: center; color: var(--petroleo); font-size: 13px; margin-bottom: 18px; text-transform: uppercase; letter-spacing: .5px; }
+  .subtitle { text-align: center; color: var(--petroleo); font-size: 13px; margin-bottom: 18px; letter-spacing: .2px; }
 
   #pinScreen { display: none; animation: fadeInScreen .3s ease-out; }
   #checkingSession { text-align: center; padding: 60px 0; }
   .session-spinner { width: 30px; height: 30px; margin: 0 auto 12px; border: 3px solid rgba(19,84,87,0.2); border-top-color: var(--petroleo); border-radius: 50%; animation: spin .7s linear infinite; }
-  .session-spinner-label { color: var(--petroleo); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  .session-spinner-label { color: var(--petroleo); font-weight: 700; font-size: 12px; letter-spacing: .5px; }
   #mainScreen { display: none; }
   #mainScreen.active { animation: fadeInScreen .3s ease-out; }
-  .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
-  .pin-input { display: block; width: 100%; text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; border: 2px solid var(--petroleo); border-radius: 16px; padding: 12px; background: var(--blanco); color: var(--petroleo); outline: none; margin-bottom: 12px; }
-  .pin-input.error { animation: shakeError .35s ease-in-out; border-color: var(--error); }
+  .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; margin-bottom: 10px; }
+  .pin-input { display: block; width: 100%; text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; border: none; border-radius: 16px; padding: 12px; background: var(--blanco); color: var(--petroleo); outline: none; margin-bottom: 12px; box-shadow: inset 0 0 0 1.5px rgba(19,84,87,0.15); }
+  .pin-input:focus { box-shadow: inset 0 0 0 2px var(--petroleo); }
+  .pin-input.error { animation: shakeError .35s ease-in-out; box-shadow: inset 0 0 0 2px var(--error); }
   .pin-error { text-align: center; color: var(--error); font-size: 13px; font-weight: 700; min-height: 18px; margin-bottom: 8px; }
 
   /* Progreso general */
   .progreso-box { background: var(--petroleo); border-radius: 16px; padding: 16px 18px; margin-bottom: 14px; }
-  .progreso-titulo { color: var(--lima); font-family: Impact, sans-serif; font-size: 14px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 8px; }
+  .progreso-titulo { color: var(--lima); font-family: 'Roboto', sans-serif; font-weight: 900; font-size: 14px; letter-spacing: .2px; margin-bottom: 8px; }
   .progreso-barra-fondo { background: rgba(255,255,255,0.15); border-radius: 20px; height: 14px; overflow: hidden; margin-bottom: 6px; }
   .progreso-barra-fill { background: var(--naranja); height: 100%; border-radius: 20px; transition: width .4s ease; }
   .progreso-pct { color: var(--hueso); font-size: 12px; text-align: right; }
 
   /* Próxima acción */
-  .proxima-accion { background: var(--naranja); border: 2px solid var(--petroleo); border-radius: 16px; padding: 12px 16px; margin-bottom: 18px; }
-  .proxima-label { color: var(--petroleo); font-size: 10px; font-weight: 900; text-transform: uppercase; opacity: .75; margin-bottom: 3px; }
+  .proxima-accion { background: var(--naranja); border: none; border-radius: 16px; padding: 12px 16px; margin-bottom: 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+  .proxima-label { color: var(--petroleo); font-size: 10px; font-weight: 900; opacity: .75; margin-bottom: 3px; }
   .proxima-texto { color: var(--petroleo); font-size: 14px; font-weight: 900; }
 
   /* Lista de hitos */
-  .seccion-titulo { color: var(--petroleo); font-family: Impact, sans-serif; font-size: 15px; letter-spacing: .5px; text-transform: uppercase; margin: 18px 0 10px; }
+  .seccion-titulo { color: var(--petroleo); font-family: 'Roboto', sans-serif; font-weight: 900; font-size: 15px; letter-spacing: .2px; margin: 18px 0 10px; }
   .hito-card { background: var(--blanco); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; text-decoration: none; transition: transform .08s; }
-  .hito-card.clickable { border: 2px solid var(--petroleo); }
+  .hito-card.clickable { box-shadow: 0 2px 8px rgba(19,84,87,0.12); }
   .hito-card.clickable:active { transform: scale(.98); }
-  .hito-card.no-disponible { border: 2px solid var(--petroleo); cursor: pointer; }
+  .hito-card.no-disponible { box-shadow: 0 2px 8px rgba(19,84,87,0.12); cursor: pointer; }
   .hito-card.no-disponible:active { transform: scale(.98); }
-  .hito-card.informativo-completo { border: 2px solid var(--petroleo); cursor: pointer; }
+  .hito-card.informativo-completo { box-shadow: 0 2px 8px rgba(19,84,87,0.12); cursor: pointer; }
   .hito-card.informativo-completo:active { transform: scale(.98); }
   .hito-flecha { display: block; font-size: 11px; font-weight: 900; color: var(--petroleo); margin-top: 3px; }
   .hito-candado { display: block; font-size: 10px; font-weight: 700; color: #888; margin-top: 3px; }
@@ -62,33 +63,33 @@
   .hito-info { flex: 1; min-width: 0; }
   .hito-nombre { color: var(--petroleo); font-weight: 900; font-size: 14px; }
   .hito-detalle { color: var(--petroleo); opacity: .7; font-size: 12px; margin-top: 1px; }
-  .hito-estado { font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 5px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .hito-estado { font-size: 10px; font-weight: 900; padding: 5px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
   .estado-completo { background: var(--verdecl); color: var(--petroleo); }
   .estado-progreso { background: var(--naranja); color: var(--petroleo); }
   .estado-observado { background: #f3c6c6; color: var(--error); }
   .estado-pendiente { background: #e8e8e8; color: #888; }
   .estado-noiniciado { background: #e8e8e8; color: #888; }
 
-  .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; text-align: center; }
-  .btn-solid { display: block; width: 100%; padding: 14px; border-radius: 24px; border: 2px solid var(--petroleo); background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
+  .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; }
+  .btn-solid { display: block; width: 100%; padding: 15px; border-radius: 24px; border: none; background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; cursor: pointer; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
   .divider { border: none; border-top: 1.5px solid #9bb583; margin: 18px 0 8px; }
   .nota-dev { font-size: 11px; color: var(--petroleo); opacity: .55; text-align: center; margin-top: 4px; }
 
-  .aviso-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
-  .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 12px 32px rgba(0,0,0,0.35); text-align: center; }
+  .aviso-overlay { position: fixed; inset: 0; background: rgba(19,84,87,0.55); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
+  .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 16px 36px rgba(0,0,0,0.3); text-align: center; }
   .aviso-texto { color: var(--petroleo); font-size: 14px; line-height: 1.5; margin-bottom: 18px; white-space: pre-wrap; }
-  .aviso-btn { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .aviso-btn { background: var(--lima); color: var(--petroleo); border: none; border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
 
   .confirm-btns { display: flex; gap: 10px; justify-content: center; }
-  .confirm-btn-aceptar { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
-  .confirm-btn-cancelar { background: transparent; color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .confirm-btn-aceptar { background: var(--lima); color: var(--petroleo); border: none; border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+  .confirm-btn-cancelar { background: transparent; color: var(--petroleo); border: 1.5px solid rgba(19,84,87,0.35); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 700; cursor: pointer; }
 </style>
 </head>
 <body>
 <div class="card">
   <div class="logo-wrap"><img src="logo.png" alt="Logo La Eugenia"></div>
   <h1>Gestión Institucional</h1>
-  <div class="subtitle"><strong style="color:var(--negro); text-transform:uppercase;">Panel de control — Ejercicio N.º 37</strong></div>
+  <div class="subtitle"><strong style="color:var(--negro); ">Panel de control — Ejercicio N.º 37</strong></div>
 
   <div id="checkingSession"><div class="session-spinner"></div><div class="session-spinner-label">Verificando sesión...</div></div>
   <div id="pinScreen">
@@ -100,7 +101,7 @@
 
   <div id="mainScreen">
     <div class="progreso-box">
-      <div id="ejercicioTitulo" onclick="toggleSelectorEjercicios()" style="cursor:pointer; display:inline-flex; justify-content:space-between; align-items:center; gap:10px; background:rgba(255,255,255,0.12); border:2px solid var(--lima); border-radius:20px; padding:8px 16px; width:100%; box-sizing:border-box;">
+      <div id="ejercicioTitulo" onclick="toggleSelectorEjercicios()" style="cursor:pointer; display:inline-flex; justify-content:space-between; align-items:center; gap:10px; background:rgba(255,255,255,0.12); border:1.5px solid var(--lima); border-radius:20px; padding:8px 16px; width:100%; box-sizing:border-box;">
         <span class="progreso-titulo" style="margin-bottom:0;" id="ejercicioTituloTexto">Ejercicio — cargando...</span>
         <span style="font-size:13px; color:var(--lima);">▾</span>
       </div>
@@ -109,22 +110,22 @@
         <button type="button" class="btn-ghost" style="color:var(--hueso); opacity:.65; font-size:10px; padding:6px 0;" onclick="cerrarEjercicio()">Cerrar Ejercicio actual y abrir el siguiente</button>
       </div>
 
-      <div style="margin-top:14px; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--lima);">Preparación para la Asamblea Ordinaria</div>
+      <div style="margin-top:14px; font-size:11px; font-weight:900;  color:var(--lima);">Preparación para la Asamblea Ordinaria</div>
       <div class="progreso-barra-fondo" style="margin-top:6px;"><div class="progreso-barra-fill" id="progresoFill" style="width:0%; background:var(--lima);"></div></div>
       <div class="progreso-pct" id="progresoPct" style="color:var(--lima);">calculando...</div>
 
-      <div id="asambleaPildora" onclick="toggleEditorAsamblea()" style="cursor:pointer; margin-top:14px; display:flex; justify-content:space-between; align-items:center; gap:10px; background:rgba(255,255,255,0.12); border:2px solid var(--naranja); border-radius:20px; padding:8px 16px;">
-        <span style="color:var(--naranja); font-family:Impact,sans-serif; font-size:13px; text-transform:uppercase;" id="asambleaPildoraTexto">Asamblea — cargando...</span>
+      <div id="asambleaPildora" onclick="toggleEditorAsamblea()" style="cursor:pointer; margin-top:14px; display:flex; justify-content:space-between; align-items:center; gap:10px; background:rgba(255,255,255,0.12); border:1.5px solid var(--naranja); border-radius:20px; padding:8px 16px;">
+        <span style="color:var(--naranja); font-family:'Roboto',sans-serif; font-weight:900; font-size:13px; " id="asambleaPildoraTexto">Asamblea — cargando...</span>
         <span style="font-size:12px; color:var(--naranja);">✏️</span>
       </div>
       <div id="editorAsamblea" style="display:none; background:rgba(255,255,255,0.08); border-radius:10px; padding:14px; margin-top:8px;">
         <span class="progreso-titulo" style="color:var(--naranja); font-size:11px; margin-bottom:6px;">Fecha</span>
         <div style="display:flex; gap:6px;">
-          <div style="flex:1; text-align:center; font-size:9px; color:var(--lima); font-weight:700; text-transform:uppercase;">Día</div>
+          <div style="flex:1; text-align:center; font-size:9px; color:var(--lima); font-weight:700; ">Día</div>
           <div style="width:12px;"></div>
-          <div style="flex:1; text-align:center; font-size:9px; color:var(--lima); font-weight:700; text-transform:uppercase;">Mes</div>
+          <div style="flex:1; text-align:center; font-size:9px; color:var(--lima); font-weight:700; ">Mes</div>
           <div style="width:12px;"></div>
-          <div style="flex:1.3; text-align:center; font-size:9px; color:var(--lima); font-weight:700; text-transform:uppercase;">Año</div>
+          <div style="flex:1.3; text-align:center; font-size:9px; color:var(--lima); font-weight:700; ">Año</div>
         </div>
         <div style="display:flex; gap:6px; align-items:center; margin-top:2px; margin-bottom:14px;">
           <select id="eAsambleaFecha_d" style="flex:1; border-radius:10px; padding:8px; border:none;"></select>
@@ -145,7 +146,7 @@
           <option value="__otro__">Otro lugar...</option>
         </select>
         <input type="text" id="eAsambleaLugar" style="display:none; width:100%; border-radius:10px; padding:8px; border:none; margin-bottom:14px;" placeholder="Escribí el lugar">
-        <button type="button" style="width:100%; padding:10px; border-radius:18px; border:2px solid var(--naranja); background:var(--naranja); color:var(--petroleo); font-weight:900; text-transform:uppercase; font-size:12px; cursor:pointer; margin-top:6px;" onclick="guardarAsamblea()">Guardar</button>
+        <button type="button" style="width:100%; padding:10px; border-radius:18px; border:1.5px solid var(--naranja); background:var(--naranja); color:var(--petroleo); font-weight:900;  font-size:12px; cursor:pointer; margin-top:6px;" onclick="guardarAsamblea()">Guardar</button>
         <div style="color:var(--hueso); opacity:.7; font-size:10px; margin-top:10px; text-align:center;">Este es el único lugar donde se define la fecha — Convocatoria solo la muestra.</div>
       </div>
     </div>
