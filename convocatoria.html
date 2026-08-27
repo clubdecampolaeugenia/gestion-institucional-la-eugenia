@@ -19,43 +19,44 @@
   @keyframes shakeError { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 40%{transform:translateX(6px);} 60%{transform:translateX(-4px);} 80%{transform:translateX(4px);} }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 600px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
+  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 600px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 16px 36px rgba(13,42,43,0.22); }
   .logo-wrap img { width: 140px; display: block; margin: 0 auto; filter: drop-shadow(0 4px 7px rgba(0,0,0,0.2)); }
   h1 { margin: 2px 0 4px; color: var(--negro); font-family: Impact, sans-serif; font-size: 24px; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
-  .subtitle { text-align: center; color: var(--petroleo); font-size: 13px; margin-bottom: 18px; text-transform: uppercase; letter-spacing: .5px; }
+  .subtitle { text-align: center; color: var(--petroleo); font-size: 13px; margin-bottom: 18px; letter-spacing: .2px; }
 
   #pinScreen { display: none; animation: fadeInScreen .3s ease-out; }
   #checkingSession { text-align: center; padding: 60px 0; }
   .session-spinner { width: 30px; height: 30px; margin: 0 auto 12px; border: 3px solid rgba(19,84,87,0.2); border-top-color: var(--petroleo); border-radius: 50%; animation: spin .7s linear infinite; }
-  .session-spinner-label { color: var(--petroleo); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  .session-spinner-label { color: var(--petroleo); font-weight: 700; font-size: 12px; letter-spacing: .5px; }
   #mainScreen { display: none; }
   #mainScreen.active { animation: fadeInScreen .3s ease-out; }
-  .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
-  .pin-input { display: block; width: 100%; text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; border: 2px solid var(--petroleo); border-radius: 16px; padding: 12px; background: var(--blanco); color: var(--petroleo); outline: none; margin-bottom: 12px; }
-  .pin-input.error { animation: shakeError .35s ease-in-out; border-color: var(--error); }
+  .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; margin-bottom: 10px; }
+  .pin-input { display: block; width: 100%; text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; border: none; border-radius: 16px; padding: 12px; background: var(--blanco); color: var(--petroleo); outline: none; margin-bottom: 12px; box-shadow: inset 0 0 0 1.5px rgba(19,84,87,0.15); }
+  .pin-input:focus { box-shadow: inset 0 0 0 2px var(--petroleo); }
+  .pin-input.error { animation: shakeError .35s ease-in-out; box-shadow: inset 0 0 0 2px var(--error); }
   .pin-error { text-align: center; color: var(--error); font-size: 13px; font-weight: 700; min-height: 18px; margin-bottom: 8px; }
 
   .instr-box { background: var(--petroleo); border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; font-size: 13px; color: var(--hueso); line-height: 1.5; }
 
-  .btn-solid { display: block; width: 100%; padding: 14px; border-radius: 24px; border: 2px solid var(--petroleo); background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
-  .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 2px solid var(--petroleo); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
-  .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; text-align: center; }
+  .btn-solid { display: block; width: 100%; padding: 15px; border-radius: 24px; border: none; background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; cursor: pointer; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+  .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 1.5px solid rgba(19,84,87,0.35); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
+  .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; }
   .btn-solid:disabled { opacity: .6; }
-  .btn-small { padding: 8px 14px; border-radius: 18px; border: 2px solid var(--petroleo); background: var(--blanco); color: var(--petroleo); font-size: 11px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .btn-small { padding: 8px 14px; border-radius: 18px; border: none; background: var(--blanco); color: var(--petroleo); font-size: 11px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
 
-  .field-label { color: var(--petroleo); font-size: 11px; font-weight: 900; text-transform: uppercase; margin: 10px 0 4px; display: block; }
+  .field-label { color: var(--petroleo); font-size: 11px; font-weight: 900; margin: 10px 0 4px; display: block; }
   .field-label:first-child { margin-top: 0; }
-  input[type=text], input[type=date], textarea, select { width: 100%; border: 2px solid var(--petroleo); border-radius: 12px; padding: 10px 12px; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; }
+  input[type=text], input[type=date], textarea, select { width: 100%; border: none; border-radius: 12px; padding: 10px 12px; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; box-shadow: inset 0 0 0 1.5px rgba(19,84,87,0.15); }
   input[type=checkbox] { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--petroleo); }
   textarea { min-height: 60px; resize: vertical; }
   .form-panel { background: var(--petroleo); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
   .form-panel .field-label { color: var(--lima); font-size: 10px; opacity: .75; font-weight: 700; }
-  .seccion-label { color: var(--naranja); font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: .5px; margin: 4px 0 12px; display: block; border-bottom: 2px solid rgba(222,175,77,0.3); padding-bottom: 6px; }
+  .seccion-label { color: var(--naranja); font-size: 14px; font-weight: 900; letter-spacing: .5px; margin: 4px 0 12px; display: block; border-bottom: 2px solid rgba(222,175,77,0.3); padding-bottom: 6px; }
 
   .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--petroleo); border-top-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 6px; vertical-align: middle; }
 
   .doc-box { background: var(--blanco); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
-  .doc-titulo { font-family: Impact, sans-serif; font-size: 14px; color: var(--petroleo); text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .doc-titulo { font-family: 'Roboto', sans-serif; font-weight: 900; font-size: 14px; color: var(--petroleo); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
   .doc-texto { white-space: pre-wrap; font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: var(--petroleo); line-height: 1.5; text-align: justify; }
 
 
@@ -65,10 +66,10 @@
 </head>
 <body>
 <div class="card">
-  <a href="index.html" style="display:inline-block; text-align:left; color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:none; opacity:.75; margin-bottom:10px;">&larr; Volver al panel</a>
+  <a href="index.html" style="display:inline-block; text-align:left; color:var(--petroleo); font-size:12px; font-weight:900;  text-decoration:none; opacity:.75; margin-bottom:10px;">&larr; Volver al panel</a>
   <a href="index.html" class="logo-wrap" style="cursor:pointer;"><img src="logo.png" alt="Logo La Eugenia"></a>
   <h1>Gestión Institucional</h1>
-  <div class="subtitle"><strong style="color:var(--negro); text-transform:uppercase;">Convocatoria</strong></div>
+  <div class="subtitle"><strong style="color:var(--negro); ">Convocatoria</strong></div>
 
   <div id="checkingSession"><div class="session-spinner"></div><div class="session-spinner-label">Verificando sesión...</div></div>
   <div id="pinScreen">
@@ -79,13 +80,13 @@
   </div>
 
   <div id="mainScreen">
-    <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
+    <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900;  margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
     <div id="instrBox" class="instr-box" style="display:none;">
       Genera de una sola vez los 4 documentos que necesitás para convocar a la Asamblea Ordinaria: Acta de Comisión Directiva, Edicto para diario local, Edicto para Boletín Oficial, y Circular a socios — todos con el <strong>mismo Orden del Día</strong>, para que nunca queden inconsistentes entre sí.
     </div>
 
     <a href="orden-dia.html" style="display:block; text-decoration:none; background:var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:14px;">
-      <div style="color:var(--lima); font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px;">Orden del Día →</div>
+      <div style="color:var(--lima); font-size:12px; font-weight:900;  letter-spacing:.5px; margin-bottom:4px;">Orden del Día →</div>
       <div style="color:var(--hueso); font-size:12px; line-height:1.5;">Se arma solo con lo fijo del Estatuto y los datos reales del sistema. Tocá acá para verlo completo o agregar un asunto puntual.</div>
     </a>
 
@@ -98,27 +99,27 @@
       <span class="seccion-label">Reunión de Comisión Directiva que aprueba esta convocatoria</span>
       <span class="field-label">Fecha de la reunión</span>
       <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
-        <select id="fFechaReunionCD_d" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
+        <select id="fFechaReunionCD_d" style="flex:1; border-radius:12px; padding:10px; border:1.5px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
         <span style="font-weight:900; color:var(--petroleo);">/</span>
-        <select id="fFechaReunionCD_m" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
+        <select id="fFechaReunionCD_m" style="flex:1; border-radius:12px; padding:10px; border:1.5px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
         <span style="font-weight:900; color:var(--petroleo);">/</span>
-        <select id="fFechaReunionCD_a" style="flex:1.3; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
+        <select id="fFechaReunionCD_a" style="flex:1.3; border-radius:12px; padding:10px; border:1.5px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
       </div>
       <div style="display:flex; gap:12px; margin-bottom:8px;">
         <div style="flex:1;">
           <span class="field-label">Inicio (24 hs)</span>
           <div style="display:flex; gap:4px; align-items:center;">
-            <select id="fHoraReunionCD_h" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
+            <select id="fHoraReunionCD_h" style="flex:1; border-radius:12px; padding:10px; border:1.5px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
             <span style="font-weight:900; color:var(--lima);">:</span>
-            <select id="fHoraReunionCD_m" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
+            <select id="fHoraReunionCD_m" style="flex:1; border-radius:12px; padding:10px; border:1.5px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
           </div>
         </div>
         <div style="flex:1;">
           <span class="field-label">Cierre (24 hs)</span>
           <div style="display:flex; gap:4px; align-items:center;">
-            <select id="fHoraFinReunionCD_h" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
+            <select id="fHoraFinReunionCD_h" style="flex:1; border-radius:12px; padding:10px; border:1.5px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
             <span style="font-weight:900; color:var(--lima);">:</span>
-            <select id="fHoraFinReunionCD_m" style="flex:1; border-radius:12px; padding:10px; border:2px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
+            <select id="fHoraFinReunionCD_m" style="flex:1; border-radius:12px; padding:10px; border:1.5px solid var(--petroleo); background:var(--blanco); color:var(--petroleo);"></select>
           </div>
         </div>
       </div>
@@ -126,14 +127,14 @@
       <div id="listaPresentesCD" style="background:var(--blanco); border-radius:12px; padding:12px; max-height:220px; overflow-y:auto; margin-bottom:8px;">cargando autoridades...</div>
 
       <button type="button" class="btn-solid" style="margin-top:14px; margin-bottom:0;" id="btnGenerar" onclick="generarDocumentos()">Generar los 4 documentos</button>
-      <button type="button" style="display:block; width:100%; margin-top:8px; margin-bottom:0; padding:12px; border-radius:24px; border:2px solid var(--lima); background:transparent; color:var(--lima); font-family:'Roboto'; font-size:14px; font-weight:900; text-transform:uppercase; cursor:pointer;" id="btnActualizarOD" onclick="actualizarOrdenDia()">Actualizar Orden del Día en los documentos ya generados</button>
+      <button type="button" style="display:block; width:100%; margin-top:8px; margin-bottom:0; padding:12px; border-radius:24px; border:1.5px solid var(--lima); background:transparent; color:var(--lima); font-family:'Roboto'; font-size:14px; font-weight:900;  cursor:pointer;" id="btnActualizarOD" onclick="actualizarOrdenDia()">Actualizar Orden del Día en los documentos ya generados</button>
       <div style="font-size:11px; color:var(--hueso); opacity:.75; text-align:center; margin-top:6px;">Usá esto si solo cambió el Orden del Día (agregaste/sacaste un punto) y los datos de la reunión de CD siguen siendo los mismos. Si algún documento ya estaba aprobado, vuelve a borrador.</div>
     </div>
 
     <div style="background:var(--petroleo); border-radius:16px; padding:16px; margin-bottom:14px; text-align:center;">
-      <div style="color:#a9c4cf; font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Sobre el mailing de la Convocatoria a Asamblea Ordinaria</div>
+      <div style="color:#a9c4cf; font-size:12px; font-weight:900;  letter-spacing:0.5px; margin-bottom:10px;">Sobre el mailing de la Convocatoria a Asamblea Ordinaria</div>
       <div style="color:#a9c4cf; font-size:11px; line-height:1.6; text-align:left;">El envío se hace a través de la otra plataforma (la app del Boletín), a todos los suscriptores del #BoletínMensual. Esta pantalla solo genera los documentos y alimenta esa Convocatoria en vivo — no manda mails desde acá.<br><br>El envío se realiza bajo la modalidad propia de aquella app: en tandas de 100 personas, al menos una tanda por día aproximadamente, hasta completar a todos los suscriptores.</div>
-      <a href="https://clubdecampolaeugenia.github.io/boletin-la-eugenia/admin.html" target="_blank" style="display:block; margin-top:14px; padding:10px; border-radius:20px; background:var(--hueso); color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; text-decoration:none; text-align:center;">Ir al panel admin del Boletín</a>
+      <a href="https://clubdecampolaeugenia.github.io/boletin-la-eugenia/admin.html" target="_blank" style="display:block; margin-top:14px; padding:10px; border-radius:20px; background:var(--hueso); color:var(--petroleo); font-size:11px; font-weight:900;  text-decoration:none; text-align:center;">Ir al panel admin del Boletín</a>
     </div>
 
     <div class="loading-text" id="loadingText"></div>
@@ -159,10 +160,10 @@ function mostrarAviso(mensaje, callback) {
 }
 </script>
 <style>
-  .aviso-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
-  .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 12px 32px rgba(0,0,0,0.35); text-align: center; }
+  .aviso-overlay { position: fixed; inset: 0; background: rgba(19,84,87,0.55); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
+  .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 16px 36px rgba(0,0,0,0.3); text-align: center; }
   .aviso-texto { color: var(--petroleo); font-size: 14px; line-height: 1.5; margin-bottom: 18px; white-space: pre-wrap; }
-  .aviso-btn { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .aviso-btn { background: var(--lima); color: var(--petroleo); border: none; border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
 </style>
 
 <script>
@@ -389,7 +390,7 @@ function mostrarAvisoAntelacion(res) {
   if (diasRestantes >= 15) { aviso.style.display = 'none'; return; }
 
   aviso.style.display = 'block';
-  aviso.innerHTML = '<div style="background:rgba(222,175,77,0.25); border:2px solid var(--naranja); border-radius:12px; padding:12px 14px; margin-bottom:10px; color:var(--petroleo); font-size:12px; line-height:1.5;">' +
+  aviso.innerHTML = '<div style="background:rgba(222,175,77,0.25); border:1.5px solid var(--naranja); border-radius:12px; padding:12px 14px; margin-bottom:10px; color:var(--petroleo); font-size:12px; line-height:1.5;">' +
     '⚠️ Faltan solo ' + diasRestantes + ' día(s) para la Asamblea. El Art. 41 del Estatuto exige un mínimo de 15 días de antelación desde que se comunica la Convocatoria.<br><br>' +
     '<label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer;"><input type="checkbox" id="chkAntelacionConfirmada" style="margin-top:2px;" onchange="confirmarAntelacion(this)"> Ya se cumplió con la antelación correspondiente (o decidí avanzar igual)</label>' +
     '</div>';
@@ -524,7 +525,7 @@ function mostrarResultado(res) {
     } else {
       mensajeSync = '🔗 Vinculada al módulo Actas (estado: ' + sync.estado + ').';
     }
-    html += '<div style="background:var(--verdecl); border:2px solid var(--petroleo); border-radius:12px; padding:10px 12px; margin-bottom:12px; font-size:12px; color:var(--petroleo); line-height:1.5;">' + mensajeSync + '</div>';
+    html += '<div style="background:var(--verdecl); border:1.5px solid var(--petroleo); border-radius:12px; padding:10px 12px; margin-bottom:12px; font-size:12px; color:var(--petroleo); line-height:1.5;">' + mensajeSync + '</div>';
   }
   html += '<div style="font-size:11px; color:var(--petroleo); opacity:.8; text-align:center; margin-bottom:12px;">Estos son borradores para consolidar — el formato final de impresión (márgenes, sangría, justificado) se aplica en Word u otro procesador de texto, fuera de la app.</div>';
   res.documentos.forEach(d => {
@@ -536,7 +537,7 @@ function mostrarResultado(res) {
         : '<button type="button" class="btn-small" onclick="aprobarDocumento(this)">Aprobar</button>') +
       '<button type="button" class="btn-small" style="background:var(--error); color:var(--hueso);" onclick="borrarDocumento(this)">Borrar</button>' +
       '</div></div><div class="doc-texto">' + escapeHtml(d.contenido) + '</div>' +
-      '<div style="text-align:right; margin-bottom:10px;"><a href="#" onclick="copiarTexto(this); return false;" style="color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:underline; cursor:pointer;">Copiar texto</a></div>';
+      '<div style="text-align:right; margin-bottom:10px;"><a href="#" onclick="copiarTexto(this); return false;" style="color:var(--petroleo); font-size:12px; font-weight:900;  text-decoration:underline; cursor:pointer;">Copiar texto</a></div>';
     if (d.tipo === 'CIRCULAR') {
       html += '<div style="background:var(--hueso); border-radius:10px; padding:10px 12px; margin-top:10px; font-size:11px; color:var(--petroleo); line-height:1.5;">Este documento de texto normalmente se suple por su versión en HTML (el mismo contenido, con diseño), que es la que efectivamente se remite a los socios por mail desde la app del Boletín Mensual. <a href="https://clubdecampolaeugenia.github.io/boletin-la-eugenia/admin.html" target="_blank" style="color:var(--petroleo); font-weight:900; text-decoration:underline;">Ir al Boletín →</a></div>';
     }
