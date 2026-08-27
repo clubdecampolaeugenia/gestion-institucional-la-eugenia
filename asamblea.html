@@ -65,6 +65,9 @@
   .aviso-overlay { position: fixed; inset: 0; background: rgba(19,84,87,0.55); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
   .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 16px 36px rgba(0,0,0,0.3); text-align: center; }
   .aviso-texto { color: var(--petroleo); font-size: 14px; line-height: 1.5; margin-bottom: 18px; white-space: pre-wrap; }
+    .link-copiar { display: inline-flex; align-items: center; gap: 6px; background: rgba(19,84,87,0.1); border: none; border-radius: 20px; padding: 9px 16px; font-family: 'Roboto'; font-size: 13px; font-weight: 700; color: var(--petroleo); cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: background 0.15s, transform 0.08s; }
+  .link-copiar:hover { background: rgba(19,84,87,0.18); }
+  .link-copiar:active { transform: scale(0.96); }
   .aviso-btn { background: var(--lima); color: var(--petroleo); border: none; border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
 </style>
 </head>
@@ -442,7 +445,7 @@ function mostrarActaAsamblea(idDocumento, contenido, estado, version) {
     '<div class="resultado-box">' +
     '<div style="font-size:11px; font-weight:900;  opacity:.6; margin-bottom:8px;">Versión ' + version + ' — ' + estado + '</div>' +
     '<textarea id="actaAsambleaTextarea" style="width:100%; min-height:300px; border:none; font-family:Arial, Helvetica, sans-serif; font-size:12px; color:var(--petroleo); line-height:1.5; text-align:justify;">' + contenido + '</textarea>' +
-    '<div style="text-align:right; margin-bottom:12px;"><a href="#" id="btnCopiarActaAsamblea" onclick="copiarActaAsamblea(); return false;" style="color:var(--petroleo); font-size:12px; font-weight:900;  text-decoration:underline; cursor:pointer;">Copiar texto</a></div>' +
+    '<div style="text-align:right; margin-bottom:12px;"><button type="button" class="link-copiar" id="btnCopiarActaAsamblea" onclick="copiarActaAsamblea()">Copiar texto</button></div>' +
     '<div style="font-size:11px; color:var(--petroleo); opacity:.7; text-align:center; margin-bottom:10px;">Esto es un borrador para consolidar — el formato final de impresión se aplica en Word u otro procesador de texto, fuera de la app.</div>' +
     '<button type="button" class="btn-outline" onclick="guardarActaAsamblea()">Guardar cambios</button>' +
     (estado !== 'FIRMADA' ? '<button type="button" class="btn-solid" onclick="firmarActaAsamblea()">Marcar como Firmada</button>' : '<div style="text-align:center; color:var(--petroleo); font-weight:900; font-size:12px; ">✓ Firmada</div>') +
@@ -453,7 +456,7 @@ function copiarActaAsamblea() {
   const texto = document.getElementById('actaAsambleaTextarea').value;
   navigator.clipboard.writeText(texto).then(() => {
     const btn = document.getElementById('btnCopiarActaAsamblea');
-    btn.textContent = '✓ Copiado';
+    btn.textContent = '¡Copiado!';
     setTimeout(() => { btn.textContent = 'Copiar texto'; }, 1500);
   });
 }
