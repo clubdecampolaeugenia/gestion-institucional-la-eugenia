@@ -19,34 +19,35 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes shakeError { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 40%{transform:translateX(6px);} 60%{transform:translateX(-4px);} 80%{transform:translateX(4px);} }
 
-  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 520px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
+  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 520px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 16px 36px rgba(13,42,43,0.22); }
   .logo-wrap img { width: 150px; display: block; margin: 0 auto; filter: drop-shadow(0 4px 7px rgba(0,0,0,0.2)); }
   h1 { margin: 2px 0 4px; color: var(--negro); font-family: Impact, sans-serif; font-size: 26px; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
-  .subtitle { text-align: center; color: var(--petroleo); font-size: 14px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: .5px; }
+  .subtitle { text-align: center; color: var(--petroleo); font-size: 14px; margin-bottom: 20px; letter-spacing: .2px; }
 
   #pinScreen { display: none; animation: fadeInScreen .3s ease-out; }
   #checkingSession { text-align: center; padding: 60px 0; }
   .session-spinner { width: 30px; height: 30px; margin: 0 auto 12px; border: 3px solid rgba(19,84,87,0.2); border-top-color: var(--petroleo); border-radius: 50%; animation: spin .7s linear infinite; }
-  .session-spinner-label { color: var(--petroleo); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  .session-spinner-label { color: var(--petroleo); font-weight: 700; font-size: 12px; letter-spacing: .5px; }
   #mainScreen { display: none; }
   #mainScreen.active { animation: fadeInScreen .3s ease-out; }
-  .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
-  .pin-input { display: block; width: 100%; text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; border: 2px solid var(--petroleo); border-radius: 16px; padding: 12px; background: var(--blanco); color: var(--petroleo); outline: none; margin-bottom: 12px; }
-  .pin-input.error { animation: shakeError .35s ease-in-out; border-color: var(--error); }
+  .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; margin-bottom: 10px; }
+  .pin-input { display: block; width: 100%; text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; border: none; border-radius: 16px; padding: 12px; background: var(--blanco); color: var(--petroleo); outline: none; margin-bottom: 12px; box-shadow: inset 0 0 0 1.5px rgba(19,84,87,0.15); }
+  .pin-input:focus { box-shadow: inset 0 0 0 2px var(--petroleo); }
+  .pin-input.error { animation: shakeError .35s ease-in-out; box-shadow: inset 0 0 0 2px var(--error); }
   .pin-error { text-align: center; color: var(--error); font-size: 13px; font-weight: 700; min-height: 18px; margin-bottom: 8px; }
 
   .btn-solid, .btn-outline, .btn-ghost { transition: transform .08s, box-shadow .08s, opacity .15s; }
-  .btn-solid { display: block; width: 100%; padding: 14px; border-radius: 24px; border: 2px solid var(--petroleo); background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
-  .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 2px solid var(--petroleo); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
-  .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; text-align: center; }
-  .btn-solid:active, .btn-outline:active { transform: scale(.96); box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  .btn-solid { display: block; width: 100%; padding: 15px; border-radius: 24px; border: none; background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; cursor: pointer; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+  .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 1.5px solid rgba(19,84,87,0.35); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
+  .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; }
+  .btn-solid:active, .btn-outline:active { transform: scale(.96); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 
-  .organo-header { font-family: Impact, sans-serif; font-size: 18px; color: var(--petroleo); text-transform: uppercase; letter-spacing: .5px; margin: 18px 0 10px; }
+  .organo-header { font-family: 'Roboto', sans-serif; font-weight: 900; font-size: 18px; color: var(--petroleo); letter-spacing: .5px; margin: 18px 0 10px; }
   .cargo-card { background: var(--blanco); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   .cargo-info { flex: 1; }
   .cargo-nombre { font-weight: 900; color: var(--petroleo); font-size: 15px; }
   .cargo-tipo { font-size: 12px; color: var(--petroleo); opacity: .75; }
-  .vence-badge { font-size: 11px; font-weight: 900; text-transform: uppercase; padding: 5px 10px; border-radius: 20px; white-space: nowrap; }
+  .vence-badge { font-size: 11px; font-weight: 900; padding: 5px 10px; border-radius: 20px; white-space: nowrap; }
   .vence-ok { background: var(--verdecl); color: var(--petroleo); }
   .vence-pronto { background: var(--naranja); color: var(--petroleo); }
   .vence-este-anio { background: var(--error); color: var(--blanco); }
@@ -54,39 +55,39 @@
 
   .historial-card { background: var(--blanco); border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   .historial-card.finalizado { opacity: .65; }
-  .historial-card.duplicado { border: 2px solid var(--error); }
+  .historial-card.duplicado { border: 1.5px solid var(--error); }
   .historial-info { flex: 1; font-size: 12px; color: var(--petroleo); line-height: 1.5; }
-  .historial-estado-badge { font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 3px 8px; border-radius: 12px; margin-left: 6px; }
+  .historial-estado-badge { font-size: 10px; font-weight: 900; padding: 3px 8px; border-radius: 12px; margin-left: 6px; }
   .historial-estado-vigente { background: var(--verdecl); }
   .historial-estado-finalizado { background: #ddd; }
-  .historial-dup-tag { color: var(--error); font-weight: 900; font-size: 10px; text-transform: uppercase; }
-  .btn-eliminar-mini { background: var(--error); color: var(--blanco); border: none; border-radius: 12px; padding: 8px 12px; font-family: 'Roboto'; font-size: 11px; font-weight: 900; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+  .historial-dup-tag { color: var(--error); font-weight: 900; font-size: 10px; }
+  .btn-eliminar-mini { background: var(--error); color: var(--blanco); border: none; border-radius: 12px; padding: 8px 12px; font-family: 'Roboto'; font-size: 11px; font-weight: 900; cursor: pointer; white-space: nowrap; }
 
   .form-panel { background: var(--petroleo); border-radius: 16px; padding: 16px; margin-top: 14px; display: none; }
   .form-panel.open { display: block; }
-  .field-label { color: var(--lima); font-size: 11px; font-weight: 900; text-transform: uppercase; margin: 10px 0 4px; display: block; }
+  .field-label { color: var(--lima); font-size: 11px; font-weight: 900; margin: 10px 0 4px; display: block; }
   .field-label:first-child { margin-top: 0; }
-  input[type=text], input[type=date], select { width: 100%; border: 2px solid var(--lima); border-radius: 12px; padding: 10px 12px; background: var(--hueso); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; }
+  input[type=text], input[type=date], select { width: 100%; border: 1.5px solid var(--lima); border-radius: 12px; padding: 10px 12px; background: var(--hueso); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; }
 
-  .resumen-alerta { background: var(--naranja); border: 2px solid var(--petroleo); border-radius: 16px; padding: 12px 14px; margin-bottom: 16px; color: var(--petroleo); font-size: 13px; font-weight: 700; display: none; }
+  .resumen-alerta { background: var(--naranja); border: none; border-radius: 16px; padding: 12px 14px; margin-bottom: 16px; color: var(--petroleo); font-size: 13px; font-weight: 700; display: none; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
   .loading-text { text-align: center; color: var(--hueso); font-size: 13px; font-weight: 700; min-height: 20px; }
   .divider { border: none; border-top: 1.5px solid #9bb583; margin: 16px 0; }
 
-  .aviso-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
-  .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 12px 32px rgba(0,0,0,0.35); text-align: center; }
+  .aviso-overlay { position: fixed; inset: 0; background: rgba(19,84,87,0.55); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
+  .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 16px 36px rgba(0,0,0,0.3); text-align: center; }
   .aviso-texto { color: var(--petroleo); font-size: 14px; line-height: 1.5; margin-bottom: 18px; white-space: pre-wrap; }
-  .aviso-btn { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .aviso-btn { background: var(--lima); color: var(--petroleo); border: none; border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
   .confirm-btns { display: flex; gap: 10px; justify-content: center; }
-  .confirm-btn-aceptar { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
-  .confirm-btn-cancelar { background: transparent; color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .confirm-btn-aceptar { background: var(--lima); color: var(--petroleo); border: none; border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+  .confirm-btn-cancelar { background: transparent; color: var(--petroleo); border: 1.5px solid rgba(19,84,87,0.35); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 700; cursor: pointer; }
 </style>
 </head>
 <body>
 <div class="card">
-  <a href="index.html" style="display:inline-block; text-align:left; color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:none; opacity:.75; margin-bottom:10px;">&larr; Volver al panel</a>
+  <a href="index.html" style="display:inline-block; text-align:left; color:var(--petroleo); font-size:12px; font-weight:900;  text-decoration:none; opacity:.75; margin-bottom:10px;">&larr; Volver al panel</a>
   <a href="index.html" class="logo-wrap" style="cursor:pointer;"><img src="logo.png" alt="Logo La Eugenia"></a>
   <h1>Gestión Institucional</h1>
-  <div class="subtitle"><strong style="color:var(--negro); text-transform:uppercase;">Autoridades</strong></div>
+  <div class="subtitle"><strong style="color:var(--negro); ">Autoridades</strong></div>
 
   <div id="checkingSession"><div class="session-spinner"></div><div class="session-spinner-label">Verificando sesión...</div></div>
   <div id="pinScreen">
@@ -97,14 +98,14 @@
   </div>
 
   <div id="mainScreen">
-    <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
+    <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900;  margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
     <div id="instrBox" style="display:none; background:var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:16px; font-size:13px; color:var(--hueso); line-height:1.5;">
       Cargá acá quién ocupa cada cargo. Si ya hay alguien en ese cargo, al guardar uno nuevo el anterior queda marcado como finalizado automáticamente — no hay que borrar nada a mano. El vencimiento del mandato se calcula solo, según el Estatuto.
     </div>
 
     <div class="resumen-alerta" id="resumenAlerta"></div>
 
-    <div style="background:var(--verdecl); border:2px solid var(--petroleo); border-radius:16px; padding:12px 14px; margin-bottom:16px; color:var(--petroleo); font-size:12px; line-height:1.5;">
+    <div style="background:var(--verdecl); border:1.5px solid var(--petroleo); border-radius:16px; padding:12px 14px; margin-bottom:16px; color:var(--petroleo); font-size:12px; line-height:1.5;">
       📋 <strong>Recordatorio:</strong> cuando cambie la composición de la Comisión Directiva, actualizá los <strong>Datos Filiatorios</strong> ante la Dirección de Personas Jurídicas (nombre completo, DNI, domicilio, estado civil, padres y cónyuge de cada miembro). Este dato es sensible y no se guarda acá — es un trámite aparte, este apartado solo te lo recuerda.
     </div>
 
@@ -132,7 +133,7 @@
     <div id="listaOrganos"></div>
 
     <hr class="divider">
-    <div class="instr-toggle" onclick="toggleHistorial()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">Ver / limpiar historial completo <span id="historialFlecha">▾</span></div>
+    <div class="instr-toggle" onclick="toggleHistorial()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900;  margin-bottom:10px;">Ver / limpiar historial completo <span id="historialFlecha">▾</span></div>
     <div id="historialBox" style="display:none;"></div>
 
     <div class="loading-text" id="loadingText"></div>
