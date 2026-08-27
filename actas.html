@@ -19,39 +19,40 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes shakeError { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 40%{transform:translateX(6px);} 60%{transform:translateX(-4px);} 80%{transform:translateX(4px);} }
 
-  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 560px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
+  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 560px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 16px 36px rgba(13,42,43,0.22); }
   .logo-wrap img { width: 150px; display: block; margin: 0 auto; filter: drop-shadow(0 4px 7px rgba(0,0,0,0.2)); }
   h1 { margin: 2px 0 4px; color: var(--negro); font-family: Impact, sans-serif; font-size: 26px; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
-  .subtitle { text-align: center; color: var(--petroleo); font-size: 14px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: .5px; }
+  .subtitle { text-align: center; color: var(--petroleo); font-size: 14px; margin-bottom: 20px; letter-spacing: .2px; }
 
   #pinScreen { display: none; animation: fadeInScreen .3s ease-out; }
   #checkingSession { text-align: center; padding: 60px 0; }
   .session-spinner { width: 30px; height: 30px; margin: 0 auto 12px; border: 3px solid rgba(19,84,87,0.2); border-top-color: var(--petroleo); border-radius: 50%; animation: spin .7s linear infinite; }
-  .session-spinner-label { color: var(--petroleo); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  .session-spinner-label { color: var(--petroleo); font-weight: 700; font-size: 12px; letter-spacing: .5px; }
   #mainScreen { display: none; }
   #mainScreen.active { animation: fadeInScreen .3s ease-out; }
-  .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
-  .pin-input { display: block; width: 100%; text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; border: 2px solid var(--petroleo); border-radius: 16px; padding: 12px; background: var(--blanco); color: var(--petroleo); outline: none; margin-bottom: 12px; }
-  .pin-input.error { animation: shakeError .35s ease-in-out; border-color: var(--error); }
+  .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; margin-bottom: 10px; }
+  .pin-input { display: block; width: 100%; text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; border: none; border-radius: 16px; padding: 12px; background: var(--blanco); color: var(--petroleo); outline: none; margin-bottom: 12px; box-shadow: inset 0 0 0 1.5px rgba(19,84,87,0.15); }
+  .pin-input:focus { box-shadow: inset 0 0 0 2px var(--petroleo); }
+  .pin-input.error { animation: shakeError .35s ease-in-out; box-shadow: inset 0 0 0 2px var(--error); }
   .pin-error { text-align: center; color: var(--error); font-size: 13px; font-weight: 700; min-height: 18px; margin-bottom: 8px; }
 
   .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-  .tab-btn { flex: 1; padding: 10px; border-radius: 20px; border: 2px solid var(--petroleo); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .tab-btn { flex: 1; padding: 10px; border-radius: 20px; border: 1.5px solid rgba(19,84,87,0.35); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; cursor: pointer; }
   .tab-btn.active { background: var(--petroleo); color: var(--lima); }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
 
   .btn-solid, .btn-outline, .btn-ghost { transition: transform .08s, box-shadow .08s, opacity .15s; }
-  .btn-solid { display: block; width: 100%; padding: 14px; border-radius: 24px; border: 2px solid var(--petroleo); background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
-  .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 2px solid var(--petroleo); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
-  .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; text-align: center; }
-  .btn-solid:active, .btn-outline:active { transform: scale(.96); box-shadow: 0 2px 6px rgba(0,0,0,.25); }
-  .btn-small { padding: 8px 12px; font-size: 12px; border-radius: 16px; border: 2px solid var(--petroleo); background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .btn-solid { display: block; width: 100%; padding: 15px; border-radius: 24px; border: none; background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; cursor: pointer; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+  .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 1.5px solid rgba(19,84,87,0.35); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
+  .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; }
+  .btn-solid:active, .btn-outline:active { transform: scale(.96); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .btn-small { padding: 8px 12px; font-size: 12px; border-radius: 16px; border: none; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
   .btn-modo-activo { background: var(--lima) !important; }
 
-  .field-label { color: var(--petroleo); font-size: 11px; font-weight: 900; text-transform: uppercase; margin: 10px 0 4px; display: block; }
+  .field-label { color: var(--petroleo); font-size: 11px; font-weight: 900; margin: 10px 0 4px; display: block; }
   .field-label:first-child { margin-top: 0; }
-  input[type=text], input[type=date], input[type=time], input[type=number], input[type=password], textarea { width: 100%; border: 2px solid var(--petroleo); border-radius: 12px; padding: 10px 12px; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; }
+  input[type=text], input[type=date], input[type=time], input[type=number], input[type=password], textarea { width: 100%; border: none; border-radius: 12px; padding: 10px 12px; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; box-shadow: inset 0 0 0 1.5px rgba(19,84,87,0.15); }
   select { -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23135457'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px !important; }
   textarea { min-height: 90px; resize: vertical; }
 
@@ -61,15 +62,15 @@
 
   .acta-card { background: var(--blanco); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
   .acta-num { font-weight: 900; color: var(--petroleo); }
-  .acta-origen-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; opacity: .55; margin-left: 6px; }
-  .estado-badge { font-size: 11px; font-weight: 900; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; }
+  .acta-origen-tag { font-size: 9px; font-weight: 700; opacity: .55; margin-left: 6px; }
+  .estado-badge { font-size: 11px; font-weight: 900; padding: 4px 10px; border-radius: 20px; }
   .estado-BORRADOR { background: var(--naranja); color: var(--petroleo); }
   .estado-REVISADA { background: var(--lima); color: var(--petroleo); }
   .estado-APROBADA, .estado-FIRMADA, .estado-ASENTADA { background: var(--petroleo); color: var(--lima); }
   .estado-ANULADA { background: var(--error); color: var(--blanco); text-decoration: line-through; }
 
-  .btn-peligro { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 2px solid var(--error); background: transparent; color: var(--error); font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
-  .btn-asentar { display: block; width: 100%; padding: 14px; border-radius: 24px; border: 2px solid var(--petroleo); background: var(--lima); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
+  .btn-peligro { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 1.5px solid var(--error); background: transparent; color: var(--error); font-family: 'Roboto'; font-size: 13px; font-weight: 900; cursor: pointer; margin-bottom: 10px; }
+  .btn-asentar { display: block; width: 100%; padding: 14px; border-radius: 24px; border: none; background: var(--lima); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; cursor: pointer; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
 
   .punto-item { background: var(--blanco); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; }
   .punto-item textarea { border: none; padding: 4px; min-height: 60px; }
@@ -84,24 +85,24 @@
   .novedad-titulo { font-weight: 900; color: var(--petroleo); font-size: 13px; }
   .novedad-fecha { font-size: 11px; color: var(--petroleo); opacity: .6; }
   .novedad-desc { font-size: 12px; color: var(--petroleo); line-height: 1.4; }
-  .chip-categoria { display: inline-block; background: var(--petroleo); color: var(--verdecl); border-radius: 10px; padding: 2px 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-top: 6px; }
+  .chip-categoria { display: inline-block; background: var(--petroleo); color: var(--verdecl); border-radius: 10px; padding: 2px 8px; font-size: 10px; font-weight: 700; margin-top: 6px; }
   .form-panel { background: var(--petroleo); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
 
-  .aviso-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
-  .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 12px 32px rgba(0,0,0,0.35); text-align: center; }
+  .aviso-overlay { position: fixed; inset: 0; background: rgba(19,84,87,0.55); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
+  .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 16px 36px rgba(0,0,0,0.3); text-align: center; }
   .aviso-texto { color: var(--petroleo); font-size: 14px; line-height: 1.5; margin-bottom: 18px; white-space: pre-wrap; }
-  .aviso-btn { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .aviso-btn { background: var(--lima); color: var(--petroleo); border: none; border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
   .confirm-btns { display: flex; gap: 10px; justify-content: center; }
-  .confirm-btn-aceptar { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
-  .confirm-btn-cancelar { background: transparent; color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .confirm-btn-aceptar { background: var(--lima); color: var(--petroleo); border: none; border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+  .confirm-btn-cancelar { background: transparent; color: var(--petroleo); border: 1.5px solid rgba(19,84,87,0.35); border-radius: 20px; padding: 10px 24px; font-family: 'Roboto'; font-size: 13px; font-weight: 700; cursor: pointer; }
 </style>
 </head>
 <body>
 <div class="card">
-  <a href="index.html" style="display:inline-block; text-align:left; color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:none; opacity:.75; margin-bottom:10px;">&larr; Volver al panel</a>
+  <a href="index.html" style="display:inline-block; text-align:left; color:var(--petroleo); font-size:12px; font-weight:900;  text-decoration:none; opacity:.75; margin-bottom:10px;">&larr; Volver al panel</a>
   <a href="index.html" class="logo-wrap" style="cursor:pointer;"><img src="logo.png" alt="Logo La Eugenia"></a>
   <h1>Gestión Institucional</h1>
-  <div class="subtitle"><strong style="color:var(--negro); text-transform:uppercase;">Bitácora y Actas</strong></div>
+  <div class="subtitle"><strong style="color:var(--negro); ">Bitácora y Actas</strong></div>
 
   <div id="checkingSession"><div class="session-spinner"></div><div class="session-spinner-label">Verificando sesión...</div></div>
   <div id="pinScreen">
@@ -112,7 +113,7 @@
   </div>
 
   <div id="mainScreen">
-    <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
+    <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900;  margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
     <div id="instrBox" style="display:none; background:var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:16px; font-size:13px; color:var(--hueso); line-height:1.5;">
       <strong>¿Qué es la Bitácora?</strong><br>
       Es un cuaderno de notas sueltas, sin ningún formato especial. La cargás <strong>en el momento</strong> en que pasa algo relevante: una decisión que se charló por WhatsApp, un llamado, algo que resolvió el Presidente solo, un reclamo de un socio. No es un acta todavía — es solo la materia prima.<br><br>
@@ -177,7 +178,7 @@
     <!-- ACTAS -->
     <div class="tab-panel" id="panelActas">
       <div style="background:var(--petroleo); border-radius:14px; padding:12px 14px; margin-bottom:12px; text-align:center;">
-        <div style="color:var(--lima); font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.5px;">Próximo número institucional disponible</div>
+        <div style="color:var(--lima); font-size:11px; font-weight:900;  letter-spacing:.5px;">Próximo número institucional disponible</div>
         <div id="proximoNumeroInstitucional" style="color:var(--hueso); font-size:22px; font-weight:900; margin:4px 0;">—</div>
         <div style="color:var(--hueso); font-size:10.5px; opacity:.8;">Se asignará al primer borrador que sea asentado. No está reservado.</div>
       </div>
@@ -189,9 +190,9 @@
         <input type="date" id="fFechaReunion">
         <span class="field-label" style="color:var(--lima);">Hora de inicio (24 hs)</span>
         <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
-          <select id="fHoraInicio_h" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <select id="fHoraInicio_h" style="flex:1; border-radius:10px; padding:8px; border:1.5px solid var(--petroleo);"></select>
           <span style="font-weight:900;">:</span>
-          <select id="fHoraInicio_m" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <select id="fHoraInicio_m" style="flex:1; border-radius:10px; padding:8px; border:1.5px solid var(--petroleo);"></select>
         </div>
         <span class="field-label" style="color:var(--lima);">Presentes (tildá quiénes asistieron)</span>
         <div id="listaPresentesActa" style="background:var(--blanco); border-radius:12px; padding:12px; max-height:220px; overflow-y:auto; margin-bottom:8px;">cargando autoridades...</div>
@@ -213,15 +214,15 @@
         </div>
         <span class="field-label" style="color:var(--lima);">Hora de inicio (24 hs)</span>
         <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
-          <select id="mHoraInicio_h" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <select id="mHoraInicio_h" style="flex:1; border-radius:10px; padding:8px; border:1.5px solid var(--petroleo);"></select>
           <span style="font-weight:900;">:</span>
-          <select id="mHoraInicio_m" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <select id="mHoraInicio_m" style="flex:1; border-radius:10px; padding:8px; border:1.5px solid var(--petroleo);"></select>
         </div>
         <span class="field-label" style="color:var(--lima);">Hora de cierre (24 hs)</span>
         <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
-          <select id="mHoraFin_h" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <select id="mHoraFin_h" style="flex:1; border-radius:10px; padding:8px; border:1.5px solid var(--petroleo);"></select>
           <span style="font-weight:900;">:</span>
-          <select id="mHoraFin_m" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <select id="mHoraFin_m" style="flex:1; border-radius:10px; padding:8px; border:1.5px solid var(--petroleo);"></select>
         </div>
         <span class="field-label" style="color:var(--lima);">Presentes</span>
         <div id="listaPresentesActaManual" style="background:var(--blanco); border-radius:12px; padding:12px; max-height:220px; overflow-y:auto; margin-bottom:8px;">cargando autoridades...</div>
@@ -258,22 +259,22 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
       <div id="previewActa" style="display:none;">
         <hr class="divider">
         <div class="field-label" id="previewActaTitulo"></div>
-        <div id="previewActaMotivoAnulacion" style="display:none; background:rgba(192,57,43,0.12); border:2px solid var(--error); border-radius:12px; padding:10px 12px; margin-bottom:12px; color:var(--error); font-size:12px; font-weight:700;"></div>
-        <div id="previewActaAvisoMetadata" style="display:none; background:rgba(222,175,77,0.2); border:2px solid var(--naranja); border-radius:12px; padding:10px 12px; margin-bottom:12px; color:var(--petroleo); font-size:11.5px; line-height:1.5;"></div>
+        <div id="previewActaMotivoAnulacion" style="display:none; background:rgba(192,57,43,0.12); border:1.5px solid var(--error); border-radius:12px; padding:10px 12px; margin-bottom:12px; color:var(--error); font-size:12px; font-weight:700;"></div>
+        <div id="previewActaAvisoMetadata" style="display:none; background:rgba(222,175,77,0.2); border:1.5px solid var(--naranja); border-radius:12px; padding:10px 12px; margin-bottom:12px; color:var(--petroleo); font-size:11.5px; line-height:1.5;"></div>
         <div class="texto-final-box" id="previewTextoBox" style="display:block; margin-bottom:6px;"></div>
-        <div style="text-align:right; margin-bottom:16px;"><a href="#" id="linkCopiarPreview" onclick="copiarTextoPreview(); return false;" style="color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:underline; cursor:pointer;">Copiar texto</a></div>
+        <div style="text-align:right; margin-bottom:16px;"><a href="#" id="linkCopiarPreview" onclick="copiarTextoPreview(); return false;" style="color:var(--petroleo); font-size:12px; font-weight:900;  text-decoration:underline; cursor:pointer;">Copiar texto</a></div>
         <button type="button" class="btn-asentar" id="btnAsentarActa" style="display:none;" onclick="asentarActaUI()">✔️ Asentar en el Libro (asigna número definitivo)</button>
-        <button type="button" style="display:block; width:100%; padding:14px; border-radius:24px; border:2px solid var(--lima); background:var(--petroleo); color:var(--lima); font-family:'Roboto'; font-size:15px; font-weight:900; text-transform:uppercase; cursor:pointer; margin-bottom:10px;" id="btnEditarActa" onclick="pasarAEditar()">✏️ Editar</button>
+        <button type="button" style="display:block; width:100%; padding:14px; border-radius:24px; border:1.5px solid var(--lima); background:var(--petroleo); color:var(--lima); font-family:'Roboto'; font-size:15px; font-weight:900;  cursor:pointer; margin-bottom:10px;" id="btnEditarActa" onclick="pasarAEditar()">✏️ Editar</button>
         <button type="button" class="btn-peligro" id="btnEliminarBorrador" style="display:none;" onclick="eliminarBorradorUI()">🗑️ Eliminar borrador</button>
         <button type="button" class="btn-peligro" id="btnAnularActa" style="display:none;" onclick="anularActaUI()">⚠️ Anular Acta</button>
-        <button type="button" style="display:none; width:100%; padding:12px; border-radius:24px; border:3px dotted var(--error); background:rgba(192,57,43,0.08); color:var(--error); font-family:'Roboto'; font-size:12px; font-weight:900; text-transform:uppercase; cursor:pointer; margin-bottom:10px;" id="btnEliminarErroneo" onclick="eliminarRegistroErroneoUI()">🚫 Eliminar registro erróneo (nunca existió en el Libro físico)</button>
+        <button type="button" style="display:none; width:100%; padding:12px; border-radius:24px; border:3px dotted var(--error); background:rgba(192,57,43,0.08); color:var(--error); font-family:'Roboto'; font-size:12px; font-weight:900;  cursor:pointer; margin-bottom:10px;" id="btnEliminarErroneo" onclick="eliminarRegistroErroneoUI()">🚫 Eliminar registro erróneo (nunca existió en el Libro físico)</button>
         <button type="button" class="btn-peligro" id="btnEditarFormal" style="display:none; border-style:dashed;" onclick="abrirEditorFormal()">🔒 Editar acta asentada / anulada</button>
         <button type="button" class="btn-ghost" onclick="cerrarPreview()">← Volver a la lista de actas</button>
       </div>
 
       <div id="editorFormal" style="display:none;">
         <hr class="divider">
-        <div style="background:rgba(192,57,43,0.12); border:2px solid var(--error); border-radius:12px; padding:12px 14px; margin-bottom:14px; color:var(--error); font-size:12px; font-weight:700; line-height:1.5;">
+        <div style="background:rgba(192,57,43,0.12); border:1.5px solid var(--error); border-radius:12px; padding:12px 14px; margin-bottom:14px; color:var(--error); font-size:12px; font-weight:700; line-height:1.5;">
           ⚠️ Estás editando un registro ya ASENTADO/ANULADO. El Libro físico es la fuente formal definitiva -- esto es para reconciliar la app con lo que finalmente quedó asentado ahí. Cada cambio queda auditado con motivo, fecha y snapshot antes/después.
         </div>
         <div style="display:flex; gap:10px;">
@@ -290,22 +291,22 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
         <input type="date" id="efFechaReunion" onchange="if(EF_MODO==='TEXTO_LIBRE') actualizarAvisoMetadataFormal();">
         <span class="field-label">Hora de inicio (24 hs)</span>
         <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
-          <select id="efHoraInicio_h" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <select id="efHoraInicio_h" style="flex:1; border-radius:10px; padding:8px; border:1.5px solid var(--petroleo);"></select>
           <span style="font-weight:900;">:</span>
-          <select id="efHoraInicio_m" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <select id="efHoraInicio_m" style="flex:1; border-radius:10px; padding:8px; border:1.5px solid var(--petroleo);"></select>
         </div>
         <span class="field-label">Hora de cierre (24 hs)</span>
         <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
-          <select id="efHoraFin_h" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <select id="efHoraFin_h" style="flex:1; border-radius:10px; padding:8px; border:1.5px solid var(--petroleo);"></select>
           <span style="font-weight:900;">:</span>
-          <select id="efHoraFin_m" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <select id="efHoraFin_m" style="flex:1; border-radius:10px; padding:8px; border:1.5px solid var(--petroleo);"></select>
         </div>
         <label style="display:flex; align-items:center; gap:6px; font-size:11px; color:var(--petroleo); margin-bottom:8px;">
           <input type="checkbox" id="efHoraFinVacia" onchange="document.getElementById('efHoraFin_h').disabled=this.checked; document.getElementById('efHoraFin_m').disabled=this.checked; if(EF_MODO==='TEXTO_LIBRE') actualizarAvisoMetadataFormal();">
           Dejar sin hora de cierre (vacío)
         </label>
         <span class="field-label">Presentes</span>
-        <textarea id="efPresentes" style="width:100%; min-height:60px; border-radius:10px; padding:10px; border:2px solid var(--petroleo);" oninput="if(EF_MODO==='TEXTO_LIBRE') actualizarAvisoMetadataFormal();"></textarea>
+        <textarea id="efPresentes" style="width:100%; min-height:60px; border-radius:10px; padding:10px; border:1.5px solid var(--petroleo);" oninput="if(EF_MODO==='TEXTO_LIBRE') actualizarAvisoMetadataFormal();"></textarea>
 
         <span class="field-label">Tipo de contenido</span>
         <div id="efModoActualLabel" style="font-size:12px; color:var(--petroleo); font-weight:900; margin-bottom:6px;"></div>
@@ -313,7 +314,7 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
           <button type="button" class="btn-small" id="efModoEstructuradoBtn" style="flex:1;" onclick="cambiarModoFormal('ESTRUCTURADO')">Puntos por separado</button>
           <button type="button" class="btn-small" id="efModoTextoLibreBtn" style="flex:1;" onclick="cambiarModoFormal('TEXTO_LIBRE')">Texto libre</button>
         </div>
-        <div id="efAvisoConversion" style="display:none; background:rgba(222,175,77,0.25); border:2px solid var(--naranja); border-radius:10px; padding:10px 12px; margin-bottom:10px; color:var(--petroleo); font-size:11.5px; font-weight:700;"></div>
+        <div id="efAvisoConversion" style="display:none; background:rgba(222,175,77,0.25); border:1.5px solid var(--naranja); border-radius:10px; padding:10px 12px; margin-bottom:10px; color:var(--petroleo); font-size:11.5px; font-weight:700;"></div>
 
         <div id="efBloqueEstructurado">
           <div id="efPuntosContainer"></div>
@@ -321,7 +322,7 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
         </div>
         <div id="efBloqueTextoLibre" style="display:none;">
           <div id="efAvisoMetadataTextoLibre" style="font-size:11px; color:var(--error); font-weight:700; margin-bottom:8px;"></div>
-          <textarea id="efTextoLibre" style="width:100%; min-height:260px; border-radius:10px; padding:10px; border:2px solid var(--petroleo); font-family:monospace; font-size:12.5px;" placeholder="ACTA — BORRADOR SIN NÚMERO ASIGNADO
+          <textarea id="efTextoLibre" style="width:100%; min-height:260px; border-radius:10px; padding:10px; border:1.5px solid var(--petroleo); font-family:monospace; font-size:12.5px;" placeholder="ACTA — BORRADOR SIN NÚMERO ASIGNADO
 
 En la sede social del Club de Campo La Eugenia, siendo las 21:00 hs. del día 25 de agosto de 2026, se reúnen los siguientes miembros de Comisión Directiva: Javier Stefañuk, Presidente; Augusto Coutada, Vicepresidente...
 
@@ -333,7 +334,7 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
         <span class="field-label">PIN (volvé a ingresarlo para confirmar)</span>
         <input type="password" id="efPin" inputmode="numeric" maxlength="4" placeholder="····">
         <span class="field-label">Motivo del cambio (obligatorio)</span>
-        <textarea id="efMotivo" style="width:100%; min-height:60px; border-radius:10px; padding:10px; border:2px solid var(--petroleo);" placeholder="Ej: se reordenó al asentar en el Libro físico, correspondía N.º 564 y no 563"></textarea>
+        <textarea id="efMotivo" style="width:100%; min-height:60px; border-radius:10px; padding:10px; border:1.5px solid var(--petroleo);" placeholder="Ej: se reordenó al asentar en el Libro físico, correspondía N.º 564 y no 563"></textarea>
         <button type="button" class="btn-peligro" style="background:var(--error); color:var(--blanco); margin-top:10px;" id="btnGuardarEdicionFormal" onclick="guardarEdicionFormal()">Guardar cambios (con auditoría)</button>
         <button type="button" class="btn-ghost" onclick="cerrarEditorFormal()">Cancelar</button>
       </div>
@@ -343,7 +344,7 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
         <div class="field-label" id="editorActaTitulo"></div>
         <button type="button" class="btn-outline" style="background:var(--verdecl);" onclick="generarTextoFinal()">👁️ Ver texto final del Acta (no editable)</button>
         <div class="texto-final-box" id="textoFinalBox"></div>
-        <div style="text-align:right; margin-bottom:16px;"><a href="#" id="btnCopiarActa" style="display:none; color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:underline; cursor:pointer;" onclick="copiarTextoFinal(); return false;">Copiar texto</a></div>
+        <div style="text-align:right; margin-bottom:16px;"><a href="#" id="btnCopiarActa" style="display:none; color:var(--petroleo); font-size:12px; font-weight:900;  text-decoration:underline; cursor:pointer;" onclick="copiarTextoFinal(); return false;">Copiar texto</a></div>
         <div id="avisoImprimirActa" style="display:none; font-size:11px; color:var(--petroleo); opacity:.7; text-align:center; margin-bottom:10px;">Esto es un borrador para consolidar — el formato final de impresión (márgenes, sangría, justificado) se aplica en Word u otro procesador de texto, fuera de la app.</div>
         <hr class="divider">
         <div class="field-label">Edición punto por punto</div>
@@ -354,9 +355,9 @@ Siendo las 21:30 horas se levanta la sesión.-"></textarea>
         <input type="number" id="eActaLeidaNumero">
         <span class="field-label">Hora de cierre (24 hs)</span>
         <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
-          <select id="eHoraFin_h" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <select id="eHoraFin_h" style="flex:1; border-radius:10px; padding:8px; border:1.5px solid var(--petroleo);"></select>
           <span style="font-weight:900;">:</span>
-          <select id="eHoraFin_m" style="flex:1; border-radius:10px; padding:8px; border:2px solid var(--petroleo);"></select>
+          <select id="eHoraFin_m" style="flex:1; border-radius:10px; padding:8px; border:1.5px solid var(--petroleo);"></select>
         </div>
         <button type="button" class="btn-solid" style="margin-top:10px;" onclick="guardarCambiosActa()">Guardar cambios</button>
         <button type="button" class="btn-ghost" onclick="cerrarEditor()">Cerrar</button>
@@ -407,7 +408,7 @@ function mostrarPrompt(mensaje, callbackAceptar) {
   const overlay = document.createElement('div');
   overlay.className = 'aviso-overlay';
   overlay.innerHTML = '<div class="aviso-card"><div class="aviso-texto">' + mensaje.replace(/</g,'&lt;') + '</div>' +
-    '<textarea id="promptInputTexto" style="width:100%; min-height:70px; border-radius:10px; padding:10px; border:2px solid var(--petroleo); font-family:\'Roboto\'; font-size:14px; margin-bottom:14px; color:var(--petroleo);"></textarea>' +
+    '<textarea id="promptInputTexto" style="width:100%; min-height:70px; border-radius:10px; padding:10px; border:1.5px solid var(--petroleo); font-family:\'Roboto\'; font-size:14px; margin-bottom:14px; color:var(--petroleo);"></textarea>' +
     '<div class="confirm-btns"><button type="button" class="confirm-btn-cancelar">Cancelar</button><button type="button" class="confirm-btn-aceptar">Aceptar</button></div></div>';
   document.body.appendChild(overlay);
   const input = overlay.querySelector('#promptInputTexto');
@@ -426,10 +427,10 @@ function mostrarPromptMotivoPin(mensaje, callbackAceptar) {
   const overlay = document.createElement('div');
   overlay.className = 'aviso-overlay';
   overlay.innerHTML = '<div class="aviso-card"><div class="aviso-texto">' + mensaje.replace(/</g,'&lt;') + '</div>' +
-    '<div style="text-align:left; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--petroleo); margin-bottom:4px;">Motivo (obligatorio)</div>' +
-    '<textarea id="promptMotivoTexto" style="width:100%; min-height:60px; border-radius:10px; padding:10px; border:2px solid var(--petroleo); font-family:\'Roboto\'; font-size:14px; margin-bottom:10px; color:var(--petroleo);"></textarea>' +
-    '<div style="text-align:left; font-size:11px; font-weight:900; text-transform:uppercase; color:var(--petroleo); margin-bottom:4px;">PIN (volvé a ingresarlo)</div>' +
-    '<input type="password" id="promptPinTexto" inputmode="numeric" maxlength="4" style="width:100%; text-align:center; font-size:20px; font-weight:900; letter-spacing:6px; border-radius:10px; padding:10px; border:2px solid var(--petroleo); margin-bottom:14px; color:var(--petroleo);">' +
+    '<div style="text-align:left; font-size:11px; font-weight:900;  color:var(--petroleo); margin-bottom:4px;">Motivo (obligatorio)</div>' +
+    '<textarea id="promptMotivoTexto" style="width:100%; min-height:60px; border-radius:10px; padding:10px; border:1.5px solid var(--petroleo); font-family:\'Roboto\'; font-size:14px; margin-bottom:10px; color:var(--petroleo);"></textarea>' +
+    '<div style="text-align:left; font-size:11px; font-weight:900;  color:var(--petroleo); margin-bottom:4px;">PIN (volvé a ingresarlo)</div>' +
+    '<input type="password" id="promptPinTexto" inputmode="numeric" maxlength="4" style="width:100%; text-align:center; font-size:20px; font-weight:900; letter-spacing:6px; border-radius:10px; padding:10px; border:1.5px solid var(--petroleo); margin-bottom:14px; color:var(--petroleo);">' +
     '<div class="confirm-btns"><button type="button" class="confirm-btn-cancelar">Cancelar</button><button type="button" class="confirm-btn-aceptar">Confirmar</button></div></div>';
   document.body.appendChild(overlay);
   const inputMotivo = overlay.querySelector('#promptMotivoTexto');
@@ -753,7 +754,7 @@ function renderCandidatosChatBit() {
   if (CANDIDATOS_CHAT_BIT.length === 0) { cont.innerHTML = '<div class="empty-msg">No se encontró nada institucional relevante.</div>'; return; }
   let html = '<div class="field-label">Sugerencias encontradas (' + CANDIDATOS_CHAT_BIT.length + ') — elegí a dónde va cada una</div>';
   CANDIDATOS_CHAT_BIT.forEach((c, i) => {
-    const estiloDup = c.posibleDuplicadoDe ? 'border:2px solid var(--naranja);' : '';
+    const estiloDup = c.posibleDuplicadoDe ? 'border:1.5px solid var(--naranja);' : '';
     html += '<div class="novedad-card" style="' + estiloDup + '">';
     html += '<div class="novedad-header"><span class="novedad-titulo">' + escapeHtml(c.titulo) + '</span><span class="novedad-fecha">' + c.fecha + '</span></div>';
     html += '<div class="novedad-desc">' + escapeHtml(c.descripcion) + '</div>';
@@ -1445,7 +1446,7 @@ function cargarConsolidado() {
         div.style.display = 'block';
         div.style.marginBottom = '14px';
         const anuladaTag = a.estado === 'ANULADA' ? ' — ANULADA (' + escapeHtml(a.motivoAnulacion) + ')' : '';
-        div.innerHTML = '<div style="font-weight:900; color:var(--petroleo); margin-bottom:8px; text-transform:uppercase; font-size:12px;">Acta N.º ' + a.numeroActa + anuladaTag + '</div>' +
+        div.innerHTML = '<div style="font-weight:900; color:var(--petroleo); margin-bottom:8px;  font-size:12px;">Acta N.º ' + a.numeroActa + anuladaTag + '</div>' +
           escapeHtml(construirTextoFinalActa(detalle.acta));
         // Inserta en orden aunque las respuestas lleguen desordenadas
         div.dataset.orden = a.numeroActa;
