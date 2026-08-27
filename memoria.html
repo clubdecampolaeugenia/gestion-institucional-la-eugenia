@@ -19,34 +19,35 @@
   @keyframes shakeError { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 40%{transform:translateX(6px);} 60%{transform:translateX(-4px);} 80%{transform:translateX(4px);} }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 600px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
+  .card { background: var(--verdecl); border-radius: 24px; width: 100%; max-width: 600px; padding: 28px 24px; box-sizing: border-box; box-shadow: 0 16px 36px rgba(13,42,43,0.22); }
   .logo-wrap img { width: 140px; display: block; margin: 0 auto; filter: drop-shadow(0 4px 7px rgba(0,0,0,0.2)); }
   h1 { margin: 2px 0 4px; color: var(--negro); font-family: Impact, sans-serif; font-size: 24px; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
-  .subtitle { text-align: center; color: var(--petroleo); font-size: 13px; margin-bottom: 18px; text-transform: uppercase; letter-spacing: .5px; }
+  .subtitle { text-align: center; color: var(--petroleo); font-size: 13px; margin-bottom: 18px; letter-spacing: .2px; }
 
   #pinScreen { display: none; animation: fadeInScreen .3s ease-out; }
   #checkingSession { text-align: center; padding: 60px 0; }
   .session-spinner { width: 30px; height: 30px; margin: 0 auto 12px; border: 3px solid rgba(19,84,87,0.2); border-top-color: var(--petroleo); border-radius: 50%; animation: spin .7s linear infinite; }
-  .session-spinner-label { color: var(--petroleo); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  .session-spinner-label { color: var(--petroleo); font-weight: 700; font-size: 12px; letter-spacing: .5px; }
   #mainScreen { display: none; }
   #mainScreen.active { animation: fadeInScreen .3s ease-out; }
-  .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
-  .pin-input { display: block; width: 100%; text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; border: 2px solid var(--petroleo); border-radius: 16px; padding: 12px; background: var(--blanco); color: var(--petroleo); outline: none; margin-bottom: 12px; }
-  .pin-input.error { animation: shakeError .35s ease-in-out; border-color: var(--error); }
+  .pin-label { text-align: center; color: var(--petroleo); font-size: 14px; font-weight: 900; margin-bottom: 10px; }
+  .pin-input { display: block; width: 100%; text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; border: none; border-radius: 16px; padding: 12px; background: var(--blanco); color: var(--petroleo); outline: none; margin-bottom: 12px; box-shadow: inset 0 0 0 1.5px rgba(19,84,87,0.15); }
+  .pin-input:focus { box-shadow: inset 0 0 0 2px var(--petroleo); }
+  .pin-input.error { animation: shakeError .35s ease-in-out; box-shadow: inset 0 0 0 2px var(--error); }
   .pin-error { text-align: center; color: var(--error); font-size: 13px; font-weight: 700; min-height: 18px; margin-bottom: 8px; }
 
   .instr-toggle {}
   .instr-box { background: var(--petroleo); border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; font-size: 13px; color: var(--hueso); line-height: 1.5; }
 
-  .btn-solid { display: block; width: 100%; padding: 14px; border-radius: 24px; border: 2px solid var(--petroleo); background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
-  .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 2px solid var(--petroleo); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
-  .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; text-align: center; }
+  .btn-solid { display: block; width: 100%; padding: 15px; border-radius: 24px; border: none; background: var(--naranja); color: var(--petroleo); font-family: 'Roboto'; font-size: 15px; font-weight: 900; cursor: pointer; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+  .btn-outline { display: block; width: 100%; padding: 12px; border-radius: 24px; border: 1.5px solid rgba(19,84,87,0.35); background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
+  .btn-ghost { display: block; width: 100%; padding: 8px 10px 0; border-radius: 24px; border: none; background: transparent; color: var(--petroleo); font-family: 'Roboto'; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; }
   .btn-solid:disabled { opacity: .6; }
 
-  .field-label { color: var(--petroleo); font-size: 11px; font-weight: 900; text-transform: uppercase; margin: 10px 0 4px; display: block; }
+  .field-label { color: var(--petroleo); font-size: 11px; font-weight: 900; margin: 10px 0 4px; display: block; }
   .field-label:first-child { margin-top: 0; }
-  input[type=number] { width: 100%; border: 2px solid var(--petroleo); border-radius: 12px; padding: 10px 12px; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; }
-  textarea { width: 100%; border: 2px solid var(--petroleo); border-radius: 12px; padding: 10px 12px; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; resize: vertical; }
+  input[type=number] { width: 100%; border: none; border-radius: 12px; padding: 10px 12px; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; box-shadow: inset 0 0 0 1.5px rgba(19,84,87,0.15); }
+  textarea { width: 100%; border: none; border-radius: 12px; padding: 10px 12px; background: var(--blanco); color: var(--petroleo); font-family: 'Roboto'; font-size: 14px; outline: none; resize: vertical; box-shadow: inset 0 0 0 1.5px rgba(19,84,87,0.15); }
   .grid-socios { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
   .form-panel { background: var(--petroleo); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
@@ -55,10 +56,10 @@
   .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--petroleo); border-top-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 6px; vertical-align: middle; }
 
   .memoria-box { background: var(--blanco); border-radius: 16px; padding: 18px; margin-top: 14px; }
-  .memoria-meta { font-size: 11px; color: var(--petroleo); opacity: .6; margin-bottom: 10px; text-transform: uppercase; font-weight: 900; }
+  .memoria-meta { font-size: 11px; color: var(--petroleo); opacity: .6; margin-bottom: 10px; font-weight: 900; }
   .memoria-texto { width: 100%; min-height: 400px; border: none; font-family: 'Roboto'; font-size: 13px; color: var(--petroleo); line-height: 1.7; resize: vertical; outline: none; }
 
-  .estado-badge { display: inline-block; font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; margin-left: 8px; }
+  .estado-badge { display: inline-block; font-size: 10px; font-weight: 900; padding: 4px 10px; border-radius: 20px; margin-left: 8px; }
   .estado-BORRADOR { background: var(--naranja); color: var(--petroleo); }
   .estado-REVISADA { background: var(--lima); color: var(--petroleo); }
   .estado-APROBADA { background: var(--petroleo); color: var(--lima); }
@@ -67,18 +68,18 @@
   .loading-text { text-align: center; color: var(--petroleo); font-size: 13px; font-weight: 700; min-height: 20px; }
   .empty-msg { text-align: center; color: var(--petroleo); opacity: .6; font-size: 13px; padding: 20px 0; }
 
-  .aviso-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
-  .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 12px 32px rgba(0,0,0,0.35); text-align: center; }
+  .aviso-overlay { position: fixed; inset: 0; background: rgba(19,84,87,0.55); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
+  .aviso-card { background: rgba(245,243,236,0.97); border-radius: 20px; padding: 24px 22px; max-width: 380px; width: 100%; box-shadow: 0 16px 36px rgba(0,0,0,0.3); text-align: center; }
   .aviso-texto { color: var(--petroleo); font-size: 14px; line-height: 1.5; margin-bottom: 18px; white-space: pre-wrap; }
-  .aviso-btn { background: var(--lima); color: var(--petroleo); border: 2px solid var(--petroleo); border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+  .aviso-btn { background: var(--lima); color: var(--petroleo); border: none; border-radius: 20px; padding: 10px 28px; font-family: 'Roboto'; font-size: 13px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
 </style>
 </head>
 <body>
 <div class="card">
-  <a href="index.html" style="display:inline-block; text-align:left; color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:none; opacity:.75; margin-bottom:10px;">&larr; Volver al panel</a>
+  <a href="index.html" style="display:inline-block; text-align:left; color:var(--petroleo); font-size:12px; font-weight:900;  text-decoration:none; opacity:.75; margin-bottom:10px;">&larr; Volver al panel</a>
   <a href="index.html" class="logo-wrap" style="cursor:pointer;"><img src="logo.png" alt="Logo La Eugenia"></a>
   <h1>Gestión Institucional</h1>
-  <div class="subtitle"><strong style="color:var(--negro); text-transform:uppercase;">Memoria</strong></div>
+  <div class="subtitle"><strong style="color:var(--negro); ">Memoria</strong></div>
 
   <div id="checkingSession"><div class="session-spinner"></div><div class="session-spinner-label">Verificando sesión...</div></div>
   <div id="pinScreen">
@@ -89,19 +90,19 @@
   </div>
 
   <div id="mainScreen">
-    <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
+    <div class="instr-toggle" onclick="toggleInstrucciones()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900;  margin-bottom:10px;">¿Cómo funciona este apartado? <span id="instrFlecha">▾</span></div>
     <div id="instrBox" class="instr-box" style="display:none;">
       La Memoria se arma con lo que cargaste en <strong>Novedades</strong> (solo las marcadas <strong>SI</strong>) y el último <strong>Balance</strong> procesado del Ejercicio activo. Completá el dato de socios (todavía no viene del Padrón, hay que cargarlo a mano) y tocá "Generar borrador". Después podés editar el texto libremente antes de aprobarlo — nunca se pierde, cada generación queda como una versión nueva.
     </div>
 
-    <div class="instr-toggle" onclick="toggleConfigMemoria()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900; text-transform:uppercase; margin-bottom:10px;">⚙️ Instrucciones de estilo para la IA <span id="configFlecha">▾</span></div>
+    <div class="instr-toggle" onclick="toggleConfigMemoria()" style="cursor:pointer; text-align:center; color:var(--petroleo); font-size:11px; font-weight:900;  margin-bottom:10px;">⚙️ Instrucciones de estilo para la IA <span id="configFlecha">▾</span></div>
     <div id="configMemoriaBox" style="display:none; background:var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:16px;">
       <div style="color:var(--hueso); font-size:12px; margin-bottom:8px;">Estas instrucciones se le suman a la IA cada vez que generás una Memoria. Agregá acá cualquier corrección de estilo que quieras que se aplique de ahora en más — no hace falta pedirle a nadie que toque código.</div>
       <textarea id="configMemoriaTexto" style="min-height:140px; background:var(--hueso);" placeholder="Ej: Ordená los hechos cronológicamente según su fecha real..."></textarea>
       <button type="button" class="btn-solid" style="margin-top:10px; margin-bottom:0;" onclick="guardarConfigMemoria()">Guardar instrucciones</button>
     </div>
 
-    <div id="avisoPendientes" style="display:none; background:var(--naranja); border:2px solid var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:16px; font-size:13px; font-weight:700; color:var(--petroleo);"></div>
+    <div id="avisoPendientes" style="display:none; background:var(--naranja); border:1.5px solid var(--petroleo); border-radius:16px; padding:14px 16px; margin-bottom:16px; font-size:13px; font-weight:700; color:var(--petroleo);"></div>
 
     <div class="form-panel">
       <span class="field-label">Socios al cierre del Ejercicio</span>
@@ -320,7 +321,7 @@ function mostrarMemoria(idDocumento, contenido, estado, version) {
     '<div class="memoria-box">' +
     '<div class="memoria-meta">Versión ' + version + '<span class="estado-badge estado-' + estado + '">' + estado + '</span></div>' +
     '<textarea class="memoria-texto" id="memoriaTextarea" style="font-family:Arial, Helvetica, sans-serif; text-align:justify;">' + contenido + '</textarea>' +
-    '<div style="text-align:right; margin-bottom:12px;"><a href="#" id="btnCopiarMemoria" onclick="copiarMemoria(); return false;" style="color:var(--petroleo); font-size:12px; font-weight:900; text-transform:uppercase; text-decoration:underline; cursor:pointer;">Copiar texto</a></div>' +
+    '<div style="text-align:right; margin-bottom:12px;"><a href="#" id="btnCopiarMemoria" onclick="copiarMemoria(); return false;" style="color:var(--petroleo); font-size:12px; font-weight:900;  text-decoration:underline; cursor:pointer;">Copiar texto</a></div>' +
     '<div style="font-size:11px; color:var(--petroleo); opacity:.7; text-align:center; margin-bottom:10px;">Esto es un borrador para consolidar — el formato final de impresión se aplica en Word u otro procesador de texto, fuera de la app.</div>' +
     '<button type="button" class="btn-outline" onclick="guardarEdicion()">Guardar cambios</button>' +
     '<button type="button" class="btn-solid" onclick="cambiarEstado(\'REVISADA\')">Marcar como revisada</button>' +
