@@ -116,7 +116,7 @@
 
       <div id="asambleaPildora" onclick="toggleEditorAsamblea()" style="cursor:pointer; margin-top:14px; display:flex; justify-content:space-between; align-items:center; gap:10px; background:rgba(255,255,255,0.12); border:1.5px solid var(--naranja); border-radius:20px; padding:8px 16px;">
         <span style="color:var(--naranja); font-family:'Roboto',sans-serif; font-weight:900; font-size:13px; " id="asambleaPildoraTexto">Asamblea — cargando...</span>
-        <span style="font-size:12px; color:var(--naranja);">✏️</span>
+        <span style="display:inline-flex;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#deaf4d" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path></svg></span>
       </div>
       <div id="editorAsamblea" style="display:none; background:rgba(255,255,255,0.08); border-radius:10px; padding:14px; margin-top:8px;">
         <span class="progreso-titulo" style="color:var(--naranja); font-size:11px; margin-bottom:6px;">Fecha</span>
@@ -158,7 +158,7 @@
 
     <div class="seccion-titulo">Durante el año</div>
     <a href="novedades.html" class="hito-card clickable" style="text-decoration:none;">
-      <div class="hito-num">📰</div>
+      <div class="hito-num"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#135457" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h11l3 3v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"></path><path d="M8 7h6M8 11h8M8 15h5"></path></svg></div>
       <div class="hito-info"><div class="hito-nombre">Novedades</div><div class="hito-detalle">Registro de hechos del año — revisar y aprobar antes de generar la Memoria</div><span class="hito-flecha">Abrir &rarr;</span></div>
     </a>
 
@@ -382,10 +382,10 @@ function renderHitosGenerico(lista, contenedorId, prefijo) {
       indicador = '<span class="hito-flecha">Abrir &rarr;</span>';
     } else if (h.estado === 'COMPLETO') {
       indicador = '<span class="hito-flecha">Ver &rarr;</span>';
-      el.onclick = () => mostrarAviso('✓ ' + h.nombre + '\n\n' + h.detalle + '\n\nEsto ya es un hecho consumado — no necesita un módulo propio.');
+      el.onclick = () => mostrarAviso(h.nombre + '\n\n' + h.detalle + '\n\nEsto ya es un hecho consumado — no necesita un módulo propio.');
     } else {
       indicador = '<span class="hito-flecha">Ver &rarr;</span>';
-      el.onclick = () => mostrarAviso('🔒 ' + h.nombre + '\n\nTodavía no está construido este módulo.\n\n' + h.detalle);
+      el.onclick = () => mostrarAviso(h.nombre + '\n\nTodavía no está construido este módulo.\n\n' + h.detalle);
     }
     el.innerHTML =
       '<div class="hito-num">' + (i + 1) + '</div>' +
@@ -535,7 +535,7 @@ function actualizarProximaAccion() {
     el.textContent = 'Avanzar: ' + pendiente.nombre;
     return;
   }
-  el.textContent = '✅ Todo listo para la Asamblea Ordinaria.';
+  el.textContent = 'Todo listo para la Asamblea Ordinaria.';
 }
 
 function actualizarHito(nombre, estado, detalle) {
